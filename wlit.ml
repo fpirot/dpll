@@ -15,8 +15,12 @@ module type Clause =
     val var : t -> int list
   end;;
 
+module type Assig = 
+  sig
+    val read : int -> int
+  end;;
 
-module Wlit = functor (Clause : Clause) ->
+module Wlit = functor (Clause: Clause) -> functor (Assig: Assig) ->
   struct
 
     type  wclause = {mutable lit : Clause.t; mutable wlit : int * int}
@@ -40,18 +44,18 @@ module Wlit = functor (Clause : Clause) ->
     t
 (* Remplit la table d'association entre watched literals et clauses, avec un tableau de wclauses en entrée. *)
 
-    let watched_literals_of_clause c =
-  let l = Clause.var c in
+    let watched_literals_of_clause t i =
+  let l = Clause.var t.(i).lit in
   let rec aux w1 w2 = function
     |[] -> if w1 = 0 then raise Unsatisfiable
 (* Si on n'a trouvé aucun litéral à surveiller, la clause n'est pas satisfiable avec la valuation actuelle. *)
-      else raise Val w1
+      else raise (Val w1)
 (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors pour que la clause soit satisfaite, il doit forcément être à vrai. *)
     |x :: r -> let v = Assig.read (abs x) in
       if v = 0 then 
 	if w1 = 0 then aux x 0 r
 	else (w1,x)
-      else if v = x then raise Satisfiable i
+      else if v = x then raise (Satisfiable i)
       else aux w1 w2 r
   in aux 0 0 l
 (* watched_literals_of_clause renvoie un couple de litéraux à surveiller possibles pour la clause c. *)
@@ -62,7 +66,7 @@ module Wlit = functor (Clause : Clause) ->
 for i = 0 to n-1 do
   let c = tab.(i) in
   t.(i).lit <- c;
-  let d = watched_literals_of_clause c in
+  let d = watched_literals_of_clause t i in
   t.(i).wlit <- d
 done;
 t
@@ -73,7 +77,7 @@ construit un tableau de clauses avec deux litéraux surveillés. *)
   let l = watched_to_clauses (abs x) assoc in
   let rec aux = function
     |[] -> ()
-    |i :: r -> let d = watched_literals_of_clause t.(i) in t.(i).wlit <- d; aux r
+    |i :: r -> let d = watched_literals_of_clause t i in t.(i).wlit <- d; aux r
 in aux l
 (* Change les litéraux à surveiller dans le tableau t, lorsqu'une nouvelle variable voit sa valeur fixée. *)
 
