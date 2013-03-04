@@ -11,6 +11,7 @@ module Clause = Map.Make (Data);;
 (* Une clause est représentée sous forme d'un arbre de variables. *)
 
 
+
 (* Input/Output *)
 
 let rec insert x = function
