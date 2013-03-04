@@ -12,13 +12,13 @@ module Literal =
   end;;
 (* Structure des litéraux qui composent les clauses. *)
 
-module Clauseinit = Set.Make (Literal);;
+module Clause = Set.Make (Literal);;
 let rec list_to_clause = function
-  |[] -> Clauseinit.empty
-  |x :: r -> Clauseinit.add x (list_to_clause r);;
+  |[] -> Clause.empty
+  |x :: r -> Clause.add x (list_to_clause r);;
 (* Une clause est représenté par un ensemble de variables. *)
 
-module type Clauseinit = 
+module type Clause = 
   sig
     type t = Set.Make(Literal).t
     val for_all : (int -> bool) -> t -> bool
@@ -30,9 +30,9 @@ module type Clauseinit =
 module type Ref =
   sig
     type t
-    val add : Clauseinit.t -> unit
+    val add : Clause.t -> unit
     val length : int
-    val elt : int -> Clauseinit.t
+    val elt : int -> Clause.t
   end;;
 
 module Int =
@@ -74,7 +74,7 @@ module type Assig =
   end;;
 
 module ClauseElt = functor (Elt : Element) -> functor (Links : Links) -> 
-  functor (Ref : Ref) -> functor (Clause : Clauseinit) -> functor (Assig : Assig) ->
+  functor (Ref : Ref) -> functor (Clause : Clause) -> functor (Assig : Assig) ->
   struct
     type set = Clause.t
 (* Ref est un tableau dynamique de clauses, qui sert de référence à l'ensemble des problèmes les utilisant. *)
@@ -102,7 +102,7 @@ module ClauseElt = functor (Elt : Element) -> functor (Links : Links) ->
       else if Clause.mem (-x) s then (false, Clause.remove (-x) s)
       else failwith "No such variable to remove."
 
-    let remove x t = 
+    let extract x t = 
       let links = Elt.find x t in
       let l = Links.elements links in
       let rep = ref t in
@@ -199,4 +199,4 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt)
   end;;
 
 
-module Clause = (ClauseCore : ClauseAbstract);;
+module Op = (ClauseCore : ClauseAbstract);;

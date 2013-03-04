@@ -12,7 +12,7 @@ module type Clause =
   sig
     type t
     val empty : t
-    val var : t -> int list
+    val elements : t -> int list
   end;;
 
 module type Assig = 
