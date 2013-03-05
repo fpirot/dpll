@@ -11,7 +11,14 @@ module type ClauseElt =
     val fold : (int -> 'b -> 'b) -> int list -> 'b -> 'b
   end;;
 
-module ClauseCore = functor (Elt : ClauseElt) ->
+module type AssigElt = 
+  sig
+    type t = int
+    val read : int -> t
+    val write : int -> t -> unit
+  end;;
+
+module ClauseCore = functor (Elt : ClauseElt) -> functor (Assig : AssigElt) ->
   struct
     module Cls = Set.Make
       (struct
@@ -62,8 +69,8 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let is_empty = Mp.is_empty
     (* Teste si la table d'association est vide. *)
 
-    let is_unsat id = Cls.is_empty clauseArray.(id)
-    (* Teste si la clause d'indice id est insatisfiable (c'est à dire vide). *)
+    let are_sat id = Cls.fold (fun x c -> if Assig.read x = 0 then c+1 else c) clauseArray.(id) 0
+    (* Renvoie le nombre de litéraux dont on ne connaît pas encore l'assignation dans la clause. *)
 
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
@@ -103,7 +110,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
   end;;
 
 
-module type ClauseAbstract = functor (Elt : ClauseElt) ->
+module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Assig : AssigElt) ->
   sig
     type map
     type cls
@@ -111,7 +118,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val create : int list -> cls
     val reset : unit -> unit
     val is_empty : map -> bool
-    val is_unsat : cls -> bool
+    val are_sat : cls -> int
     val mem : int -> map -> bool
     val add : cls -> map -> map
     val variable : int -> cls -> cls
@@ -129,6 +136,12 @@ module Test = Make
   (struct
     let nbr = 10
     let fold = List.fold_right
+  end)
+  (struct
+    type t = int
+    let tab = Array.create 10 0
+    let read n = tab.(n-1)
+    let write n x = tab.(n-1) <- x
   end);;
 
 let s = Test.empty;;
