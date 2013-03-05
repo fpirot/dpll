@@ -1,0 +1,3 @@
+fonction split : env -> int * (clause list * env) * (clause list * env)
+Choisit unevariable dans l'environnement en entrée, et renvoie deux couples (l, env) pour chaque assignation possible de la variable :
+l est la liste des clauses qui contiennent le litéral correspondant, et env l'environnement de départ privé de ces clauses, et dont on a retiré la négation de ce litéral de toutes les clauses qui la contenaient. 
