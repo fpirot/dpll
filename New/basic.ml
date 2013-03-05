@@ -1,11 +1,48 @@
+(* Module de, surprise, chargement des donnees *)
+
+module Load =
+		struct
+
+		let rec insert x = function
+				| [] -> [(0, x)]
+				| (m, y) :: l ->
+				    if x = y then
+				      (m + 1, y) :: l
+				    else
+				      match insert x l with
+				        | [] -> failwith "Insert"
+				        | (m', y') :: l' ->
+				            if m' > m then
+				              (m', y') :: (m, y) :: l'
+				            else
+				              (m, y) :: (m', y') :: l'
+
+
+		let init c channel =
+			let rec iter list lstC lstV = function
+				  | 0 -> Scanf.bscanf channel " %d "
+				      (fun x -> if x = 0 then (lstV :: lstC, list)
+				              else iter (insert (abs x) list) lstC (x :: lstV) 0)
+				  | n -> Scanf.bscanf channel " %d "
+				      (fun x -> if x = 0 then iter list (lstV :: lstC) [] (n - 1)
+				              else iter (insert (abs x) list) lstC (x :: lstV) n) in
+				iter [] [] [] (c - 1)
+
+
+		let load channel =
+			Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init c channel))
+
+  end;;
+
+
 (* Regroupe les modules d'initialisation *)
 
 module Core =
   struct
     
-    let (var, cls) = Scanf.bscanf (Scanf.Scanning.open_in "test") "p cnf %d %d" (fun v c -> (v, c) );;
-    
     type order = (int * int) list
+    
+    let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
     let read n = assigArray.(n - 1)
@@ -13,7 +50,7 @@ module Core =
     
     let hd l = snd (List.hd l)
     let tl = List.tl
-    let init l = List.map (fun x -> x, x) l
+    let update = fun x -> x
     
     let fold = List.fold_right
     
@@ -24,12 +61,14 @@ module type Abstract =
     type order
     val var : int
     val cls : int
+    val lst : int list list
+    val ord : order
     val read : int -> int
     val write : int -> int -> unit
     val hd : order -> int
     val tl : order -> order
-    val init : int list -> order
-    val fold : (int -> 'b -> 'b) -> int list -> 'b -> 'b
+    val update : order -> order
+    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
 module Make = (Core : Abstract);;
@@ -40,6 +79,8 @@ module Make = (Core : Abstract);;
 
 Make.var;;
 Make.cls;;
+Make.lst;;
+Make.hd Make.ord;;
 Make.read 1;;
 Make.write 3 2;;
 Make.read 3;;

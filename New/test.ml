@@ -6,12 +6,46 @@ le corps du fichier associer. *)
 
 module Core = struct
 
+module Load =
+		struct
+
+		let rec insert x = function
+				| [] -> [(0, x)]
+				| (m, y) :: l ->
+				    if x = y then
+				      (m + 1, y) :: l
+				    else
+				      match insert x l with
+				        | [] -> failwith "Insert"
+				        | (m', y') :: l' ->
+				            if m' > m then
+				              (m', y') :: (m, y) :: l'
+				            else
+				              (m, y) :: (m', y') :: l'
+
+
+		let init c channel =
+			let rec iter list lstC lstV = function
+				  | 0 -> Scanf.bscanf channel " %d "
+				      (fun x -> if x = 0 then (lstV :: lstC, list)
+				              else iter (insert (abs x) list) lstC (x :: lstV) 0)
+				  | n -> Scanf.bscanf channel " %d "
+				      (fun x -> if x = 0 then iter list (lstV :: lstC) [] (n - 1)
+				              else iter (insert (abs x) list) lstC (x :: lstV) n) in
+				iter [] [] [] (c - 1)
+
+
+		let load channel =
+			Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init c channel))
+
+  end;;
+
 module Core =
   struct
     
-    let (var, cls) = Scanf.bscanf (Scanf.Scanning.open_in "test") "p cnf %d %d" (fun v c -> (v, c) );;
-    
     type order = (int * int) list
+    
+    let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
     let read n = assigArray.(n - 1)
@@ -30,12 +64,14 @@ module type Abstract =
     type order
     val var : int
     val cls : int
+    val lst : int list list
+    val ord : order
     val read : int -> int
     val write : int -> int -> unit
     val hd : order -> int
     val tl : order -> order
     val init : int list -> order
-    val fold : (int -> 'b -> 'b) -> int list -> 'b -> 'b
+    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
 module Make = (Core : Abstract);;
@@ -52,9 +88,10 @@ module Clause = struct
 module type ClauseElt =
   sig
     val cls : int
+    val lst : int list list
     val read : int -> int
     val write : int -> int -> unit
-    val fold : (int -> 'b -> 'b) -> int list -> 'b -> 'b
+    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
@@ -94,16 +131,25 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let empty = Mp.empty
     (* Table d'association vide. *)
     
-    let create l =
+    let fill l =
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
+    let add id map =
+      Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
+        Mp.add x (St.add id s) m) clauseArray.(id) map
+    (* Ajoute la clause d'indice id dans la table d'association. *)
+    
     let reset () =
       Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
       compt := -1
     (* Réinitialise le tableau de clauses. *)
+    
+    let create lst =
+      reset ();
+      Elt.fold (fun l m -> add (fill l) m) lst Mp.empty
     
     let is_empty = Mp.is_empty
     (* Teste si la table d'association est vide. *)
@@ -113,11 +159,6 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
-
-    let add id map =
-      Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
-        Mp.add x (St.add id s) m) clauseArray.(id) map
-    (* Ajoute la clause d'indice id dans la table d'association. *)
 
     let variable x id =
       clauseArray.(id) <- Cls.remove x clauseArray.(id); id
@@ -158,12 +199,13 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     type map
     type cls
     val empty : map
-    val create : int list -> cls
+    val fill : int list -> cls
+    val add : cls -> map -> map
+    val create : int list list -> map
     val reset : unit -> unit
     val is_empty : map -> bool
     val are_sat : cls -> int
     val mem : int -> map -> bool
-    val add : cls -> map -> map
     val variable : int -> cls -> cls
     val remove : cls -> map -> map
     val bindings : map -> (int * int list list) list
@@ -282,3 +324,11 @@ end;;
 module Core = Core.Make;;
 module Clause = Clause.Make(Core);;
 module Oper = Oper.Make(Clause)(Core);;
+
+Core.var;;
+Core.cls;;
+Core.lst;;
+Core.hd Core.ord;;
+Core.read 1;;
+Core.write 3 2;;
+Core.read 3;;

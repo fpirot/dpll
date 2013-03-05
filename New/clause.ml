@@ -4,9 +4,10 @@
 module type ClauseElt =
   sig
     val cls : int
+    val lst : int list list
     val read : int -> int
     val write : int -> int -> unit
-    val fold : (int -> 'b -> 'b) -> int list -> 'b -> 'b
+    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
@@ -46,16 +47,25 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let empty = Mp.empty
     (* Table d'association vide. *)
     
-    let create l =
+    let fill l =
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
+    let add id map =
+      Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
+        Mp.add x (St.add id s) m) clauseArray.(id) map
+    (* Ajoute la clause d'indice id dans la table d'association. *)
+    
     let reset () =
       Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
       compt := -1
     (* Réinitialise le tableau de clauses. *)
+    
+    let create lst =
+      reset ();
+      Elt.fold (fun l m -> add (fill l) m) lst Mp.empty
     
     let is_empty = Mp.is_empty
     (* Teste si la table d'association est vide. *)
@@ -65,11 +75,6 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
-
-    let add id map =
-      Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
-        Mp.add x (St.add id s) m) clauseArray.(id) map
-    (* Ajoute la clause d'indice id dans la table d'association. *)
 
     let variable x id =
       clauseArray.(id) <- Cls.remove x clauseArray.(id); id
@@ -110,12 +115,13 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     type map
     type cls
     val empty : map
-    val create : int list -> cls
+    val fill : int list -> cls
+    val add : cls -> map -> map
+    val create : int list list -> map
     val reset : unit -> unit
     val is_empty : map -> bool
     val are_sat : cls -> int
     val mem : int -> map -> bool
-    val add : cls -> map -> map
     val variable : int -> cls -> cls
     val remove : cls -> map -> map
     val bindings : map -> (int * int list list) list
@@ -132,6 +138,7 @@ module Make = (ClauseCore : ClauseAbstract);;
 module Test = Make
   (struct
     let cls = 10
+    let lst = []
     let tab = Array.create 10 0
     let read n = tab.(n-1)
     let write n x = tab.(n-1) <- x
@@ -140,11 +147,7 @@ module Test = Make
 
 let s = Test.empty;;
 Test.bindings s;;
-let s = Test.add (Test.create [0; -1; 2]) s;;
-let s = Test.add (Test.create [1; -2; 3]) s;;
-let s = Test.add (Test.create [2; -3; 0]) s;;
-let s = Test.add (Test.create [3; -0; 1]) s;;
-let s = Test.add (Test.create [0; -1; -2]) s;;
+let s = Test.create [[0; -1; 2]; [1; -2; 3]; [2; -3; 0]; [3; -0; 1]; [0; -1; -2]];;
 Test.bindings s;;
 let (l, s) = Test.extract 1 s;;
 List.map (fun cls -> Test.elements cls) l;;
