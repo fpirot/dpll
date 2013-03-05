@@ -186,6 +186,8 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) ->
           if Elt.is_unsat c then b, None else b, Some c         
       
     in assigC (Some []) (Some []) lstC
+    
+    let is_empty env = Elt.is_empty env.clause
      
   end;;
 
@@ -197,6 +199,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt)
     type map
     val split : env -> (int * (set list * env) * (set list * env))
     val assignment : int * set list -> set list option * set list option
+    val is_empty : env -> bool
   end;;
 
 
