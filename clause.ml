@@ -25,6 +25,7 @@ module type Clause =
     val iter : (int -> unit) -> t -> unit
     val mem : int -> t -> bool
     val remove : int -> t -> t
+    val choose : t -> int
   end;;
 
 module type Ref =
@@ -71,6 +72,7 @@ module type Assig =
   sig
     type t
     val read : int -> int
+    val write : int -> int -> int
   end;;
 
 module ClauseElt = functor (Elt : Element) -> functor (Links : Links) -> 
@@ -125,7 +127,9 @@ module type ClauseElt =
     type map
     val empty : map
     val is_empty : map -> bool
-    val is_unsat : set -> bool
+    val are_sat : set -> int
+    val find : int -> map -> set list
+    val choose : set -> int
     val mem : int -> map -> bool (* Verifie si une variable est presente dans la map *)
     val add : set -> map -> map (* Ajoute une clause a la map *)
     val variable : int -> set -> bool * set (* Supprime une variable d'une clause et donne le booleen associe a son litteral *)
@@ -140,13 +144,17 @@ module type OrdElt =
     val tl : order -> order
   end;;
 
-
-
-module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) ->
+module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> functor (Assig : Assig) ->
   struct
     type env = {clause: Elt.map; order: Ord.order}
     type set = Elt.set
     type map = Elt.map
+
+    module St = Set.Make (
+      struct
+	type t = int
+	let compare = compare
+      end)
 
 (* Extrait une variable selon l'ordre *)
     let split env =
@@ -155,40 +163,29 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) ->
       and (lfalse, mfalse) = Elt.extract (-k) env.clause in
       (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
 	  (lfalse, {clause = mfalse; order = Ord.tl env.order}))
-
-    
-(* Determine l'assignation d'une variable *)    
-    let assignment (x, lstC) =
-    
-      let rec assigC optT optF = function
-        |[] -> optT, optF
-        |c::l -> match optT, optF with
-          | None, None -> failwith "Assignment"
-          | Some lstT, None -> begin match assigV c with
-              | true, _ -> assigC optT optF l
-              | false, None -> raise Unsatisfiable
-              | false, Some v -> assigC (Some (v :: lstT)) None l
-            end
-          | None, Some lstF -> begin match assigV c with
-              | false, _ -> assigC optT optF l
-              | true, None -> raise Unsatisfiable
-              | true, Some v -> assigC None (Some (v :: lstF)) l
-            end
-          | Some lstT, Some lstF -> begin match assigV c with
-              | false, None -> assigC None  (Some lstF) l
-              | true, None -> assigC (Some lstT) None l
-              | false, Some v -> assigC (Some (v :: lstT)) optF l
-              | true, Some v -> assigC optT (Some (v :: lstF)) l
-            end
-      
-      and assigV c =
-        let (b, c) = Elt.variable x c in
-          if Elt.is_unsat c then b, None else b, Some c         
-      
-    in assigC (Some []) (Some []) lstC
     
     let is_empty env = Elt.is_empty env.clause
-     
+
+    let select lc setv = 	
+      List.fold_right (fun c s -> let n = Elt.are_sat c in
+				  if n = 0 then raise Unsatisfiable
+				  else if n = 1 then 
+				    let x = Elt.choose c in St.add x s
+				  else s) lc setv
+
+    let rec propagation env lc =
+      let rec aux env lc setv =
+	let setv' = select lc setv in
+	if St.is_empty setv' then env
+	else begin
+	  let x = St.choose setv' in
+	  Assig.write (abs x) x; 
+	  let (_, m) = Elt.extract x env.clause in
+	  let lc' = Elt.find (-x) env.clause in
+	  aux {clause = m; order = Ord.tl env.order} lc' setv'
+	end
+      in aux env lc St.empty
+
   end;;
 
 
@@ -198,9 +195,9 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt)
     type set
     type map
     val split : env -> (int * (set list * env) * (set list * env))
-    val assignment : int * set list -> set list option * set list option
     val is_empty : env -> bool
-  end;;
+    val propagation : env -> set list -> env
+ end;;
 
 
 module Op = (ClauseCore : ClauseAbstract);;
