@@ -94,7 +94,7 @@ module ClauseElt = functor (Elt : Element) -> functor (Links : Links) ->
       let n = Ref.length in
       let rep = ref t in
       Clause.iter (fun k ->
-	try (let e = Elt.find (abs k) !rep in let e' = Links.add n e in rep := Elt.remove (abs k) !rep; rep := Elt.add (abs k) e' !rep);
+	try (let e = Elt.find (abs k) !rep in let e' = Links.add n e in rep := Elt.add (abs k) e' !rep);
 	with Not_found -> rep := Elt.add (abs k) (Links.singleton n) !rep) s;
       !rep
       
@@ -109,7 +109,7 @@ module ClauseElt = functor (Elt : Element) -> functor (Links : Links) ->
       let rec aux = function
 	|[] -> ()
 	|k :: r -> let s = Ref.elt k in
-	  Clause.iter (fun x -> let e = Elt.find (abs x) !rep in let e' = Links.remove k e in 
+	  Clause.iter (fun x -> let e = Elt.find (abs x) !rep in let e' = Links.remove k e in
 	    rep := Elt.remove (abs x) !rep;
 	    if not (Links.is_empty e') then rep := Elt.add (abs x) e' !rep) s;
           aux r

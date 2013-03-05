@@ -15,7 +15,7 @@ module type Clause =
     val elements : t -> int list
   end;;
 
-module type Assig = 
+module type Assig =
   sig
     val read : int -> int
   end;;
