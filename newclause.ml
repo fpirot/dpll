@@ -18,40 +18,51 @@ module ClauseCore = functor (Elt : ClauseElt) ->
         type t = int
         let compare x y = compare (abs x) (abs y)
       end)
+    (* Les clauses sont des ensembles d'entiers (+x pour le litéral vrai de la variable x, -x pour sa négation), 
+       avec la relation de comparaison sur les valeurs absolues (entre nom de variable). *)
     
     module St = Set.Make
       (struct
         type t = int
         let compare = compare
       end)
+    (* Une structure d'ensemble d'entiers avec la comparaison habituelle. *)
     
     module Mp = Map.Make
       (struct
         type t = int
         let compare = compare
       end)
+    (* On gère une table d'association qui à chaque litéral associe l'ensemble des indices de clauses qui le contiennent. *)
     
     let clauseArray = Array.make Elt.nbr Cls.empty
+    (* On référencie l'ensemble des clauses dans un tableau, afin de stocker des indices dans nos structures de données plutôt que des clauses. *)
     
     let compt = ref (-1)
-    
+    (* L'indice en cours dans le tableau. *)
     
     let empty = Mp.empty
+    (* Table d'association vide. *)
     
     let create l =
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
       !compt
+    (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
     let reset =
       Array.fill clauseArray 0 (Elt.nbr - 1) Cls.empty;
       compt := -1
+    (* Réinitialise le tableau de clauses. *)
     
     let is_empty = Mp.is_empty
+    (* Teste si la table d'association est vide. *)
 
     let is_unsat id = Cls.is_empty clauseArray.(id)
+    (* Teste si la clause d'indice id est insatisfiable (c'est à dire vide). *)
 
     let mem = Mp.mem
+    (* Indique si une variable est présente dans l'ensemble des clauses. *)
 
     let add id map =
       Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
