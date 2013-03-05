@@ -35,6 +35,10 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     
     let compt = ref (-1)
     
+    type cls = int
+    type set = St.t
+    type map = St.t Mp.t
+    
     
     let empty = Mp.empty
     
@@ -43,7 +47,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
       !compt
     
-    let reset =
+    let reset () =
       Array.fill clauseArray 0 (Elt.nbr - 1) Cls.empty;
       compt := -1
     
@@ -69,12 +73,12 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       List.map (fun (k, s) ->
         (k, List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s))) lst
     
-    let elements s =
-      List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s)
+    let elements l =
+      List.map (fun id -> Cls.elements clauseArray.(id)) l
 
     let extract x map =
-      let l = Mp.find x map
-      and m = Mp.remove x map in (l, m)
+      let s = Mp.find x map
+      and m = Mp.remove x map in (St.elements s, m)
     
   end;;
 
@@ -82,19 +86,19 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
   sig
     type map
-    type set
+    type cls
     val empty : map
-    val create : int list -> set
+    val create : int list -> cls
     val reset : unit -> unit
     val is_empty : map -> bool
-    val is_unsat : set -> bool
+    val is_unsat : cls -> bool
     val mem : int -> map -> bool
-    val add : set -> map -> map
-    val variable : int -> set -> bool * set
+    val add : cls -> map -> map
+    val variable : int -> cls -> cls
     val remove : int -> map -> map
     val bindings : map -> (int * int list list) list
-    val elements : set -> int list list
-    val extract : int -> map -> set list * map
+    val elements : cls list -> int list list
+    val extract : int -> map -> cls list * map
   end;;
 
 module Make = (ClauseCore : ClauseAbstract);;
