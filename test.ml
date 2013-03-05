@@ -1,3 +1,5 @@
+(* Ceci est un commentaire inutile *)
+
 exception Satisfiable;;
 exception Unsatisfiable;;
 
