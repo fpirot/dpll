@@ -1,3 +1,9 @@
 fonction split : env -> int * (clause list * env) * (clause list * env)
 Choisit unevariable dans l'environnement en entrée, et renvoie deux couples (l, env) pour chaque assignation possible de la variable :
-l est la liste des clauses qui contiennent le litéral correspondant, et env l'environnement de départ privé de ces clauses, et dont on a retiré la négation de ce litéral de toutes les clauses qui la contenaient. 
+l est la liste des clauses qui contiennent le litéral correspondant, et env l'environnement de départ privé de ces clauses, et dont on a retiré la négation de ce litéral de toutes les clauses qui la contenaient.
+
+fonction propagation : env -> env
+Détermine les assignations nécessaires dans un environnement (à partir des clauses-singletons) en remplissant au passage Assig, et renvoie l'environnement obtenu lorsqu'on ne peut plus rien déduire avant le nouveau pari.
+
+fonction is_empty : env -> bool
+Détermine si un environnement est vide (fin de l'algorithme dpll).
