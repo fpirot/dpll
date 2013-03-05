@@ -4,7 +4,6 @@
 module type ClauseElt =
   sig
     val cls : int
-    val lst : int list list
     val read : int -> int
     val write : int -> int -> unit
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
@@ -138,7 +137,6 @@ module Make = (ClauseCore : ClauseAbstract);;
 module Test = Make
   (struct
     let cls = 10
-    let lst = []
     let tab = Array.create 10 0
     let read n = tab.(n-1)
     let write n x = tab.(n-1) <- x

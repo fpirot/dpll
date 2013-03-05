@@ -228,6 +228,8 @@ module Oper = struct
 module type CoreElt =
   sig
     type order
+    val lst : int list list
+    val ord : order
     val hd : order -> int
     val tl : order -> order
     val read : int -> int
@@ -241,13 +243,13 @@ module type OpElt =
     type cls
     type map
     val empty : map
+    val create : int list list -> map
     val is_empty : map -> bool
     val are_sat : cls -> int
     val find : int -> map -> cls list
     val choose : cls -> int
-    val add : cls -> map -> map (* Ajoute une clause a la map *)
-    val bindings : map -> (int * int list list) list (* Une fonction d'affichage *)
-    val extract : int -> map -> cls list * map (* Extrait la liste des clauses comportant une variable et renvoie la map privee de ces clauses *)
+    val bindings : map -> (int * int list list) list
+    val extract : int -> map -> cls list * map 
   end ;;
 
 
@@ -264,17 +266,20 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
     module St = Set.Make (
       struct
-	type t = int
-	let compare = compare
+      	type t = int
+      	let compare = compare
       end)
+
+    let create () = 
+      {clause = Elt.create Cor.lst; order = Cor.ord}
 
 (* Extrait une variable selon l'ordre *)
     let split env =
       let k = Cor.hd env.order in
       let (ltrue, mtrue) = Elt.extract k env.clause
       and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-      (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
-	  (lfalse, {clause = mfalse; order = Cor.tl env.order}))
+        (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
+	      (lfalse, {clause = mfalse; order = Cor.tl env.order}))
     
     let is_empty env = Elt.is_empty env.clause
 
@@ -287,16 +292,18 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
     let rec propagation env lc =
       let rec aux env lc setv =
-	let setv' = select lc setv in
-	if St.is_empty setv' then env
-	else begin
-	  let x = St.choose setv' in
-	  Cor.write (abs x) x;
-	  let (_, m) = Elt.extract x env.clause in
-	  let lc' = Elt.find (-x) env.clause in
-	  aux {clause = m; order = Cor.tl env.order} lc' setv'
-	end
+				let setv' = select lc setv in
+				if St.is_empty setv' then env
+				else begin
+					let x = St.choose setv' in
+					Cor.write (abs x) x;
+					let (_, m) = Elt.extract x env.clause in
+					let lc' = Elt.find (-x) env.clause in
+					aux {clause = m; order = Cor.tl env.order} lc' setv'
+				end
       in aux env lc St.empty
+    
+    let bindings env = Elt.bindings env.clause
 
   end;;
 
@@ -308,9 +315,11 @@ module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     type env
     type cls
     type map
+    val create : unit -> env
     val split : env -> (int * (cls list * env) * (cls list * env))
     val is_empty : env -> bool
     val propagation : env -> cls list -> env
+    val bindings : env -> (int * int list list) list
   end;;
 
 
@@ -325,10 +334,7 @@ module Core = Core.Make;;
 module Clause = Clause.Make(Core);;
 module Oper = Oper.Make(Clause)(Core);;
 
-Core.var;;
-Core.cls;;
-Core.lst;;
-Core.hd Core.ord;;
-Core.read 1;;
-Core.write 3 2;;
-Core.read 3;;
+let env = Oper.create ();;
+Oper.bindings env;;
+let (k, (lstT, envT), (lstF, envF)) = Oper.split env in
+  (k, Oper.bindings envF);;
