@@ -41,6 +41,10 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let compt = ref (-1)
     (* L'indice en cours dans le tableau. *)
     
+    type cls = int
+    type set = St.t
+    type map = St.t Mp.t
+    
     let empty = Mp.empty
     (* Table d'association vide. *)
     
@@ -50,7 +54,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
-    let reset =
+    let reset () =
       Array.fill clauseArray 0 (Elt.nbr - 1) Cls.empty;
       compt := -1
     (* Réinitialise le tableau de clauses. *)
@@ -80,12 +84,11 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       List.map (fun (k, s) ->
         (k, List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s))) lst
     
-    let elements s =
-      List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s)
+    let elements id = Cls.elements clauseArray.(id)
 
     let extract x map =
-      let l = Mp.find x map
-      and m = Mp.remove x map in (l, m)
+      let s = Mp.find x map
+      and m = Mp.remove x map in (St.elements s, m)
     
   end;;
 
@@ -93,19 +96,19 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
   sig
     type map
-    type set
+    type cls
     val empty : map
-    val create : int list -> set
+    val create : int list -> cls
     val reset : unit -> unit
     val is_empty : map -> bool
-    val is_unsat : set -> bool
+    val is_unsat : cls -> bool
     val mem : int -> map -> bool
-    val add : set -> map -> map
-    val variable : int -> set -> bool * set
+    val add : cls -> map -> map
+    val variable : int -> cls -> cls
     val remove : int -> map -> map
     val bindings : map -> (int * int list list) list
-    val elements : set -> int list list
-    val extract : int -> map -> set list * map
+    val elements : cls -> int list
+    val extract : int -> map -> cls list * map
   end;;
 
 module Make = (ClauseCore : ClauseAbstract);;
@@ -129,5 +132,5 @@ Test.bindings s;;
 let s = Test.remove 0 s;;
 Test.bindings s;;
 let (l, s) = Test.extract 1 s;;
-Test.elements l;;
+List.map (fun cls -> Test.elements cls) l;;
 Test.bindings s;;
