@@ -72,7 +72,7 @@ module type Assig =
   sig
     type t
     val read : int -> int
-    val write : int -> int -> int
+    val write : int -> int -> unit
   end;;
 
 module ClauseElt = functor (Elt : Element) -> functor (Links : Links) -> 
@@ -179,7 +179,7 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> funct
 	if St.is_empty setv' then env
 	else begin
 	  let x = St.choose setv' in
-	  Assig.write (abs x) x; 
+	  Assig.write (abs x) x;
 	  let (_, m) = Elt.extract x env.clause in
 	  let lc' = Elt.find (-x) env.clause in
 	  aux {clause = m; order = Ord.tl env.order} lc' setv'
@@ -189,7 +189,7 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> funct
   end;;
 
 
-module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) ->
+module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> functor (Assig : Assig) ->
   sig
     type env
     type set
@@ -197,7 +197,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt)
     val split : env -> (int * (set list * env) * (set list * env))
     val is_empty : env -> bool
     val propagation : env -> set list -> env
- end;;
+  end;;
 
 
 module Op = (ClauseCore : ClauseAbstract);;
