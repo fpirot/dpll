@@ -77,11 +77,9 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       clauseArray.(id) <- Cls.remove x clauseArray.(id); id
     (* Retire de la clause d'indice id les litéraux correspondant à la variable x. *)
 
-    let remove x map =
-      St.iter (fun id -> clauseArray.(id) <- Cls.remove x clauseArray.(id))
-        (Mp.find x map);
-      Mp.remove x map
-    (* Retire toutes les apparitions d'un litéral de la table d'association (quand sa valeur est à vrai). *)
+    let remove id map =
+      Cls.fold (fun x m -> Mp.add x (St.remove id (Mp.find x m)) m) clauseArray.(id) map
+    (* Supprime une clause de la map *)
 
     let bindings m = let lst = Mp.bindings m in
       List.map (fun (k, s) ->
@@ -91,9 +89,15 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let elements id = Cls.elements clauseArray.(id)
     (* Affichage des éléments d'une clause sous forme de liste. *)
 
-    let extract x map =
+    (*let extract x map =
       let s = Mp.find x map
-      and m = remove x map in (St.elements s, m)
+      and m = remove x map in (St.elements s, m)*)
+    
+    let extract x map = 
+      let s = Mp.find x map in
+      let m = St.fold (fun id m -> remove id m) s map in
+        (St.elements s, Mp.remove x m)
+
     (* Renvoie la liste de toutes les clauses attachées à un litéral, et la table d'association privée de ces clauses et de la négation du litéral (lorsque l'on donne à une variable une assignation particulière). *)
     
   end;;
@@ -111,7 +115,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val mem : int -> map -> bool
     val add : cls -> map -> map
     val variable : int -> cls -> cls
-    val remove : int -> map -> map
+    val remove : cls -> map -> map
     val bindings : map -> (int * int list list) list
     val elements : cls -> int list
     val extract : int -> map -> cls list * map
@@ -134,8 +138,6 @@ let s = Test.add (Test.create [1; -2; 3]) s;;
 let s = Test.add (Test.create [2; -3; 0]) s;;
 let s = Test.add (Test.create [3; -0; 1]) s;;
 let s = Test.add (Test.create [0; -1; -2]) s;;
-Test.bindings s;;
-let s = Test.remove 0 s;;
 Test.bindings s;;
 let (l, s) = Test.extract 1 s;;
 List.map (fun cls -> Test.elements cls) l;;
