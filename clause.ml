@@ -151,10 +151,11 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) ->
 (* Extrait une variable selon l'ordre *)
     let split env =
       let k = Ord.hd env.order in
-      let (l, m) = Elt.extract k env.clause in
-        ((k, l),
-          {clause = m;
-            order = Ord.tl env.order})
+      let (ltrue, mtrue) = Elt.extract k env.clause
+      and (lfalse, mfalse) = Elt.extract (-k) env.clause in
+      (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
+	  (lfalse, {clause = mfalse; order = Ord.tl env.order}))
+
     
 (* Determine l'assignation d'une variable *)    
     let assignment (x, lstC) =
@@ -194,7 +195,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt)
     type env
     type set
     type map
-    val split : env -> (int * set list) * env
+    val split : env -> (int * (set list * env) * (set list * env))
     val assignment : int * set list -> set list option * set list option
   end;;
 
