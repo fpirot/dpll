@@ -71,24 +71,30 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let add id map =
       Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
         Mp.add x (St.add id s) m) clauseArray.(id) map
+    (* Ajoute la clause d'indice id dans la table d'association. *)
 
     let variable x id =
       clauseArray.(id) <- Cls.remove x clauseArray.(id); id
+    (* Retire de la clause d'indice id les litéraux correspondant à la variable x. *)
 
     let remove x map =
       St.iter (fun id -> clauseArray.(id) <- Cls.remove x clauseArray.(id))
         (Mp.find x map);
       Mp.remove x map
+    (* Retire toutes les apparitions d'un litéral de la table d'association (quand sa valeur est à vrai). *)
 
     let bindings m = let lst = Mp.bindings m in
       List.map (fun (k, s) ->
         (k, List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s))) lst
+    (* Affichage des éléments de la table d'association sous forme de liste. *)
     
     let elements id = Cls.elements clauseArray.(id)
+    (* Affichage des éléments d'une clause sous forme de liste. *)
 
     let extract x map =
       let s = Mp.find x map
-      and m = Mp.remove x map in (St.elements s, m)
+      and m = remove x map in (St.elements s, m)
+    (* Renvoie la liste de toutes les clauses attachées à un litéral, et la table d'association privée de ces clauses et de la négation du litéral (lorsque l'on donne à une variable une assignation particulière). *)
     
   end;;
 
