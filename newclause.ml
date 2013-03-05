@@ -104,6 +104,8 @@ module ClauseCore = functor (Elt : ClauseElt) -> functor (Assig : AssigElt) ->
       let s = Mp.find x map in
       let m = St.fold (fun id m -> remove id m) s map in
         (St.elements s, Mp.remove x m)
+    
+    let choose id = Cls.choose clauseArray.(id)
 
     (* Renvoie la liste de toutes les clauses attachées à un litéral, et la table d'association privée de ces clauses et de la négation du litéral (lorsque l'on donne à une variable une assignation particulière). *)
     
@@ -126,6 +128,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Assig : Assig
     val bindings : map -> (int * int list list) list
     val elements : cls -> int list
     val extract : int -> map -> cls list * map
+    val choose : cls -> int
   end;;
 
 module Make = (ClauseCore : ClauseAbstract);;
