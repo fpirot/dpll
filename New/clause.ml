@@ -39,6 +39,14 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let compt = ref (-1)
     (* L'indice en cours dans le tableau. *)
     
+    let debug = true
+    let print_list l=
+      let rec print = function
+        |[] -> print_string "]"
+        |[a] -> print_int a; print_string "]"
+        |a::l -> print_int a; print_string "; "; print l in
+      print_string "["; print l;
+    
     type cls = int
     type set = St.t
     type map = St.t Mp.t
@@ -49,6 +57,16 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let fill l =
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
+      if debug then begin
+        print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()
+      end;
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
@@ -59,6 +77,16 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     
     let reset () =
       Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
+      if debug then begin
+        print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()
+      end;
       compt := -1
     (* Réinitialise le tableau de clauses. *)
     
@@ -97,6 +125,33 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let extract x map = 
       let s = Mp.find x map in
       let m = St.fold (fun id m -> remove id m) s map in
+        if debug then begin
+          print_string "Extraction:\n";
+          List.iter (fun x ->
+		          print_int x;
+		          print_string ": ";
+		          print_list (Cls.elements clauseArray.(x));
+		          print_newline())
+            (St.elements s);
+          print_newline ();
+          print_string "New map:\n";
+          List.iter (fun (x, lst) ->
+              if lst <> [] then begin
+				          print_int x;
+				          print_string ": ";
+				          List.iter (fun l -> print_list l; print_char ' ') lst;
+				          print_newline() end)
+		          (bindings (Mp.remove x m));
+          print_newline();
+          print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()
+        end;
         (St.elements s, Mp.remove x m)
     
     let choose id = Cls.choose clauseArray.(id)
@@ -148,4 +203,3 @@ let s = Test.create [[0; -1; 2]; [1; -2; 3]; [2; -3; 0]; [3; -0; 1]; [0; -1; -2]
 Test.bindings s;;
 let (l, s) = Test.extract 1 s;;
 List.map (fun cls -> Test.elements cls) l;;
-Test.bindings s;;
