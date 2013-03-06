@@ -25,10 +25,13 @@ let dpll env =
 	Core.write x; Oper.propag x;
 	let env' = Oper.propagation envtrue lfalse in
 	aux env')
-      with Unsatisfiable -> (
+      with Unsatisfiable -> 
+	try (
+	Oper.restore();
 	Core.write (-x); Oper.propag (-x);
 	let env' = Oper.propagation envfalse ltrue in
 	aux env')
+	with Unsatisfiable -> (Oper.restore(); raise Unsatisfiable)
     end;
   in aux env; valuation Core.var;;
   (* Renvoie une assignation qui permet de satisfaire l'instance
