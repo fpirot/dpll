@@ -17,7 +17,9 @@ module type Op =
     val propagation : env -> env
   end;;
 
-module Dpll = functor (Op : Op) -> functor (Assig : Assig) ->
+
+
+module Dpll = functor (Op : Op) -> functor (Assig : Assig)
 struct 
   let rec valuation n =
     let rec aux l = function
