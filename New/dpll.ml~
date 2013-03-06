@@ -17,9 +17,7 @@ module type Op =
     val propagation : env -> env
   end;;
 
-
-
-module Dpll = functor (Op : Op) -> functor (Assig : Assig)
+module Dpll = functor (Op : Op) -> functor (Assig : Assig) ->
 struct 
   let rec valuation n =
     let rec aux l = function
@@ -37,11 +35,11 @@ struct
 	let (x, (ltrue, envtrue), (lfalse, envfalse)) = Op.split env in
 	try (
 	  Assig.write x x; 
-	  let env' = Op.propagation envtrue lfalse in
+	  let env' = Op.propagation envtrue in
 	  aux env')
 	with Unsatisfiable -> (
 	  Assig.write x (-x);
-	  let env' = Op.propagation envfalse ltrue in
+	  let env' = Op.propagation envfalse in
 	  aux env')
       end;
     in aux env; valuation Assig.nbr

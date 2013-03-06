@@ -10,11 +10,8 @@ exception Satisfiable of int;;
 
 module type Clause =
   sig
-    type t
-    val var : int
     val cls : int
-    val empty : t
-    val elements : t -> int list
+    val literals : int -> int list
   end;;
 
 module type Assig =
@@ -22,67 +19,57 @@ module type Assig =
     val read : int -> int
   end;;
 
-module Wlit = functor (Clause: Clause) -> functor (Assig: Assig) ->
+module Wlit = functor (Elt: Clause) -> functor (Assig: Assig) ->
   struct
+    type wlit = int * int
+    let zero = (0, 0)
+    let warray = Array.make Elt.cls zero
 
-    type  wclause = {mutable lit : Clause.t; mutable wlit : int * int}
-(* lit contient l'ensemble des litéraux de la clause, wlit contient les deux variables surveillées dans la clause (dont la valuation est donc indéterminée). *)
-
-    type assoc = int array
+    let assoc = Array.make Assig.nbr []
 (* table d'association : à la variable i est associée l'ensemble des clauses
   (représentées par leur indice dans un tableau les listant toutes) dans lesquelle elle est surveillée. *)
 
     let watched_to_clauses x assoc = assoc.(x-1)
 
-    let fill_assoc tab = 
-      let n = Array.length tab in
-      let t = Array.make n [] in
-    for i = 0 to n-1 do
-      let c = tab.(i) in
-      let (a,b) = c.wlit in
-      t.(a-1) <- c :: t.(a-1);
-      t.(b-1) <- c :: t.(b-1)
-    done;
-    t
-(* Remplit la table d'association entre watched literals et clauses, avec un tableau de wclauses en entrée. *)
+    let fill_assoc () = 
+      let n = Elt.cls in
+      for i = 0 to n-1 do
+	let (a,b) = warray.(i) in
+	assoc.(a-1) <- c :: t.(a-1);
+	assoc.(b-1) <- c :: t.(b-1)
+      done
+(* Remplit la table d'association entre watched literals et clauses. *)
 
-    let watched_literals_of_clause t i =
-  let l = Clause.elements t.(i).lit in
-  let rec aux w1 w2 = function
-    |[] -> if w1 = 0 then raise Unsatisfiable
-(* Si on n'a trouvé aucun litéral à surveiller, la clause n'est pas satisfiable avec la valuation actuelle. *)
-      else raise (Val w1)
-(* Si on n'a pu trouver qu'un seul litéral à surveiller, alors pour que la clause soit satisfaite, il doit forcément être à vrai. *)
-    |x :: r -> let v = Assig.read (abs x) in
-      if v = 0 then 
-	if w1 = 0 then aux x 0 r
-	else (w1,x)
-      else if v = x then raise (Satisfiable i)
-      else aux w1 w2 r
-  in aux 0 0 l
+    let watched_literals_of_clause id =
+      let l = Elt.literals id in
+      let rec aux w1 w2 = function
+	|[] -> if w1 = 0 then raise Unsatisfiable
+      (* Si on n'a trouvé aucun litéral à surveiller, la clause n'est pas satisfiable avec la valuation actuelle. *)
+	  else raise (Val w1)
+    (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors pour que la clause soit satisfaite, il doit forcément être à vrai. *)
+	|x :: r -> let v = Assig.read (abs x) in
+		   if v = 0 then 
+		     if w1 = 0 then aux x 0 r
+		     else (w1,x)
+		   else if v = x then raise (Satisfiable i)
+		   else aux w1 w2 r
+      in aux 0 0 l
 (* watched_literals_of_clause renvoie un couple de litéraux à surveiller possibles pour la clause c. *)
 
-    let clauses_to_wclauses tab =
-  let n = Array.length tab in
-  let t = Array.make n {lit = Clause.empty; wlit = (0,0)} in
-for i = 0 to n-1 do
-  let c = tab.(i) in
-  t.(i).lit <- c;
-  let d = watched_literals_of_clause t i in
-  t.(i).wlit <- d
-done;
-t
+    let fill_warray () =
+      let n = Elt.cls in
+      for i = 0 to n-1 do
+	warray.(i) <- watched_literals_of_clause i
+      done
 (* A partir d'un tableau de clauses, et d'une fonction Assig.read qui donne la valuation des variables en cours,
 construit un tableau de clauses avec deux litéraux surveillés. *)  
 
-    let update_watched_literals x t assoc = 
-  let l = watched_to_clauses (abs x) assoc in
-  let rec aux lst= function
-    |[] -> lst
-    |i :: r -> try (let d = watched_literals_of_clause t i in t.(i).wlit <- d; aux r lst) with Satisfiable(i) -> aux r (i::lst)
-in aux l []
-(* Change les litéraux à surveiller dans le tableau t, lorsqu'une nouvelle variable voit sa valeur fixée. *)
-    
-    let update x u v = update_watched_literals x u v
+    let update x = 
+      let l = watched_to_clauses (abs x) assoc in
+      let rec aux lst = function
+	|[] -> lst
+	|i :: r -> try (let d = watched_literals_of_clause i in warray.(i) <- d; aux lst r) with Satisfiable(i) -> aux (i::lst) r
+      in aux l l
+(* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle variable voit sa valeur fixée. Renvoie la liste des indices de clauses qui ont vues leurs watched literals modifiés. *)
 
   end;;
