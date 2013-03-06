@@ -45,15 +45,24 @@ module Core =
     
     type order = (int * int) list
     
+    let debug = false
     let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
     let read n = assigArray.(n - 1)
-    let write n x = assigArray.(n - 1) <- x
+    let write n x = assigArray.(n - 1) <- x;
+      if debug then begin
+        print_string "Assignment: ";
+        Array.iter (fun x -> print_int x; print_char ' ') assigArray;
+        print_string "\n\n" end
     
     let hd l = snd (List.hd l)
-    let tl = List.tl
-    let init l = List.map (fun x -> x, x) l
+    let tl l = List.tl l
+    let update l = 
+      if debug then begin
+        print_string "Order: ";
+        List.iter (fun x -> print_int (snd x); print_char ' ') l;
+        print_string "\n\n" end; l
     
     let fold = List.fold_right
     
@@ -70,7 +79,7 @@ module type Abstract =
     val write : int -> int -> unit
     val hd : order -> int
     val tl : order -> order
-    val init : int list -> order
+    val update : order -> order
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
@@ -124,6 +133,14 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let compt = ref (-1)
     (* L'indice en cours dans le tableau. *)
     
+    let debug = true
+    let print_list l=
+      let rec print = function
+        |[] -> print_string "]"
+        |[a] -> print_int a; print_string "]"
+        |a::l -> print_int a; print_string "; "; print l in
+      print_string "["; print l;
+    
     type cls = int
     type set = St.t
     type map = St.t Mp.t
@@ -134,6 +151,16 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let fill l =
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
+      if debug then begin
+        print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()
+      end;
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
     
@@ -144,6 +171,16 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     
     let reset () =
       Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
+      if debug then begin
+        print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()
+      end;
       compt := -1
     (* Réinitialise le tableau de clauses. *)
     
@@ -160,9 +197,8 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
 
-    let variable x id =
-      clauseArray.(id) <- Cls.remove x clauseArray.(id); id
-    (* Retire de la clause d'indice id les litéraux correspondant à la variable x. *)
+    let literals id = Cls.elements clauseArray.(id)
+    (* Donnes les elements d'une clause *)
 
     let remove id map =
       Cls.fold (fun x m -> Mp.add x (St.remove id (Mp.find x m)) m) clauseArray.(id) map
@@ -183,6 +219,33 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let extract x map = 
       let s = Mp.find x map in
       let m = St.fold (fun id m -> remove id m) s map in
+        if debug then begin
+          print_string "Extraction:\n";
+          List.iter (fun x ->
+		          print_int x;
+		          print_string ": ";
+		          print_list (Cls.elements clauseArray.(x));
+		          print_newline())
+            (St.elements s);
+          print_newline ();
+          print_string "New map:\n";
+          List.iter (fun (x, lst) ->
+              if lst <> [] then begin
+				          print_int x;
+				          print_string ": ";
+				          List.iter (fun l -> print_list l; print_char ' ') lst;
+				          print_newline() end)
+		          (bindings (Mp.remove x m));
+          print_newline();
+          (*print_string "clauseArray status:\n";
+          Array.iteri (fun i x ->
+              print_int i;
+              print_string ": ";
+              print_list (Cls.elements x);
+              print_newline())
+            clauseArray;
+          print_newline()*)
+        end;
         (St.elements s, Mp.remove x m)
     
     let choose id = Cls.choose clauseArray.(id)
@@ -206,7 +269,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val is_empty : map -> bool
     val are_sat : cls -> int
     val mem : int -> map -> bool
-    val variable : int -> cls -> cls
+    val literals : cls -> int list
     val remove : cls -> map -> map
     val bindings : map -> (int * int list list) list
     val elements : cls -> int list
