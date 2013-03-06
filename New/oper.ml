@@ -73,7 +73,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     
     let is_empty env = Elt.is_empty env.clause
 
-    let select lc setv = 	
+    let select lc setv = 
       List.fold_right (fun c s -> let n = Elt.are_sat c in
 				  if n = 0 then  raise Unsatisfiable
 				  else if n = 1 then 
@@ -121,7 +121,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
 
 module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
-<<<<<<< HEAD
+
   sig
     exception Satisfiable
     exception Unsatisfiable
@@ -139,21 +139,5 @@ module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     val bindings : env -> (int * int list list) list
     val update : env -> env
   end;;
-=======
-sig
-  exception Satisfiable
-  exception Unsatisfiable
-  type env
-  type cls
-  type map
-  val create : unit -> env
-  val split : env -> (int * (cls list * env) * (cls list * env))
-  val is_empty : env -> bool
-  val propagation : env -> cls list -> env
-  val bindings : env -> (int * int list list) list
-  val update : env -> env
-end;;
->>>>>>> f2cf21b93b4dac31c76522c38ddf94b9f40101af
-
 
 module Make = (OpCore : OpAbstract);;
