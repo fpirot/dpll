@@ -1,3 +1,4 @@
+
 (* Module d'operation sur les clauses propres a DPLL *)
 
 module type CoreElt =
@@ -8,7 +9,8 @@ module type CoreElt =
     val hd : order -> int
     val tl : order -> order
     val read : int -> int
-    val write : int -> int -> unit
+    val write : int -> unit
+    val update : order -> order
   end;;
 
 
@@ -45,6 +47,8 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
       	let compare = compare
       end)
 
+    let debug = true
+
     let create () = 
       {clause = Elt.create Cor.lst; order = Cor.ord}
 
@@ -62,7 +66,13 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
       List.fold_right (fun c s -> let n = Elt.are_sat c in
 				  if n = 0 then raise Unsatisfiable
 				  else if n = 1 then 
-				    let x = Elt.choose c in St.add x s
+				    let x = Elt.choose c in
+					if debug then begin
+					  print_string "Choice: ";
+					  print_int x;
+					  print_newline()
+					end;
+				    St.add x s
 				  else s) lc setv
 
     let rec propagation env lc =
@@ -71,7 +81,12 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 				if St.is_empty setv' then env
 				else begin
 					let x = St.choose setv' in
-					Cor.write (abs x) x;
+					if debug then begin
+					  print_string "Choice: ";
+					  print_int x;
+					  print_newline()
+					end;
+					Cor.write x;
 					let (_, m) = Elt.extract x env.clause in
 					let lc' = Elt.find (-x) env.clause in
 					aux {clause = m; order = Cor.tl env.order} lc' setv'
@@ -79,6 +94,8 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
       in aux env lc St.empty
     
     let bindings env = Elt.bindings env.clause
+
+    let update env = {clause = env.clause; order = Cor.update env.order}
 
   end;;
 
@@ -95,6 +112,7 @@ module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     val is_empty : env -> bool
     val propagation : env -> cls list -> env
     val bindings : env -> (int * int list list) list
+    val update : env -> env
   end;;
 
 

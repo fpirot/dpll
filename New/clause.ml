@@ -5,7 +5,7 @@ module type ClauseElt =
   sig
     val cls : int
     val read : int -> int
-    val write : int -> int -> unit
+    val write : int -> unit
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
@@ -143,7 +143,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 				          print_newline() end)
 		          (bindings (Mp.remove x m));
           print_newline();
-          print_string "clauseArray status:\n";
+(*          print_string "clauseArray status:\n";
           Array.iteri (fun i x ->
               print_int i;
               print_string ": ";
@@ -151,7 +151,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
               print_newline())
             clauseArray;
           print_newline()
-        end;
+*)        end;
         (St.elements s, Mp.remove x m)
     
     let choose id = Cls.choose clauseArray.(id)

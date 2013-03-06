@@ -42,12 +42,12 @@ module Core =
     
     type order = (int * int) list
     
-    let debug = false
+    let debug = true
     let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
-    let read n = assigArray.(n - 1)
-    let write n x = assigArray.(n - 1) <- x;
+    let read x = assigArray.((abs x) - 1)
+    let write x = assigArray.((abs x) - 1) <- x;
       if debug then begin
         print_string "Assignment: ";
         Array.iter (fun x -> print_int x; print_char ' ') assigArray;
@@ -73,7 +73,7 @@ module type Abstract =
     val lst : int list list
     val ord : order
     val read : int -> int
-    val write : int -> int -> unit
+    val write : int -> unit
     val hd : order -> int
     val tl : order -> order
     val update : order -> order
