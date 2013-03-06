@@ -187,7 +187,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
 module Make = (ClauseCore : ClauseAbstract);;
 
 (* Tests *)
-
+(*
 module Test = Make
   (struct
     let cls = 10
@@ -203,3 +203,4 @@ let s = Test.create [[0; -1; 2]; [1; -2; 3]; [2; -3; 0]; [3; -0; 1]; [0; -1; -2]
 Test.bindings s;;
 let (l, s) = Test.extract 1 s;;
 List.map (fun cls -> Test.elements cls) l;;
+*)

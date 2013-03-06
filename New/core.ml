@@ -85,7 +85,7 @@ module Make = (Core : Abstract);;
 
 (* Tests *)
 
-
+(*
 Make.var;;
 Make.cls;;
 Make.lst;;
@@ -94,7 +94,7 @@ Make.read 1;;
 Make.write 3 2;;
 Make.read 3;;
 Make.update Make.ord;;
-
+*)
 
 
 
