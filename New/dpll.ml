@@ -10,10 +10,10 @@ module type Assig =
 module type Op =
   sig
     type env
-    type set
+    type cls
     val is_empty : env -> bool
-    val split : env -> int * (set list * env) * (set list * env)
-    val propagation : env -> set list -> env
+    val split : env -> int * (cls list * env) * (cls list * env)
+    val propagation : env -> cls list -> env
   end;;
 
 
