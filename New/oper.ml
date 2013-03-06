@@ -93,7 +93,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     let rec propagation env lc =
       let rec aux env lc setv =
 	let setv' = select lc setv in
-	if St.is_empty setv' then (Oper.flush (); env)
+	if St.is_empty setv' then (flush (); env)
 	(* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	   s'arrête. On rentre la liste des assignations effectuée au cours de
 	   cette propagation dans une liste, et on passe au prochain pari. *)
@@ -104,7 +104,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 	    print_int x;
 	    print_newline()
 	  end;
-	  Cor.write x; Oper.propag x;
+	  Cor.write x; propag x;
 	  (* On assigne x à vrai, et on rentre cette assignation dans une liste,
 	     afin de désassigner convenablement lors du potentiel backtrack. *)
 	  let (_, m) = Elt.extract x env.clause in
