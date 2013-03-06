@@ -22,11 +22,11 @@ let dpll env =
     else begin
       let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
       try (
-	Core.write x; 
+	Core.write x; Oper.propag x;
 	let env' = Oper.propagation envtrue lfalse in
 	aux env')
       with Unsatisfiable -> (
-	Core.write (-x);
+	Core.write (-x); Oper.propag (-x);
 	let env' = Oper.propagation envfalse ltrue in
 	aux env')
     end;
