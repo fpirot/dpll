@@ -75,9 +75,8 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
 
-    let variable x id =
-      clauseArray.(id) <- Cls.remove x clauseArray.(id); id
-    (* Retire de la clause d'indice id les litéraux correspondant à la variable x. *)
+    let literals id = Cls.elements clauseArray.(id)
+    (* Donnes les elements d'une clause *)
 
     let remove id map =
       Cls.fold (fun x m -> Mp.add x (St.remove id (Mp.find x m)) m) clauseArray.(id) map
@@ -121,7 +120,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val is_empty : map -> bool
     val are_sat : cls -> int
     val mem : int -> map -> bool
-    val variable : int -> cls -> cls
+    val literals : cls -> int list
     val remove : cls -> map -> map
     val bindings : map -> (int * int list list) list
     val elements : cls -> int list
