@@ -10,6 +10,7 @@ module type CoreElt =
     val tl : order -> order
     val read : int -> int
     val write : int -> unit
+    val reset : int -> unit
     val update : order -> order
   end;;
 
@@ -51,6 +52,16 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
     let create () = 
       {clause = Elt.create Cor.lst; order = Cor.ord}
+
+
+
+		let (propag, flush, restore, reset) = 
+	    let lst = ref []
+	    and ls = ref [] in
+	      ((fun x -> ls := x::(!ls)),
+	      (fun () -> lst := (!ls)::(!lst); ls := []),
+	      (fun () -> List.iter (fun x -> Cor.reset x) (List.hd (!lst)); lst := List.tl (!lst)),
+	      (fun () -> ls := []; lst := []))
 
 (* Extrait une variable selon l'ordre *)
     let split env =
@@ -108,6 +119,10 @@ module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     type cls
     type map
     val create : unit -> env
+    val propag : int -> unit
+    val flush : unit -> unit
+    val restore : unit -> unit
+    val reset : unit -> unit
     val split : env -> (int * (cls list * env) * (cls list * env))
     val is_empty : env -> bool
     val propagation : env -> cls list -> env

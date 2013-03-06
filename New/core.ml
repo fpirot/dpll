@@ -52,6 +52,11 @@ module Core =
         print_string "Assignment: ";
         Array.iter (fun x -> print_int x; print_char ' ') assigArray;
         print_string "\n\n" end
+    let reset x = assigArray.((abs x) - 1) <- 0;
+      if debug then begin
+        print_string "Assignment: ";
+        Array.iter (fun x -> print_int x; print_char ' ') assigArray;
+        print_string "\n\n" end
     
     let hd l = snd (List.hd l)
     let tl l = List.tl l
@@ -74,6 +79,7 @@ module type Abstract =
     val ord : order
     val read : int -> int
     val write : int -> unit
+    val reset : int -> unit
     val hd : order -> int
     val tl : order -> order
     val update : order -> order
