@@ -2,7 +2,6 @@ exception Unsatisfiable;;
 
 module type Assig =
   sig
-    type t = int
     val nbr : int
     val read : int -> int
     val write : int -> int -> unit
@@ -14,12 +13,12 @@ module type Op =
     type set
     val is_empty : env -> bool
     val split : env -> int * (set list * env) * (set list * env)
-    val propagation : env -> env
+    val propagation : env -> set list -> env
   end;;
 
 
 
-module Dpll = functor (Op : Op) -> functor (Assig : Assig)
+module Dpll = functor (Op : Op) -> functor (Assig : Assig) ->
 struct 
   let rec valuation n =
     let rec aux l = function
