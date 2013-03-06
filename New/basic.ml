@@ -42,15 +42,24 @@ module Core =
     
     type order = (int * int) list
     
+    let debug = false
     let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
     let read n = assigArray.(n - 1)
-    let write n x = assigArray.(n - 1) <- x
+    let write n x = assigArray.(n - 1) <- x;
+      if debug then begin
+        print_string "Assignment: ";
+        Array.iter (fun x -> print_int x; print_char ' ') assigArray;
+        print_string "\n\n" end
     
     let hd l = snd (List.hd l)
-    let tl = List.tl
-    let update = fun x -> x
+    let tl l = List.tl l
+    let update l = 
+      if debug then begin
+        print_string "Order: ";
+        List.iter (fun x -> print_int (snd x); print_char ' ') l;
+        print_string "\n\n" end; l
     
     let fold = List.fold_right
     
@@ -84,6 +93,7 @@ Make.hd Make.ord;;
 Make.read 1;;
 Make.write 3 2;;
 Make.read 3;;
+Make.update Make.ord;;
 
 
 
