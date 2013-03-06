@@ -11,8 +11,6 @@ exception Satisfiable of int;;
 module type Clause =
   sig
     type t
-    val var : int
-    val cls : int
     val empty : t
     val elements : t -> int list
   end;;
@@ -83,6 +81,9 @@ construit un tableau de clauses avec deux litéraux surveillés. *)
 in aux l []
 (* Change les litéraux à surveiller dans le tableau t, lorsqu'une nouvelle variable voit sa valeur fixée. *)
     
-    let update x u v = update_watched_literals x u v
+    let arrayAssoc = [||]
+    let arrayWClause = [||]
+    
+    let update x = update_watched_literals x arrayWClause arrayAssoc
 
   end;;

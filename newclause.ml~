@@ -131,7 +131,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Assig : Assig
     val elements : cls -> int list
     val extract : int -> map -> cls list * map
     val choose : cls -> int
-    val find : int -> map -> cls list
+    val find int -> map -> cls list
   end;;
 
 module Make = (ClauseCore : ClauseAbstract);;

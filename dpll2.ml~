@@ -14,7 +14,7 @@ module type Op =
     type set
     val is_empty : env -> bool
     val split : env -> int * (set list * env) * (set list * env)
-    val next : env -> env
+    val propagation : env -> env
   end;;
 
 module Dpll = functor (Op : Op) -> functor (Assig : Assig) ->
@@ -35,11 +35,11 @@ struct
 	let (x, (ltrue, envtrue), (lfalse, envfalse)) = Op.split env in
 	try (
 	  Assig.write x x; 
-	  let env' = Op.next envtrue in
+	  let env' = Op.propagation envtrue in
 	  aux env')
 	with Unsatisfiable -> (
 	  Assig.write x (-x);
-	  let env' = Op.next envfalse in
+	  let env' = Op.propagation envfalse in
 	  aux env')
       end;
     in aux env; valuation Assig.nbr
