@@ -58,6 +58,13 @@ module Wlit = functor (Elt: Clause) -> functor (Assig: Assig) ->
       in aux 0 0 l
 (* watched_literals_of_clause renvoie un couple de litéraux à surveiller possibles pour la clause c, et remplit la liste lbord avec x si x est le seul litéral pouvant encore être potentiellement vrai dans c, et lsat avec c si elle est satisfiable. *)
 
+    let new_assoc id lbord lsat =
+      let (a, b) = watched_literals_of_clause id lbord lsat in
+      if a <> 0 then assoc.((abs a) - 1 ) <- id :: assoc.((abs a) - 1);
+      if b <> 0 then assoc.((abs b) - 1 ) <- id :: assoc.((abs b) - 1);
+      warray.(id) <- (a, b)
+(* Associe de nouveaux watched literals à la clause d'indice i, et modifie les tables convenablement. *)
+
     let fill_warray () =
       let n = Elt.cls in
       let lbord = ref [] and lsat = ref [] in
@@ -73,11 +80,8 @@ remplit warray, et renvoie la liste des assignations nécessaires (pour les clau
       let lbord = ref [] and lsat = ref [] in
       let rec aux = function
 	|[] -> (!lbord, !lsat)
-	|i :: r -> if get_sat x i then aux  r
-	  else (let (a, b) = watched_literals_of_clause i lbord lsat in warray.(i) <- (a, b);
-		assoc.((abs a) - 1 ) <- i :: assoc.((abs a) - 1);
-		assoc.((abs b) - 1 ) <- i :: assoc.((abs b) - 1);
-		aux r)
+	|i :: r -> if get_sat x i then (lsat := i :: !lsat; aux r)
+	  else (new_assoc i lbord lsat;	aux r)
       in aux l
 (* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle variable voit sa valeur fixée. Renvoie la liste des litéraux à assigner à vrai par effet de bord, et la liste des clauses nouvellement satisfiables. *)
 
