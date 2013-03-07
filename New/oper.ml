@@ -49,6 +49,12 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
       end)
 
     let debug = true
+    let print_list l=
+      let rec print = function
+        |[] -> print_string "]"
+        |[a] -> (*if Elt.read a = 0 then*) print_int a; print_string "]"
+        |a::l -> (*if Elt.read a = 0 then*) (print_int a; print_string "; "); print l in
+      print_string "["; print l
 
     let create () = 
       {clause = Elt.create Cor.lst; order = Cor.ord}
@@ -59,8 +65,18 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 	    let lst = ref []
 	    and ls = ref [] in
 	      ((fun x -> ls := x::(!ls)),
-	      (fun () -> lst := (!ls)::(!lst); ls := []),
-	      (fun () -> List.iter (fun x -> Cor.reset x)
+	      (fun () -> lst := (!ls)::(!lst); ls := [];
+	        if debug then begin
+	          print_string "Flush: ";
+	          List.iter (fun l -> print_list l) (!lst);
+	          print_newline()
+	        end;),
+	      (fun () ->  if debug then begin
+	          print_string "Restore: ";
+	          List.iter (fun l -> print_list l) (!lst);
+	          print_newline()
+	        end;
+	      List.iter (fun x -> Cor.reset x)
 	          (try List.hd (!lst) with Failure(s) -> raise (Failure("Restore: "^s)));
 	        lst := List.tl (!lst)),
 	      (fun () -> ls := []; lst := []))
