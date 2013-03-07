@@ -53,4 +53,10 @@ let dpll env =
      d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
      satisfiable. *)
 
-  try dpll (Oper.create ()) with Clause.Satisfiable -> List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);;
+try dpll (Oper.create ()) with 
+  |Clause.Satisfiable -> 
+    print_string "L'instance est satisfiable, voilà une assignation des variables possible :\n";
+    List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
+    print_newline();
+  |Clause.Unsatisfiable ->
+    print_string "L'instance n'est pas satisfiable.\n"
