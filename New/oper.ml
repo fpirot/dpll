@@ -60,8 +60,8 @@ struct
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
-      |[a] -> (*if Elt.read a = 0 then*) print_int a; print_string "]"
-      |a::l -> (*if Elt.read a = 0 then*) (print_int a; print_string "; "); print l in
+      |[a] -> print_int a; print_string "]"
+      |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
   let create () = 
@@ -147,6 +147,11 @@ struct
     let rec aux env setv = 
       if Wlit.is_empty setv then env
       else let x = Wlit.choose setv in
+      if debug then begin
+          print_string "WLit choose: ";
+          print_int x;
+          print_newline()
+        end;
 	   let setv = Wlit.remove x setv in
 	   if Cor.read x = 0 then begin
 	     Cor.write x; propag x;

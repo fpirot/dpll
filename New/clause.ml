@@ -53,9 +53,9 @@ struct
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
-      |[a] -> (*if Elt.read a = 0 then*) print_int a; print_string "]"
-      |a::l -> (*if Elt.read a = 0 then*) (print_int a; print_string "; "); print l in
-    print_string "["; print l;
+      |[a] -> print_int a; print_string "]"
+      |a::l -> print_int a; print_string "; "; print l in
+    print_string "["; print l
     
   type cls = int
   type set = St.t
@@ -68,14 +68,6 @@ struct
     incr compt;
     clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
     if debug then begin
-      (*print_string "clauseArray status:\n";
-        Array.iteri (fun i x ->
-        print_int i;
-        print_string ": ";
-        print_list (Cls.elements x);
-        print_newline())
-        clauseArray;
-        print_newline()*)
     end;
     !compt
   (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
@@ -87,22 +79,22 @@ struct
       
   let reset () =
     Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
-    if debug then begin
-      print_string "clauseArray status:\n";
-      Array.iteri (fun i x ->
-        print_int i;
-        print_string ": ";
-        print_list (Cls.elements x);
-        print_newline())
-        clauseArray;
-      print_newline()
-    end;
     compt := -1
   (* Réinitialise le tableau de clauses. *)
       
   let create lst =
     reset ();
-    Elt.fold (fun l m -> add (fill l) m) lst Mp.empty
+    let m = Elt.fold (fun l m -> add (fill l) m) lst Mp.empty in
+		  if debug then begin
+		    print_string "clauseArray:\n";
+		    Array.iteri (fun i x ->
+		      print_int i;
+		      print_string ": ";
+		      print_list (Cls.elements x);
+		      print_newline())
+		      clauseArray;
+		    print_newline()
+		  end; m
       
   let is_empty = Mp.is_empty
   (* Teste si la table d'association est vide. *)
@@ -161,10 +153,6 @@ struct
 	  print_newline() end)
 	(bindings (Mp.remove x m));
       print_newline();
-    (* print_string "clauseArray status:\n";
-       Array.iteri (fun i x -> print_int i; print_string ": "; 
-       print_list (Cls.elements x); print_newline()) clauseArray;
-       print_newline() *)
     end;
     (St.elements s, Mp.remove x m)
       

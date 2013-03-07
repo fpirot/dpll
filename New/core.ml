@@ -62,32 +62,40 @@ module Core =
     type order = (int * int) list
     
     let debug = true
-     let (var, cls, (lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "Test/test"))
+    let (var, cls, (lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "Test/test"))
     let wlit = try (Sys.argv.(2) = "wlit") with _ -> false
     
+    
     let assigArray = Array.create var 0
+    
     let read x = assigArray.((abs x) - 1)
+    
     let write x = assigArray.((abs x) - 1) <- x;
       if debug then begin
         print_string "Assignment: ";
         Array.iter (fun x -> print_int x; print_char ' ') assigArray;
         print_string "\n\n" end
+        
     let reset x = assigArray.((abs x) - 1) <- 0;
       if debug then begin
         print_string "Assignment: ";
         Array.iter (fun x -> print_int x; print_char ' ') assigArray;
         print_string "\n\n" end
     
+    
     let hd l = snd (List.hd l)
+    
     let tl l =if debug then begin
         print_string "Order: ";
         List.iter (fun x -> print_int (snd x); print_char ' ') (List.tl l);
         print_string "\n\n" end; List.tl l
+        
     let update l = 
       if debug then begin
         print_string "Order: ";
         List.iter (fun x -> print_int (snd x); print_char ' ') l;
         print_string "\n\n" end; l
+        
     let is_empty l = l = []
     
     let fold = List.fold_right
@@ -97,11 +105,11 @@ module Core =
 module type Abstract =
   sig
     type order
-    val wlit : bool
     val var : int
     val cls : int
     val lst : int list list
     val ord : order
+    val wlit : bool
     val read : int -> int
     val write : int -> unit
     val reset : int -> unit
