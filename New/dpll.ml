@@ -55,12 +55,13 @@ let dpll env =
    d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
    satisfiable. *)
 
-try dpll (Oper.create ()) with 
+let t = Sys.time() in
+(try dpll (Oper.create ()) with 
   |Clause.Satisfiable -> 
     print_string "L'instance est satisfiable, voilà une assignation des variables possible :\n";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "Youpi !\n" else print_string "Hum, c'est embarrassant...\n"
   |Clause.Unsatisfiable ->
-    print_string "L'instance n'est pas satisfiable.\n"
-
+    print_string "L'instance n'est pas satisfiable.\n");
+print_string "Résultat trouvé en "; print_float (Sys.time() -. t); print_string " secondes.\n";;
