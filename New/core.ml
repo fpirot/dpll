@@ -59,7 +59,10 @@ module Core =
         print_string "\n\n" end
     
     let hd l = snd (List.hd l)
-    let tl l = List.tl l
+    let tl l =if debug then begin
+        print_string "Order: ";
+        List.iter (fun x -> print_int (snd x); print_char ' ') (List.tl l);
+        print_string "\n\n" end; List.tl l
     let update l = 
       if debug then begin
         print_string "Order: ";
