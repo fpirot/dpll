@@ -32,7 +32,12 @@ struct
      des clauses (représentées par leur indice dans un tableau les
      listant toutes) dans lesquelle elle est surveillée. *)
 
-  let watched_to_clauses x = assoc.(x-1)
+  let print_warray () = 
+    print_string "Watched literals :";
+    Array.iter (fun x -> print_char '('; print_int (fst x); print_char ' '; print_int (snd x); print_string ") ") warray;
+    print_newline()
+
+  let watched_to_clauses x = if x <> 0 then assoc.((abs x) - 1) else []
   (* Renvoie la liste des indices de clauses dans lesquelles la
      variable x est surveillé. *)
 
@@ -48,8 +53,8 @@ struct
     let n = Assig.cls in
     for i = 0 to n-1 do
       let (a,b) = warray.(i) in
-      assoc.((abs a) - 1) <- i :: assoc.(a - 1);
-      assoc.((abs b) - 1) <- i :: assoc.(b - 1)
+      if a <> 0 then  assoc.((abs a) - 1) <- i :: assoc.((abs a) - 1);
+      if b <> 0 then assoc.((abs b) - 1) <- i :: assoc.((abs b) - 1)
     done
   (* Remplit la table d'association entre watched literals et
      clauses. *)
@@ -64,7 +69,7 @@ struct
       (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors
 	 pour que la clause soit satisfaite, il doit forcément être à
 	 vrai. *)
-      |x :: r -> let v = Assig.read (abs x) in
+      |x :: r -> let v = Assig.read x in
 		 if v = 0 then 
 		   if w1 = 0 then aux x 0 r
 		   else (w1,x)
@@ -96,16 +101,19 @@ struct
 
   let init () =
     let _ = fill_warray () in
-    fill_assoc ()
+    fill_assoc ();
+    print_warray()
 
-  let update x = 
-    let l = watched_to_clauses (abs x) in
+  let update x =
+    let l = watched_to_clauses x in
     let lbord = ref St.empty and lsat = ref St.empty in
     let rec aux = function
       |[] -> (!lbord, !lsat)
       |i :: r -> if get_sat x i then (lsat := St.add i !lsat; aux r)
-	else (new_assoc i lbord lsat;	aux r)
-    in aux l
+	else (new_assoc i lbord lsat; aux r)
+    in 
+    let rep = aux l in
+    print_warray (); rep
 (* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle
    variable voit sa valeur fixée. Renvoie la liste des litéraux à
    assigner à vrai par effet de bord, et la liste des clauses
