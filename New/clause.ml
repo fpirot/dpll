@@ -117,7 +117,7 @@ struct
   (* Donne les elements d'une clause *)
 
   let remove id map =
-    Cls.fold (fun x m -> Mp.add x (St.remove id (Mp.find x m)) m) clauseArray.(id) map
+    Cls.fold (fun x m -> try (Mp.add x (St.remove id (Mp.find x m)) m) with Not_found -> m) clauseArray.(id) map
   (* Supprime une clause de la map *)
 
   let bindings m = let lst = Mp.bindings m in
