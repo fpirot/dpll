@@ -39,6 +39,8 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     
     let clauseArray = Array.make Elt.cls Cls.empty
     (* On référencie l'ensemble des clauses dans un tableau, afin de stocker des indices dans nos structures de données plutôt que des clauses. *)
+
+    let clause id = id
     
     let compt = ref (-1)
     (* L'indice en cours dans le tableau. *)
@@ -195,6 +197,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val extract : int -> map -> cls list * map
     val choose : cls -> int
     val find : int -> map -> cls list
+    val clause : int -> cls
   end;;
 
 module Make = (ClauseCore : ClauseAbstract);;
