@@ -19,6 +19,7 @@ module type CoreElt =
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
   sig
+    exception Satisfiable
     type cls
     type map
     val empty : map
@@ -34,9 +35,6 @@ module type OpElt =
 
 module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
   struct
-    
-    exception Satisfiable;;
-    exception Unsatisfiable;;
     
     type env = {clause: Elt.map; order: Cor.order}
     type cls = Elt.cls
@@ -83,7 +81,11 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
 (* Extrait une variable selon l'ordre *)
     let split env =
-      let k = Cor.hd env.order in
+      let rec choice ord =
+	if Cor.is_empty ord then raise Elt.Satisfiable
+	else let x = Cor.hd ord in
+	     if Cor.read x = 0 then x else choice (Cor.tl ord)
+      in let k = choice env.order in
       let (ltrue, mtrue) = Elt.extract k env.clause
       and (lfalse, mfalse) = Elt.extract (-k) env.clause in
       (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),

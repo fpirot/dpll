@@ -13,6 +13,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
   struct
 
     exception Unsatisfiable
+    exception Satisfiable
 
     module Cls = Set.Make
       (struct
@@ -176,6 +177,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
   sig
     exception Unsatisfiable
+    exception Satisfiable
     type map
     type cls
     val empty : map

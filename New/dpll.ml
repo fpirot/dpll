@@ -20,9 +20,7 @@ let rec valuation n =
 
 let dpll env = 
   let rec aux env =
-    let b = Oper.is_empty env in
-      if b then print_string "true\n" else print_string "false\n";
-    if b then raise Satisfiable
+    if Oper.is_empty env then ()
     else begin
       let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
       try (
@@ -55,4 +53,4 @@ let dpll env =
      d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
      satisfiable. *)
 
-  try dpll (Oper.create ()) with _ -> List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);;
+  try dpll (Oper.create ()) with Clause.Satisfiable -> List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);;
