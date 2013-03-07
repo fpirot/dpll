@@ -1,0 +1,38 @@
+/!\ Dans cette version du code, le caractère 'c' doit impérativement être suivi d'un
+commentaire avant de retourner à la ligne ! 
+
+-------------------------
+Compilation et exécution :
+-------------------------
+
+Pour compiler, utiliser le makefile. Pour exécuter le programme lancer le programme dpll, avec en argument l'adresse absolue ou relative du fichier test. Le programme retourne dans la sortie standard l'assignation trouvée si elle existe, ou dénonce le problème comme étant non satisfiable.
+
+
+--------------------------------
+Description rapide du programme :
+--------------------------------
+
+Le programme se décompose en plusieurs modules.
+
+- Core :
+Ce module interface le programme avec l'entrée qu'il prépare pour les autres modules. Il contient les constantes utiles (nombres de variables, de clauses) ainsi que des fonctions générales utilisées par les autres modules.
+
+- Clause :
+Ce module implémente les clauses et la façon dont elles sont stockées. Nous avons fais le choix de représenter chaque clause par un Set pour accélérer la recherche des littéraux. L'algorithme demande de pouvoir accéder à toutes les clauses contenant un certain littéral. On regroupe donc ces clauses dans une Map indexé par les littéraux de Set. Et pour éviter de dupliquer les clauses, on les stocke dans un tableau et on les identifie à leur indice. Le module contient aussi les fonctions nécessaires à leur utilisation.
+
+- Wlit :
+
+
+- Oper :
+Ce module gère les opérations propres à DPLL à appliquer sur les clauses, indépendamment de leur implémentation. Il gère la façon dont sont propagées les assignations, avec ou sans les WatchLiterals.
+
+- DPLL :
+Le corps du programme, qui comme tout bon corps de programme qui se respecte, ne fait qu'appeler les modules subalternes pour répondre à la requête.
+
+
+----------------------
+Quelques commentaires :
+----------------------
+
+L'implémentation modulaire des programmes nous a pris un peu de temps. Mais on espère que la facilité à le modifier ainsi obtenue nous permettra d'en gagner par la suite. Des options de débuggage sont incluses dans les modules. Pour les afficher, passer le booléen debug du module souhaité à true. Attention, c'est un peu verbeux.
+
