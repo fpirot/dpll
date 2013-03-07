@@ -194,7 +194,7 @@ sig
   val is_empty : map -> bool
   val is_singleton : cls -> int
   val mem : int -> map -> bool
-  val literals : cls -> int list
+  val literals : int -> int list
   val remove : cls -> map -> map
   val bindings : map -> (int * int list list) list
   val elements : cls -> int list

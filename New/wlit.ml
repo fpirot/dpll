@@ -2,17 +2,17 @@ exception Unsatisfiable;;
 
 module type Clause =
 sig
-  val cls : int
-  val literals : int -> int list
+  val literals :int -> int list
 end;;
 
 module type Assig =
 sig
-  val nbr : int
+  val cls : int
+  val var : int
   val read : int -> int
 end;;
 
-module Wlit = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+module WlitCore = functor (Elt: Clause) -> functor (Assig: Assig) -> 
 struct
 
   module St = Set.Make (
@@ -25,9 +25,9 @@ struct
 
   type wlit = int * int
   let zero = (0, 0)
-  let warray = Array.make Elt.cls zero
+  let warray = Array.make Assig.cls zero
 
-  let assoc = Array.make Assig.nbr []
+  let assoc = Array.make Assig.var []
   (* table d'association : à la variable i est associée l'ensemble
      des clauses (représentées par leur indice dans un tableau les
      listant toutes) dans lesquelle elle est surveillée. *)
@@ -45,7 +45,7 @@ struct
      d'indice id satisfiable, au vu des litéraux qu'elle surveille. *)
 
   let fill_assoc () = 
-    let n = Elt.cls in
+    let n = Assig.cls in
     for i = 0 to n-1 do
       let (a,b) = warray.(i) in
       assoc.((abs a) - 1) <- i :: assoc.(a - 1);
@@ -87,12 +87,16 @@ struct
      modifie les tables convenablement. *)
 
   let fill_warray () =
-    let n = Elt.cls in
+    let n = Assig.cls in
     let lbord = ref St.empty and lsat = ref St.empty in
     for i = 0 to n-1 do
       warray.(i) <- watched_literals_of_clause i lbord lsat
     done
   (* A partir d'un tableau de clauses remplit warray. *)
+
+  let init () =
+    let _ = fill_warray () in
+    fill_assoc ()
 
   let update x = 
     let l = watched_to_clauses (abs x) in
@@ -107,4 +111,29 @@ struct
    assigner à vrai par effet de bord, et la liste des clauses
    nouvellement satisfiables. *)
 
+  let fold = St.fold
+  let choose = St.choose
+  let singleton = St.singleton
+  let empty = St.empty
+  let is_empty = St.is_empty
+  let union = St.union
+  let add = St.add
+  let remove = St.remove
 end;;
+
+module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+sig
+  type set
+  val update : int -> set * set
+  val init : unit -> unit
+  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
+  val choose : set -> int
+  val singleton : int -> set
+  val empty : set
+  val is_empty : set -> bool
+  val union : set -> set -> set
+  val add : int -> set -> set
+  val remove : int -> set -> set
+end;;
+
+module Make = (WlitCore: WlitAbstract);;

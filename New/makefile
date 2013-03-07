@@ -3,7 +3,7 @@ all :
 	ocamlc -a clause.ml -o clause.cma
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc -a wlit.ml -o wlit.cma
-	ocamlc core.cma clause.cma oper.cma dpll.ml -o dpll
+	ocamlc core.cma clause.cma oper.cma wlit.cma dpll.ml -o dpll
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
 
 clean :

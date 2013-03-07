@@ -34,21 +34,22 @@ sig
 end;;
 
 
-module type Wlit =
+module type WlitElt =
 sig
   type set
   val update : int -> set * set
+  val init : unit -> unit
+  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
+  val choose : set -> int
+  val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
   val add : int -> set -> set
   val remove : int -> set -> set
-  val singleton : int -> set
-  val choose : set -> int
-  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: Wlit) ->
+module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: WlitElt) ->
 struct
   
   type env = {clause: Elt.map; order: Cor.order}
@@ -163,7 +164,7 @@ struct
 end;;
 
 
-module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: Wlit) ->
+module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: WlitElt) ->
 
 sig
   type env
