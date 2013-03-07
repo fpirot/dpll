@@ -46,7 +46,7 @@ module Load =
 
 		let load channel =
 		  let s = try Scanf.bscanf channel "c %s@\n" (fun x -> x ^ "\n") with _ -> "" in
-			  Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s c channel))
+				Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s c channel))
 
   end;;
 
@@ -59,7 +59,7 @@ module Core =
     type order = (int * int) list
     
     let debug = true
-    let (var, cls, (lst, ord, comment)) = Load.load (Scanf.Scanning.open_in "test")
+    let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
     
     let assigArray = Array.create var 0
     let read x = assigArray.((abs x) - 1)
