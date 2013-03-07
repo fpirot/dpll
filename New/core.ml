@@ -43,7 +43,9 @@ module Core =
     type order = (int * int) list
     
     let debug = true
-    let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in "test")
+    
+    let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "test"))
+    let wlit = try (Sys.argv.(2) = "wlit") with _ -> false
     
     let assigArray = Array.create var 0
     let read x = assigArray.((abs x) - 1)
@@ -81,6 +83,7 @@ module type Abstract =
     val cls : int
     val lst : int list list
     val ord : order
+    val wlit : bool
     val read : int -> int
     val write : int -> unit
     val reset : int -> unit
