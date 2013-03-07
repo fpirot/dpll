@@ -29,7 +29,7 @@ let dpll env =
 	print_newline();
       end;
       Core.write x; Oper.propag x;
-      let env' = Oper.propagation envtrue lfalse in
+      let env' = Oper.propagation envtrue lfalse x in
       Oper.flush();
       aux env')
     with Clause.Unsatisfiable -> 
@@ -42,7 +42,7 @@ let dpll env =
 	  print_newline();
 	end;
 	Core.write (-x); Oper.propag (-x);
-	let env' = Oper.propagation envfalse ltrue in
+	let env' = Oper.propagation envfalse ltrue (-x) in
 	Oper.flush();
 	aux env')
       with Clause.Unsatisfiable -> (Oper.restore(); raise Clause.Unsatisfiable)
