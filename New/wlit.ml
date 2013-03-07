@@ -1,7 +1,7 @@
-exception Unsatisfiable;;
 
 module type Clause =
 sig
+  exception Unsatisfiable
   val literals :int -> int list
 end;;
 
@@ -62,7 +62,7 @@ struct
   let watched_literals_of_clause id lbord lsat =
     let l = Elt.literals id in
     let rec aux w1 w2 = function
-      |[] -> if w1 = 0 then raise Unsatisfiable
+      |[] -> if w1 = 0 then raise Elt.Unsatisfiable
 	(* Si on n'a trouvé aucun litéral à surveiller, la clause
 	   n'est pas satisfiable avec la valuation actuelle. *)
 	else (lbord := St.add w1 !lbord; (w1,0))
