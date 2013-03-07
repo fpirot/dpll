@@ -34,5 +34,5 @@ Le corps du programme, qui comme tout bon corps de programme qui se respecte, ne
 Quelques commentaires :
 ----------------------
 
-L'implémentation modulaire des programmes nous a pris un peu de temps. Mais on espère que la facilité à le modifier ainsi obtenue nous permettra d'en gagner par la suite. Des options de débuggage sont incluses dans les modules. Pour les afficher, passer le booléen debug du module souhaité à true. Attention, c'est un peu verbeux.
+L'implémentation modulaire des programmes nous a pris un peu de temps. Mais on espère que la facilité à le modifier ainsi obtenue nous permettra d'en gagner par la suite. Des options de débuggage sont incluses dans les modules. Pour les afficher, passer le booléen debug du module souhaité à true. Attention, c'est un peu vrebeux.
 
