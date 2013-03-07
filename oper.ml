@@ -21,6 +21,7 @@ module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
   exception Satisfiable
+  exception Unsatisfiable 
   type cls
   type map
   val empty : map
@@ -79,13 +80,14 @@ struct
 	 List.iter (fun l -> print_list l) (!lst);
 	 print_newline()
        end;),
-     (fun () ->  if debug then begin
-       print_string "Restore: ";
-       List.iter (fun l -> print_list l) (!lst);
-       print_newline()
-     end;
+     (fun () ->  
+       if debug then begin
+	 print_string "Restore: ";
+	 List.iter (fun l -> print_list l) (!lst);
+	 print_newline()
+       end;
        List.iter (fun x -> Cor.reset x)
-	 (try List.hd (!lst) with Failure(s) -> raise (Failure("Restore: "^s)));
+	 (try List.hd (!lst) with Failure _ -> raise Elt.Unsatisfiable);
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
