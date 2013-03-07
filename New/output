@@ -1,10 +1,12 @@
-Order: 15 5 12 17 19 9 10 14 7 11 13 20 18 1 4 2 16 8 3 6 
+Order: 15
 
+Gamble: 15
 Assignment: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 15 0 0 0 0 0 
 
 Flush: [15]
-Order: 5 12 17 19 9 10 14 7 11 13 20 18 1 4 2 16 8 3 6 
+Order: 5
 
+Gamble: 5
 Assignment: 0 0 0 0 5 0 0 0 0 0 0 0 0 0 15 0 0 0 0 0 
 
 Select: -8
@@ -12,8 +14,9 @@ Choice: -8
 Assignment: 0 0 0 0 5 0 0 -8 0 0 0 0 0 0 15 0 0 0 0 0 
 
 Flush: [-8; 5][15]
-Order: 17 19 9 10 14 7 11 13 20 18 1 4 2 16 8 3 6 
+Order: 17
 
+Gamble: 17
 Assignment: 0 0 0 0 5 0 0 -8 0 0 0 0 0 0 15 0 17 0 0 0 
 
 Select: -19
@@ -79,6 +82,7 @@ Assignment: 0 0 0 0 5 0 0 -8 0 0 0 0 0 0 15 0 17 0 0 0
 
 Assignment: 0 0 0 0 5 0 0 -8 0 0 0 0 0 0 15 0 0 0 0 0 
 
+Gamble: -17
 Assignment: 0 0 0 0 5 0 0 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
 Select: 7
@@ -86,8 +90,9 @@ Choice: 7
 Assignment: 0 0 0 0 5 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
 Flush: [7; -17][-8; 5][15]
-Order: 9 10 14 7 11 13 20 18 1 4 2 16 8 3 6 
+Order: 9
 
+Gamble: 9
 Assignment: 0 0 0 0 5 0 7 -8 9 0 0 0 0 0 15 0 -17 0 0 0 
 
 Select: 1
@@ -127,6 +132,7 @@ Assignment: 0 0 0 0 5 0 7 -8 9 0 0 0 0 0 15 0 -17 0 0 0
 
 Assignment: 0 0 0 0 5 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
+Gamble: -9
 Assignment: 0 0 0 0 5 0 7 -8 -9 0 0 0 0 0 15 0 -17 0 0 0 
 
 Select: -19
@@ -165,6 +171,7 @@ Assignment: 0 0 0 0 5 0 7 -8 -9 0 0 0 0 0 15 0 -17 0 0 0
 
 Assignment: 0 0 0 0 5 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
+Gamble: -5
 Assignment: 0 0 0 0 -5 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
 Select: -6
@@ -183,6 +190,7 @@ Assignment: 0 0 0 0 -5 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0
 
 Assignment: 0 0 0 0 0 0 7 -8 0 0 0 0 0 0 15 0 -17 0 0 0 
 
+Gamble: -15
 Assignment: 0 0 0 0 0 0 7 -8 0 0 0 0 0 0 -15 0 -17 0 0 0 
 
 Select: 9
