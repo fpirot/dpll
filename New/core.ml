@@ -97,6 +97,7 @@ module Core =
 module type Abstract =
   sig
     type order
+    val wlit : bool
     val var : int
     val cls : int
     val lst : int list list
