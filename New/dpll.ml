@@ -19,6 +19,9 @@ let rec valuation n =
      satisfait le problème, à partir des données entrées dans Assig. n est
      le nombre de variables du problème. *)
 
+let verify lst =
+  List.for_all (fun l -> List.exits (fun x -> Core.read x = x) l) lst
+
 let dpll env = 
   let rec aux env =
     let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
