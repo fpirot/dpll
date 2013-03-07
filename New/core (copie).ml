@@ -20,6 +20,9 @@ module Load =
 				              (m, y) :: (m', y') :: l'
 
 
+    let add x l = if List.exists (fun y -> y = -x) l then raise Satisfiable else x::l
+
+
 		let init string n channel =
 			let rec next () = match Scanf.bscanf channel " %d " (fun x -> x) with
 				  | 0 -> ()
@@ -30,14 +33,14 @@ module Load =
 				        Scanf.bscanf channel " %d "
 				        (fun x -> if x = 0 then (ensV :: lstC, list, s)
 				                else begin
-				                    try iter s (insert (abs x) list) lstC (x::ensV) 0 with
+				                    try iter s (insert (abs x) list) lstC (add x ensV) 0 with
 				                      Satisfiable -> (lstC, list, s) end)
 				  | n -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
 				        Scanf.bscanf channel " %d "
 				        (fun x -> if x = 0 then
 				                  iter s list (ensV :: lstC) [] (n - 1)
 				                else begin
-				                    try iter s (insert (abs x) list) lstC (x::ensV) n with
+				                    try iter s (insert (abs x) list) lstC (add x ensV) n with
 				                      Satisfiable ->
 				                          (next (); iter s list lstC [] (n - 1)) end) in
 				
