@@ -63,7 +63,7 @@ module Core =
     let update l = 
       if debug then begin
         print_string "Order: ";
-        print_int (snd (List.hd l));
+        List.iter (fun x -> print_int (snd x); print_char ' ') l;
         print_string "\n\n" end; l
     
     let fold = List.fold_right
