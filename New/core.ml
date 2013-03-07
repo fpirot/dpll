@@ -62,7 +62,7 @@ module Core =
     type order = (int * int) list
     
     let debug = true
-     let (var, cls, (lst, ord)) = Load.load (Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "Test/test"))
+     let (var, cls, (lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "Test/test"))
     let wlit = try (Sys.argv.(2) = "wlit") with _ -> false
     
     let assigArray = Array.create var 0
