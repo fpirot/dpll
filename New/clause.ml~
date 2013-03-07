@@ -61,14 +61,14 @@ module ClauseCore = functor (Elt : ClauseElt) ->
       incr compt;
       clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
       if debug then begin
-        (*print_string "clauseArray status:\n";
+        print_string "clauseArray status:\n";
           Array.iteri (fun i x ->
               print_int i;
               print_string ": ";
               print_list (Cls.elements x);
               print_newline())
             clauseArray;
-          print_newline()*)
+          print_newline()
       end;
       !compt
     (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
