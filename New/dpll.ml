@@ -46,7 +46,7 @@ let dpll env =
 	let env' = Oper.propagation envfalse ltrue in
 	Oper.flush();
 	aux env')
-	with Unsatisfiable -> (Oper.flush(); Oper.restore(); raise Unsatisfiable)
+	with Clause.Unsatisfiable -> (Oper.restore(); raise Clause.Unsatisfiable)
     end;
   in aux env; valuation Core.var;;
   (* Renvoie une assignation qui permet de satisfaire l'instance
