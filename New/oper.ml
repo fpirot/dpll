@@ -140,8 +140,6 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 
 sig
-  exception Satisfiable
-  exception Unsatisfiable
   type env
   type cls
   type map
