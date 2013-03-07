@@ -49,7 +49,7 @@ struct
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
-  let debug = true
+  let debug = false
   let print_list l=
     let rec print = function
       |[] -> print_string "]"

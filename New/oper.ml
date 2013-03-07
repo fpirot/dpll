@@ -1,6 +1,8 @@
 
 (* Module d'operation sur les clauses propres a DPLL *)
 
+exception Debug;;
+
 module type CoreElt =
 sig
   type order
@@ -56,7 +58,7 @@ struct
   type env = {clause: Elt.map; order: Cor.order}
   type cls = Elt.cls
 
-  let debug = true
+  let debug = false
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -156,7 +158,7 @@ struct
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause; order = Cor.tl env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause ; order = env.order} setv'
     in aux env (Wlit.singleton x)
 
     
