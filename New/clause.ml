@@ -42,14 +42,16 @@ struct
      l'ensemble des indices de clauses qui le contiennent. *)
     
   let clauseArray = Array.make Elt.cls Cls.empty
-  (* On référencie l'ensemble des clauses dans un tableau, afin de stocker des indices dans nos structures de données plutôt que des clauses. *)
+  (* On référencie l'ensemble des clauses dans un tableau, afin de
+     stocker des indices dans nos structures de données plutôt que des
+     clauses. *)
 
   let clause id = id
     
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"

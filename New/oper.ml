@@ -1,8 +1,6 @@
 
 (* Module d'operation sur les clauses propres a DPLL *)
 
-exception Debug;;
-
 module type CoreElt =
 sig
   type order
@@ -20,7 +18,7 @@ end;;
 
 
 module type OpElt =
-  (* Module qui référencie l'ensemble des clauses du problème. *)
+(* Module qui référencie l'ensemble des clauses du problème. *)
 sig
   exception Satisfiable
   type cls
@@ -91,7 +89,7 @@ struct
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
-    (* Extrait une variable selon l'ordre *)
+  (* Extrait une variable selon l'ordre *)
   let split env =
     let rec choice ord =
       if Cor.is_empty ord then raise Elt.Satisfiable
@@ -115,10 +113,10 @@ struct
 				  end;
 				  Wlit.add x s)
 				else s) lc setv
-    (* Sélectionne dans une liste de clauses celles qui sont des
-       singletons, et renvoie l'union de leurs éléments. On renvoie
-       ainsi un ensemble de nouvelles assignations contraintes par
-       celle en cours. *)
+  (* Sélectionne dans une liste de clauses celles qui sont des
+     singletons, et renvoie l'union de leurs éléments. On renvoie
+     ainsi un ensemble de nouvelles assignations contraintes par
+     celle en cours. *)
 
   let simple_propagation env lc =
     let rec aux env lc setv =
@@ -141,7 +139,7 @@ struct
 	let setv' = Wlit.remove x setv'
 	and (_, m) = Elt.extract x env.clause
 	and lc' = Elt.find (-x) env.clause in
-	aux {clause = m; order = Cor.tl env.order} lc' setv'
+	aux {clause = m; order = env.order} lc' setv'
       end
     in aux env lc Wlit.empty
 

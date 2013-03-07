@@ -1,57 +1,57 @@
 (* Module de, surprise, chargement des donnees *)
 
 module Load =
-		struct
+struct
 
-    exception Satisfiable
+  exception Satisfiable
 
-		let rec insert x = function
-				| [] -> [(0, x)]
-				| (m, y) :: l ->
-				    if x = y then
-				      (m + 1, y) :: l
-				    else
-				      match insert x l with
-				        | [] -> failwith "Insert"
-				        | (m', y') :: l' ->
-				            if m' > m then
-				              (m', y') :: (m, y) :: l'
-				            else
-				              (m, y) :: (m', y') :: l'
-
-
-    let add x l = if List.exists (fun y -> y = -x) l then raise Satisfiable else x::l
+  let rec insert x = function
+    | [] -> [(0, x)]
+    | (m, y) :: l ->
+      if x = y then
+	(m + 1, y) :: l
+      else
+	match insert x l with
+	  | [] -> failwith "Insert"
+	  | (m', y') :: l' ->
+	    if m' > m then
+	      (m', y') :: (m, y) :: l'
+	    else
+	      (m, y) :: (m', y') :: l'
 
 
-		let init string n channel =
-			let rec next () = match Scanf.bscanf channel " %d " (fun x -> x) with
-				  | 0 -> ()
-				  | n -> next ()
-		
-			and iter s list lstC ensV = function
-				  | 0 -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
-				        Scanf.bscanf channel " %d "
-				        (fun x -> if x = 0 then (ensV :: lstC, list, s)
-				                else begin
-				                    try iter s (insert (abs x) list) lstC (add x ensV) 0 with
-				                      Satisfiable -> (lstC, list, s) end)
-				  | n -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
-				        Scanf.bscanf channel " %d "
-				        (fun x -> if x = 0 then
-				                  iter s list (ensV :: lstC) [] (n - 1)
-				                else begin
-				                    try iter s (insert (abs x) list) lstC (add x ensV) n with
-				                      Satisfiable ->
-				                          (next (); iter s list lstC [] (n - 1)) end) in
-				
-				iter string [] [] [] n;;
+  let add x l = if List.exists (fun y -> y = -x) l then raise Satisfiable else x::l
 
 
-		let load channel =
-		  let s = try Scanf.bscanf channel "c %s@\n" (fun x -> x ^ "\n") with _ -> "" in
-				Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s (c-1) channel))
+  let init string n channel =
+    let rec next () = match Scanf.bscanf channel " %d " (fun x -> x) with
+      | 0 -> ()
+      | n -> next ()
+	
+    and iter s list lstC ensV = function
+      | 0 -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
+	     Scanf.bscanf channel " %d "
+	       (fun x -> if x = 0 then (ensV :: lstC, list, s)
+		 else begin
+		   try iter s (insert (abs x) list) lstC (add x ensV) 0 with
+		       Satisfiable -> (lstC, list, s) end)
+      | n -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
+	     Scanf.bscanf channel " %d "
+	       (fun x -> if x = 0 then
+		   iter s list (ensV :: lstC) [] (n - 1)
+		 else begin
+		   try iter s (insert (abs x) list) lstC (add x ensV) n with
+		       Satisfiable ->
+			 (next (); iter s list lstC [] (n - 1)) end) in
+    
+    iter string [] [] [] n;;
 
-  end;;
+
+  let load channel =
+    let s = try Scanf.bscanf channel "c %s@\n" (fun x -> x ^ "\n") with _ -> "" in
+    Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s (c-1) channel))
+
+end;;
 
 
 (* Regroupe les modules d'initialisation *)
