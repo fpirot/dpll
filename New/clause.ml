@@ -141,7 +141,7 @@ struct
     in (St.elements s, m)*)
     
   let extract x map = 
-    let s = Mp.find x map in
+    let s = try Mp.find x map with _ -> St.empty in
     let m = St.fold (fun id m -> remove id m) s map in
     if debug then begin
       print_string "Extraction:\n";
@@ -170,8 +170,7 @@ struct
       
   let choose id = Cls.choose clauseArray.(id)
     
-  let find x m = St.elements (Mp.find x m)
-
+  let find x m = try St.elements (Mp.find x m) with _ -> []
 (* Renvoie la liste de toutes les clauses attachées à un litéral, et
    la table d'association privée de ces clauses et de la négation du
    litéral (lorsque l'on donne à une variable une assignation
