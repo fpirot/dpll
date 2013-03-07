@@ -3,9 +3,8 @@ module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Wlit);;
 
-exception Satisfiable;;
-let debug = false;;
 
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
@@ -21,6 +20,7 @@ let rec valuation n =
 
 let verify lst =
   List.for_all (fun l -> List.exists (fun x -> Core.read x = x) l) lst
+
 
 let dpll env = 
   let rec aux env =

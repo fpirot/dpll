@@ -3,7 +3,7 @@
 module Load =
 struct
 
-  exception Satisfiable
+  exception Useless
 
   let rec insert x = function
     | [] -> [(0, x)]
@@ -20,7 +20,7 @@ struct
 	      (m, y) :: (m', y') :: l'
 
 
-  let add x l = if List.exists (fun y -> y = -x) l then raise Satisfiable else x::l
+  let add x l = if List.exists (fun y -> y = -x) l then raise Useless else x::l
 
 
   let init str n channel =
@@ -34,14 +34,14 @@ struct
 	       (fun x -> if x = 0 then (c + 1, ensV :: lstC, lst, s)
 		 else begin
 		   try iter s c (insert (abs x) lst) lstC (add x ensV) 0 with
-		       Satisfiable -> (c, lstC, lst, s) end)
+		       Useless -> (c, lstC, lst, s) end)
       | n -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
 	     Scanf.bscanf channel " %d "
 	       (fun x -> if x = 0 then
 		   iter s c lst (ensV :: lstC) [] (n - 1)
 		 else begin
 		   try iter s c (insert (abs x) lst) lstC (add x ensV) n with
-		       Satisfiable ->
+		       Useless ->
 			 (next (); iter s (c - 1) lst lstC [] (n - 1)) end) in
     
     iter str n [] [] [] n;;
