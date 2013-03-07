@@ -2,7 +2,7 @@ module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
 module Oper = Oper.Make (Clause) (Core);;
 
-exception Unsatisfiable;;
+exception Satisfiable;;
 let debug = true;;
 
 
@@ -20,37 +20,39 @@ let rec valuation n =
 
 let dpll env = 
   let rec aux env =
-    if Oper.is_empty env then ()
+    let b = Oper.is_empty env in
+      if b then print_string "true\n" else print_string "false\n";
+    if b then raise Satisfiable
     else begin
       let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
       try (
-  if debug then begin
-    print_string "Gamble: ";
-    print_int x;
-    print_newline();
-  end;
+	if debug then begin
+	  print_string "Gamble: ";
+	  print_int x;
+	  print_newline();
+	end;
 	Core.write x; Oper.propag x;
 	let env' = Oper.propagation envtrue lfalse in
 	Oper.flush();
 	aux env')
       with Clause.Unsatisfiable -> 
 	try (
-	Oper.flush();
-	Oper.restore();
-	if debug then begin
-    print_string "Gamble: ";
-    print_int (-x);
-    print_newline();
-  end;
-	Core.write (-x); Oper.propag (-x);
-	let env' = Oper.propagation envfalse ltrue in
-	Oper.flush();
-	aux env')
+	  Oper.flush();
+	  Oper.restore();
+	  if debug then begin
+	    print_string "Gamble: ";
+	    print_int (-x);
+	    print_newline();
+	  end;
+	  Core.write (-x); Oper.propag (-x);
+	  let env' = Oper.propagation envfalse ltrue in
+	  Oper.flush();
+	  aux env')
 	with Clause.Unsatisfiable -> (Oper.restore(); raise Clause.Unsatisfiable)
     end;
-  in aux env; valuation Core.var;;
+  in aux env;;
   (* Renvoie une assignation qui permet de satisfaire l'instance
      d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
      satisfiable. *)
 
-  dpll (Oper.create ());;
+  try dpll (Oper.create ()) with _ -> List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);;
