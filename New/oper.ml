@@ -147,19 +147,16 @@ struct
     let rec aux env setv = 
       if Wlit.is_empty setv then env
       else let x = Wlit.choose setv in
-      if debug then begin
-          print_string "WLit choose: ";
-          print_int x;
-          print_newline()
-        end;
+	   if debug then begin
+             print_string "WLit choose: ";
+             print_int x;
+             print_newline()
+           end;
 	   let setv = Wlit.remove x setv in
-	   if Cor.read x = 0 then begin
-	     Cor.write x; propag x;
-	     let (sbord, ssat) = Wlit.update x in
-	     let setv' = Wlit.union sbord setv in
-	     aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause; order = Cor.tl env.order} setv'
-	   end
-	   else aux env setv
+	   Cor.write x; propag x;
+	   let (sbord, ssat) = Wlit.update x in
+	   let setv' = Wlit.union sbord setv in
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause; order = Cor.tl env.order} setv'
     in aux env (Wlit.singleton x)
 
     

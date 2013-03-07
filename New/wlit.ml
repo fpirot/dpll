@@ -113,7 +113,7 @@ struct
 	else (new_assoc i lbord lsat; aux r)
     in 
     let rep = aux l in
-    print_warray (); rep
+    print_warray(); rep
 (* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle
    variable voit sa valeur fixée. Renvoie la liste des litéraux à
    assigner à vrai par effet de bord, et la liste des clauses
