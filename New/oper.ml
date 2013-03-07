@@ -12,6 +12,7 @@ module type CoreElt =
     val write : int -> unit
     val reset : int -> unit
     val update : order -> order
+    val is_empty : order -> bool
   end;;
 
 
@@ -22,7 +23,6 @@ module type OpElt =
     type map
     val empty : map
     val create : int list list -> map
-    val is_empty : map -> bool
     val is_singleton : cls -> int
     val find : int -> map -> cls list
     val choose : cls -> int
@@ -89,7 +89,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
       (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
        (lfalse, {clause = mfalse; order = Cor.tl env.order}))
     
-    let is_empty env = Elt.is_empty env.clause
+    let is_empty env = Cor.is_empty env.order
 
     let select lc setv = 
       List.fold_right (fun c s -> let x = Elt.is_singleton c in

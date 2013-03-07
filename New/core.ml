@@ -68,6 +68,7 @@ module Core =
         print_string "Order: ";
         List.iter (fun x -> print_int (snd x); print_char ' ') l;
         print_string "\n\n" end; l
+    let is_empty l = l = []
     
     let fold = List.fold_right
     
@@ -86,6 +87,7 @@ module type Abstract =
     val hd : order -> int
     val tl : order -> order
     val update : order -> order
+    val is_empty : order -> bool
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
