@@ -1,203 +1,214 @@
-exception Satisfiable;;
-exception Unsatisfiable;;
-
 (* Clause *)
-(* Operation sur les clauses *)
-
-module Literal = 
-  struct
-    type t = int
-    let compare x y = compare (abs x) (abs y)
-(* On compare selon le nom de la variable, indépendemment de la valeur du litéral correspondant. *)
-  end;;
-(* Structure des litéraux qui composent les clauses. *)
-
-module Clause = Set.Make (Literal);;
-let rec list_to_clause = function
-  |[] -> Clause.empty
-  |x :: r -> Clause.add x (list_to_clause r);;
-(* Une clause est représenté par un ensemble de variables. *)
-
-module type Clause = 
-  sig
-    type t = Set.Make(Literal).t
-    val for_all : (int -> bool) -> t -> bool
-    val iter : (int -> unit) -> t -> unit
-    val mem : int -> t -> bool
-    val remove : int -> t -> t
-    val choose : t -> int
-  end;;
-
-module type Ref =
-  sig
-    type t
-    val add : Clause.t -> unit
-    val length : int
-    val elt : int -> Clause.t
-  end;;
-
-module Int =
-  struct
-    type t = int
-    let compare = compare
-  end;;
-
-module Element = Map.Make (Int);;
-(* On classe les clauses dans une table d'association qui associe à chaque variable l'ensemble des clauses dans lesquelles elle apparaît. *)
-
-module type Element = 
-  sig
-    type 'a t
-    val empty : 'a t
-    val is_empty : 'a t -> bool
-    val find : int -> 'a t -> 'a
-    val remove : int -> 'a t -> 'a t
-    val add : int -> 'a -> 'a t -> 'a t
-  end;;
-
-module Links = Set.Make (Int);;
-(* L'ensemble servant à répertorier les clauses associées à une variable. *)
-
-module type Links =
-  sig
-    type t
-    val is_empty : t -> bool
-    val add : int -> t -> t
-    val singleton : int -> t
-    val elements : t -> int list
-    val remove : int -> t -> t
-  end;;
-
-module type Assig =
-  sig
-    type t
-    val read : int -> int
-    val write : int -> int -> unit
-  end;;
-
-module ClauseElt = functor (Elt : Element) -> functor (Links : Links) -> 
-  functor (Ref : Ref) -> functor (Clause : Clause) -> functor (Assig : Assig) ->
-  struct
-    type set = Clause.t
-(* Ref est un tableau dynamique de clauses, qui sert de référence à l'ensemble des problèmes les utilisant. *)
-
-    type map = Links.t Elt.t
-
-    let empty = Elt.empty
-
-    let is_empty t = Elt.is_empty t
-
-    let is_unsat s = Clause.for_all (fun x -> x + Assig.read x = 0) s
-
-    let mem x t = not (Links.is_empty (Elt.find x t))
-
-    let add s t = 
-      Ref.add s;
-      let n = Ref.length in
-      let rep = ref t in
-      Clause.iter (fun k ->
-	try (let e = Elt.find (abs k) !rep in let e' = Links.add n e in rep := Elt.add (abs k) e' !rep);
-	with Not_found -> rep := Elt.add (abs k) (Links.singleton n) !rep) s;
-      !rep
-      
-    let variable x s = if Clause.mem x s then (true, Clause.remove x s)
-      else if Clause.mem (-x) s then (false, Clause.remove (-x) s)
-      else failwith "No such variable to remove."
-
-    let extract x t = 
-      let links = Elt.find x t in
-      let l = Links.elements links in
-      let rep = ref t in
-      let rec aux = function
-	|[] -> ()
-	|k :: r -> let s = Ref.elt k in
-	  Clause.iter (fun x -> let e = Elt.find (abs x) !rep in let e' = Links.remove k e in
-	    rep := Elt.remove (abs x) !rep;
-	    if not (Links.is_empty e') then rep := Elt.add (abs x) e' !rep) s;
-          aux r
-      in aux l;
-      (List.map Ref.elt l, !rep)
-  end;;
-
+(* Module d'implementation des clauses. *)
 
 module type ClauseElt =
-(* Module qui référencie l'ensemble des clauses du problème. *)
-  sig
-    type set
-    type map
-    val empty : map
-    val is_empty : map -> bool
-    val are_sat : set -> int
-    val find : int -> map -> set list
-    val choose : set -> int
-    val mem : int -> map -> bool (* Verifie si une variable est presente dans la map *)
-    val add : set -> map -> map (* Ajoute une clause a la map *)
-    val variable : int -> set -> bool * set (* Supprime une variable d'une clause et donne le booleen associe a son litteral *)
-    val bindings : map -> (int * int list list) list (* Une fonction d'affichage *)
-    val extract : int -> map -> set list * map (* Extrait la liste des clauses comportant une variable et renvoie la map privee de ces clauses *)
-  end ;;
+sig
+  val cls : int
+  val read : int -> int
+  val write : int -> unit
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+end;;
 
-module type OrdElt =
-  sig
-    type order
-    val hd : order -> int
-    val tl : order -> order
-  end;;
+module ClauseCore = functor (Elt : ClauseElt) ->
+struct
 
-module ClauseCore = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> functor (Assig : Assig) ->
-  struct
-    type env = {clause: Elt.map; order: Ord.order}
-    type set = Elt.set
-    type map = Elt.map
+  exception Unsatisfiable
+  exception Satisfiable
 
-    module St = Set.Make (
-      struct
-	type t = int
-	let compare = compare
-      end)
-
-(* Extrait une variable selon l'ordre *)
-    let split env =
-      let k = Ord.hd env.order in
-      let (ltrue, mtrue) = Elt.extract k env.clause
-      and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-      (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
-	  (lfalse, {clause = mfalse; order = Ord.tl env.order}))
+  module Cls = Set.Make
+    (struct
+      type t = int
+      let compare x y = compare (abs x) (abs y)
+     end)
+  (* Les clauses sont des ensembles d'entiers (+x pour le litéral
+     vrai de la variable x, -x pour sa négation), avec la relation
+     de comparaison sur les valeurs absolues (entre nom de
+     variable). *)
     
-    let is_empty env = Elt.is_empty env.clause
+  module St = Set.Make
+    (struct
+      type t = int
+      let compare = compare
+     end)
+  (* Une structure d'ensemble d'entiers avec la comparaison
+     habituelle. *)
+    
+  module Mp = Map.Make
+    (struct
+      type t = int
+      let compare = compare
+     end)
+  (* On gère une table d'association qui à chaque litéral associe
+     l'ensemble des indices de clauses qui le contiennent. *)
+    
+  let clauseArray = Array.make Elt.cls Cls.empty
+  (* On référencie l'ensemble des clauses dans un tableau, afin de
+     stocker des indices dans nos structures de données plutôt que des
+     clauses. *)
 
-    let select lc setv = 	
-      List.fold_right (fun c s -> let n = Elt.are_sat c in
-				  if n = 0 then raise Unsatisfiable
-				  else if n = 1 then 
-				    let x = Elt.choose c in St.add x s
-				  else s) lc setv
+  let clause id = id
+    
+  let compt = ref (-1)
+  (* L'indice en cours dans le tableau. *)
+    
+  let debug = false
+  let print_list l=
+    let rec print = function
+      |[] -> print_string "]"
+      |[a] -> print_int a; print_string "]"
+      |a::l -> print_int a; print_string "; "; print l in
+    print_string "["; print l
+    
+  type cls = int
+  type set = St.t
+  type map = St.t Mp.t
+      
+  let empty = Mp.empty
+  (* Table d'association vide. *)
+    
+  let fill l =
+    incr compt;
+    clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
+    if debug then begin
+    end;
+    !compt
+  (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
+      
+  let add id map =
+    Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
+			 Mp.add x (St.add id s) m) clauseArray.(id) map
+  (* Ajoute la clause d'indice id dans la table d'association. *)
+      
+  let reset () =
+    Array.fill clauseArray 0 (Elt.cls - 1) Cls.empty;
+    compt := -1
+  (* Réinitialise le tableau de clauses. *)
+      
+  let create lst =
+    reset ();
+    let m = Elt.fold (fun l m -> add (fill l) m) lst Mp.empty in
+		  if debug then begin
+		    print_string "clauseArray:\n";
+		    Array.iteri (fun i x ->
+		      print_int i;
+		      print_string ": ";
+		      print_list (Cls.elements x);
+		      print_newline())
+		      clauseArray;
+		    print_newline()
+		  end; m
+      
+  let is_empty = Mp.is_empty
+  (* Teste si la table d'association est vide. *)
 
-    let rec propagation env lc =
-      let rec aux env lc setv =
-	let setv' = select lc setv in
-	if St.is_empty setv' then env
-	else begin
-	  let x = St.choose setv' in
-	  Assig.write (abs x) x;
-	  let (_, m) = Elt.extract x env.clause in
-	  let lc' = Elt.find (-x) env.clause in
-	  aux {clause = m; order = Ord.tl env.order} lc' setv'
-	end
-      in aux env lc St.empty
+  let is_singleton id = 
+    let c = Cls.filter (fun x -> 0 = Elt.read x) clauseArray.(id) in
+    match Cls.cardinal c with
+      |0 -> raise Unsatisfiable
+      |1 -> Cls.choose c
+      |_ -> 0
+  (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
+     encore assigné quand il est bien unique, 0 sinon.  Lève
+     l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
-  end;;
+  let mem = Mp.mem
+  (* Indique si une variable est présente dans l'ensemble des
+     clauses. *)
+
+  let literals id = Cls.elements clauseArray.(id)
+  (* Donne les elements d'une clause *)
+
+  let remove id map =
+    Cls.fold (fun x m -> try (Mp.add x (St.remove id (Mp.find x m)) m) with Not_found -> m) clauseArray.(id) map
+  (* Supprime une clause de la map *)
+
+  let bindings m = let lst = Mp.bindings m in
+		   List.map (fun (k, s) ->
+		     (k, List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s))) lst
+  (* Affichage des éléments de la table d'association sous forme de
+     liste. *)
+		     
+  let elements id = Cls.elements clauseArray.(id)
+  (* Affichage des éléments d'une clause sous forme de liste. *)
+
+  (*let extract x map = let s = Mp.find x map and m = remove x map
+    in (St.elements s, m)*)
+    
+  let extract x map = 
+    let s = try Mp.find x map with _ -> St.empty in
+    let m = St.fold (fun id m -> remove id m) s map in
+    if debug then begin
+      print_string "Extraction:\n";
+      List.iter (fun x ->
+	print_int x;
+	print_string ": ";
+	print_list (Cls.elements clauseArray.(x));
+	print_newline())
+        (St.elements s);
+      print_newline ();
+      print_string "New map:\n";
+      List.iter (fun (x, lst) ->
+        if lst <> [] then begin
+	  print_int x;
+	  print_string ": ";
+	  List.iter (fun l -> print_list l; print_char ' ') lst;
+	  print_newline() end)
+	(bindings (Mp.remove x m));
+      print_newline();
+    end;
+    (St.elements s, Mp.remove x m)
+      
+  let choose id = Cls.choose clauseArray.(id)
+    
+  let find x m = try St.elements (Mp.find x m) with _ -> []
+(* Renvoie la liste de toutes les clauses attachées à un litéral, et
+   la table d'association privée de ces clauses et de la négation du
+   litéral (lorsque l'on donne à une variable une assignation
+   particulière). *)
+    
+end;;
 
 
-module type ClauseAbstract = functor (Elt : ClauseElt) -> functor (Ord : OrdElt) -> functor (Assig : Assig) ->
-  sig
-    type env
-    type set
-    type map
-    val split : env -> (int * (set list * env) * (set list * env))
-    val is_empty : env -> bool
-    val propagation : env -> set list -> env
-  end;;
+module type ClauseAbstract = functor (Elt : ClauseElt) ->
+sig
+  exception Unsatisfiable
+  exception Satisfiable
+  type map
+  type cls
+  val empty : map
+  val fill : int list -> cls
+  val add : cls -> map -> map
+  val create : int list list -> map
+  val reset : unit -> unit
+  val is_empty : map -> bool
+  val is_singleton : cls -> int
+  val mem : int -> map -> bool
+  val literals : int -> int list
+  val remove : cls -> map -> map
+  val bindings : map -> (int * int list list) list
+  val elements : cls -> int list
+  val extract : int -> map -> cls list * map
+  val choose : cls -> int
+  val find : int -> map -> cls list
+  val clause : int -> cls
+end;;
 
+module Make = (ClauseCore : ClauseAbstract);;
 
-module Op = (ClauseCore : ClauseAbstract);;
+(* Tests *)
+(*
+module Test = Make
+  (struct
+    let cls = 10
+    let tab = Array.create 10 0
+    let read n = tab.(n-1)
+    let write n x = tab.(n-1) <- x
+    let fold = List.fold_right
+  end);;
+
+let s = Test.empty;; Test.bindings s;; 
+let s = Test.create [[0; -1; 2]; [1; -2; 3]; [2; -3; 0]; [3; -0; 1]; [0; -1; -2]];; 
+Test.bindings s;;
+let (l, s) = Test.extract 1 s;; 
+List.map (fun cls -> Test.elements cls) l;;
+*)
