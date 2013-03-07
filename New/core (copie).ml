@@ -28,14 +28,14 @@ module Load =
 			and iter s list lstC ensV = function
 				  | 0 -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
 				        Scanf.bscanf channel " %d "
-				        (fun x -> if x = 0 then (((0, 0), ensV) :: lstC, list, s)
+				        (fun x -> if x = 0 then (ensV :: lstC, list, s)
 				                else begin
 				                    try iter s (insert (abs x) list) lstC (x::ensV) 0 with
 				                      Satisfiable -> (lstC, list, s) end)
 				  | n -> let s = try Scanf.bscanf channel "c %s@\n" (fun x -> s ^ x ^ "\n") with _ -> s in
 				        Scanf.bscanf channel " %d "
 				        (fun x -> if x = 0 then
-				                  iter s list (((0, 0), ensV) :: lstC) [] (n - 1)
+				                  iter s list (ensV :: lstC) [] (n - 1)
 				                else begin
 				                    try iter s (insert (abs x) list) lstC (x::ensV) n with
 				                      Satisfiable ->
@@ -46,7 +46,7 @@ module Load =
 
 		let load channel =
 		  let s = try Scanf.bscanf channel "c %s@\n" (fun x -> x ^ "\n") with _ -> "" in
-				Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s c channel))
+				Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, c, init s (c-1) channel))
 
   end;;
 
@@ -118,7 +118,7 @@ Make.cls;;
 Make.lst;;
 Make.hd Make.ord;;
 Make.read 1;;
-Make.write 3 2;;
+Make.write 3 ;;
 Make.read 3;;
 Make.update Make.ord;;
 *)

@@ -102,7 +102,7 @@ Make.cls;;
 Make.lst;;
 Make.hd Make.ord;;
 Make.read 1;;
-Make.write 3 2;;
+Make.write 3;;
 Make.read 3;;
 Make.update Make.ord;;
 *)
