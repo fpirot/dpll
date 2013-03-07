@@ -1,6 +1,6 @@
 module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
-module Wlit = Wlit.Make (Clause)(Core);;
+module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Wlit);;
 
 exception Satisfiable;;
@@ -46,7 +46,8 @@ let dpll env =
 	Oper.flush();
 	aux env')
       with Clause.Unsatisfiable -> (Oper.restore(); raise Clause.Unsatisfiable)
-  in aux env;;
+  in Oper.init();
+  aux env;;
   (* Renvoie une assignation qui permet de satisfaire l'instance
      d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
      satisfiable. *)

@@ -167,6 +167,8 @@ struct
 
   let update env = {clause = env.clause; order = Cor.update env.order}
 
+  let init () = if Cor.wlit then Wlit.init () else ()
+
 end;;
 
 
@@ -185,6 +187,7 @@ sig
   val propagation : env -> cls list -> int -> env
   val bindings : env -> (int * int list list) list
   val update : env -> env
+  val init : unit -> unit
 end;;
 
 module Make = (OpCore : OpAbstract);;
