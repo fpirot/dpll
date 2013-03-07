@@ -32,13 +32,20 @@ let dpll env =
 	print_newline();
       end;
       Core.write x; Oper.propag x;
+      (* On assigne la valeur de x, et on rentre cette assignation dans une
+	 liste pour gérer le backtrack. *)
       let env' = Oper.propagation envtrue lfalse x in
       Oper.flush();
+      (* On stocke l'ensemble des assignations effectuées avec le pari
+	 x, pour gérer le backtrack. *)
       aux env')
     with Clause.Unsatisfiable -> 
       try (
 	Oper.flush();
+	(* On stocke les assignations qui étaient en cours. *)
 	Oper.restore();
+	(* On annule les assignations effectuées à l'étape
+	   précédente. *)
 	if debug then begin
 	  print_string "Gamble: ";
 	  print_int (-x);
@@ -48,12 +55,14 @@ let dpll env =
 	let env' = Oper.propagation envfalse ltrue (-x) in
 	Oper.flush();
 	aux env')
-      with Clause.Unsatisfiable -> (Oper.restore(); raise Clause.Unsatisfiable)
+      with Clause.Unsatisfiable -> (Oper.restore(); 
+				    (* On annule les dernières assignations. *)
+				    raise Clause.Unsatisfiable)
   in Oper.init();
+  (* Gère l'initialisation des structures référentes. *)
   aux env;;
-(* Renvoie une assignation qui permet de satisfaire l'instance
-   d'entrée, ou l'exception Unsatisfiable si cette dernière n'est pas
-   satisfiable. *)
+(* Renvoie l'exception Satisfiable dans le cas où l'instance est
+   satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
 let t = Sys.time() in
 (try dpll (Oper.create ()) with 
