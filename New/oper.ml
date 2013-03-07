@@ -109,7 +109,7 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
     let rec propagation env lc =
       let rec aux env lc setv =
 	let setv' = select lc setv in
-	if St.is_empty setv' then (flush (); env)
+	if St.is_empty setv' then env
 	(* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	   s'arrête. On rentre la liste des assignations effectuée au cours de
 	   cette propagation dans une liste, et on passe au prochain pari. *)
