@@ -25,7 +25,7 @@ let dpll env =
 	Core.write x; Oper.propag x;
 	let env' = Oper.propagation envtrue lfalse in
 	aux env')
-      with Unsatisfiable -> 
+      with Clause.Unsatisfiable -> 
 	try (
 	Oper.restore();
 	Core.write (-x); Oper.propag (-x);

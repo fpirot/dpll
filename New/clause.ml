@@ -11,6 +11,9 @@ module type ClauseElt =
 
 module ClauseCore = functor (Elt : ClauseElt) ->
   struct
+
+    exception Unsatisfiable
+
     module Cls = Set.Make
       (struct
         type t = int
@@ -43,8 +46,8 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let print_list l=
       let rec print = function
         |[] -> print_string "]"
-        |[a] -> print_int a; print_string "]"
-        |a::l -> print_int a; print_string "; "; print l in
+        |[a] -> (*if Elt.read a = 0 then*) print_int a; print_string "]"
+        |a::l -> (*if Elt.read a = 0 then*) (print_int a; print_string "; "); print l in
       print_string "["; print l;
     
     type cls = int
@@ -97,8 +100,15 @@ module ClauseCore = functor (Elt : ClauseElt) ->
     let is_empty = Mp.is_empty
     (* Teste si la table d'association est vide. *)
 
-    let are_sat id = Cls.fold (fun x c -> if Elt.read x = 0 then c+1 else c) clauseArray.(id) 0
-    (* Renvoie le nombre de litéraux dont on ne connaît pas encore l'assignation dans la clause. *)
+    let is_singleton id = 
+      let c = Cls.filter (fun x -> 0 = Elt.read x) clauseArray.(id) in
+        match Cls.cardinal c with
+	  |0 -> raise Unsatisfiable
+	  |1 -> Cls.choose c
+	  |_ -> 0
+    (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
+       encore assigné quand il est bien unique, 0 sinon.  Lève
+       l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
     let mem = Mp.mem
     (* Indique si une variable est présente dans l'ensemble des clauses. *)
@@ -165,6 +175,7 @@ module ClauseCore = functor (Elt : ClauseElt) ->
 
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
   sig
+    exception Unsatisfiable
     type map
     type cls
     val empty : map
@@ -173,7 +184,7 @@ module type ClauseAbstract = functor (Elt : ClauseElt) ->
     val create : int list list -> map
     val reset : unit -> unit
     val is_empty : map -> bool
-    val are_sat : cls -> int
+    val is_singleton : cls -> int
     val mem : int -> map -> bool
     val literals : cls -> int list
     val remove : cls -> map -> map
