@@ -29,16 +29,15 @@ let p = (Random.int n) + 1 in
 let b = Random.int 2 in
 if b = 0 then -p else p;;
 
-let random_clause n = 
-  let a = random_literal n
-  and b = random_literal n
-  and c = random_literal n
-  in [a; b; c];;
+let rec random_clause n = function
+  |0 -> []
+  |t -> (random_literal n) :: (random_clause n (t - 1))
+(* Génère une clause de taille t, aléatoire. *)
 
-let random_3sat n p =
+let random_sat n p =
   let rec aux = function
     | 0 -> []
-    | p -> (random_clause n) :: (aux (p-1))
+    | p -> (random_clause n (truncate (log (float n)/.(log 2.)))) :: (aux (p-1))
   in {k = n; clauses = aux p};;
 (* n est le nombre de variables, p est le nombre de clauses. *)
 
@@ -55,7 +54,7 @@ in {k = n; clauses = aux n};;
 let main () =
 let n = int_of_string (Sys.argv).(1) in
 let file = open_out "ex0.cnf" in
-let s = random_3sat n (5*n) in
+let s = random_sat n (n*(truncate (log (float n)))) in
 output_sat file s;;
 
 main();;

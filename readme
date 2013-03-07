@@ -12,9 +12,10 @@ fichier test. Le programme retourne dans la sortie standard
 l'assignation trouvée si elle existe, ou dénonce le problème comme
 étant non satisfiable.
 
-Nb : On peut générer des tests grâce au programme test dans Test. Il
-suffit d'entrer ./test n, qui entre dans ex0.cnf un problème à n
-variable et 5n clauses de taille 3, tirées au hasard.
+Nb : On peut générer des tests grâce au programme test dans Test (à
+compiler avec ocamlc). Il suffit d'entrer ./test n, qui entre dans 
+ex0.cnf un problème à n variable et n log n clauses de taille log n, 
+tirées au hasard.
 
 
 --------------------------------
