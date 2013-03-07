@@ -60,7 +60,9 @@ module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) ->
 	    and ls = ref [] in
 	      ((fun x -> ls := x::(!ls)),
 	      (fun () -> lst := (!ls)::(!lst); ls := []),
-	      (fun () -> List.iter (fun x -> Cor.reset x) (List.hd (!lst)); lst := List.tl (!lst)),
+	      (fun () -> List.iter (fun x -> Cor.reset x)
+	          (try List.hd (!lst) with Failure(s) -> raise (Failure("Restore: "^s)));
+	        lst := List.tl (!lst)),
 	      (fun () -> ls := []; lst := []))
 
 (* Extrait une variable selon l'ordre *)
