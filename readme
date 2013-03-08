@@ -8,9 +8,10 @@ Compilation et exécution :
 
 Pour compiler, utiliser le makefile. Pour exécuter le programme lancer
 le programme dpll, avec en argument l'adresse absolue ou relative du
-fichier test. Le programme retourne dans la sortie standard
-l'assignation trouvée si elle existe, ou dénonce le problème comme
-étant non satisfiable.
+fichier test, et en argument optionnel wlit, si on veut lancer la 
+résolution avec les watched literals. Le programme retourne dans la 
+sortie standard l'assignation trouvée si elle existe, ou dénonce le 
+problème comme étant non satisfiable.
 
 Nb : On peut générer des tests grâce au programme test dans Test (à
 compiler avec ocamlc). Il suffit d'entrer ./test n, qui entre dans 
