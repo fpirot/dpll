@@ -102,13 +102,17 @@ struct
   (* Teste si la table d'association est vide. *)
 
   let is_singleton id = 
-    exception Is_not;
-    try (match Cls.fold (fun x v -> match (Elt.read x, v) with
-        |(0, 0) -> x
-        |(0, _) -> raise Is_not
-        |(_, y) -> y) clauseArray.(id) 0  with
-      |0 -> raise Unsatisfiable
-      |x -> x) with Is_not -> 0
+    try (
+      match Cls.fold 
+	(fun x v -> match (Elt.read x, v) with
+          |(0, 0) -> x
+          |(0, _) -> failwith "is_not"
+          |(_, y) -> y) clauseArray.(id) 0
+      with
+	|0 -> raise Unsatisfiable
+	|x -> x
+    )
+    with Failure "is_not" -> 0
 
   (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
      encore assigné quand il est bien unique, 0 sinon.  Lève
@@ -150,13 +154,13 @@ struct
         (St.elements s);
       print_newline ();
       print_string "New map:\n";
-      List.iter (fun (x, lst) ->
-        if lst <> [] then begin
-	  print_int x;
-	  print_string ": ";
-	  List.iter (fun l -> print_list l; print_char ' ') lst;
-	  print_newline() end)
-	(bindings (Mp.remove x m));
+      List.iter 
+	(fun (x, lst) ->
+          if lst <> [] then begin
+	    print_int x;
+	    print_string ": ";
+	    List.iter (fun l -> print_list l; print_char ' ') lst;
+	    print_newline() end) (bindings (Mp.remove x m));
       print_newline();
     end;
     (St.elements s, Mp.remove x m)
