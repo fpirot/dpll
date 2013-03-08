@@ -67,10 +67,10 @@ module Core =
       let w = ref false
       and s = ref "Nil"
       and p = ref "ex0.cnf" in
-        Arg.parse [("wlit", Arg.Unit(fun () -> w := true), "Watched literals");
-        	("rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
-        	("moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
-        	("dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
+        Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
+        	("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
+        	("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
+        	("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
             (fun str -> p := str) "";
         (!w, !s, !p)
         

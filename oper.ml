@@ -12,7 +12,7 @@ sig
   val read : int -> int
   val write : int -> unit
   val reset : int -> unit
-  val update : order -> order
+  val update : int -> int -> order -> order
   val is_empty : order -> bool
 end;;
 
@@ -169,7 +169,7 @@ struct
     
   let bindings env = Elt.bindings env.clause
 
-  let update env = {clause = env.clause; order = Cor.update env.order}
+  let update env = {clause = env.clause; order = Cor.update 0 0 env.order}
 
   let init () = if Cor.wlit then Wlit.init () else ()
 
