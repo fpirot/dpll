@@ -4,7 +4,8 @@
 module type CoreElt =
 sig
   type order
-  val wlit : bool
+  type heuristic
+  val heur : heuristic
   val lst : int list list
   val ord : order
   val hd : order -> int
@@ -91,17 +92,20 @@ struct
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
-  (* Extrait une variable selon l'ordre *)
-  let split env =
-    let rec choice ord =
-      if Cor.is_empty ord then raise Elt.Satisfiable
-      else let x = Cor.hd ord in
-	   if Cor.read x = 0 then x else choice (Cor.tl ord)
-    in let k = choice env.order in
-       let (ltrue, mtrue) = Elt.extract k env.clause
-       and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-       (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
-	(lfalse, {clause = mfalse; order = Cor.tl env.order}))
+  (* choisit la variable sur laquelle faire le prochain pari, en
+     fonction de l'heuristique en cours. *)
+  let rec choice ord =
+    if Cor.is_empty ord then raise Elt.Satisfiable
+    else let x = Cor.hd ord in
+	 if Cor.read x = 0 then x else choice (Cor.tl ord)
+
+(* Extrait une variable selon l'ordre *)
+let split env =
+  let k = choice env.order in
+  let (ltrue, mtrue) = Elt.extract k env.clause
+  and (lfalse, mfalse) = Elt.extract (-k) env.clause in
+  (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
+   (lfalse, {clause = mfalse; order = Cor.tl env.order}))
 	 
   let is_empty env = Cor.is_empty env.order
 
