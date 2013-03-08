@@ -62,8 +62,19 @@ module Core =
     type order = (int * int) list
     
     let debug = false
-    let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in ("Test/"^(try Sys.argv.(1) with _ -> "test")))
-    let wlit = try (Sys.argv.(2) = "wlit") with _ -> false
+    
+    let (wlit, heur, path) =
+      let w = ref false
+      and s = ref "Nil"
+      and p = ref "ex0.cnf" in
+        Arg.parse [("wlit", Arg.Unit(fun () -> w := true), "Watched literals");
+        	("rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
+        	("moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
+        	("dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
+            (fun str -> p := str) "";
+        (!w, !s, !p)
+        
+    let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in ("Test/"^path))
     
     
     let assigArray = Array.create var 0
@@ -90,7 +101,7 @@ module Core =
         List.iter (fun x -> print_int (snd x); print_char ' ') (List.tl l);
         print_string "\n\n" end; List.tl l
         
-    let update l = 
+    let update x y l = 
       if debug then begin
         print_string "Order: ";
         List.iter (fun x -> print_int (snd x); print_char ' ') l;
@@ -99,6 +110,7 @@ module Core =
     let is_empty l = l = []
     
     let fold = List.fold_right
+    
     
   end;;
 
@@ -110,12 +122,13 @@ module type Abstract =
     val lst : int list list
     val ord : order
     val wlit : bool
+    val heur : string
     val read : int -> int
     val write : int -> unit
     val reset : int -> unit
     val hd : order -> int
     val tl : order -> order
-    val update : order -> order
+    val update : int -> int -> order -> order
     val is_empty : order -> bool
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
@@ -129,14 +142,14 @@ module Make = (Core : Abstract);;
 Make.var;;
 Make.cls;;
 Make.lst;;
+Make.wlit;;
+Make.heur;;
 Make.hd Make.ord;;
 Make.read 1;;
 Make.write 3 ;;
 Make.read 3;;
-Make.update Make.ord;;
+Make.update 0 0 Make.ord;;
 *)
-
-
 
 (* Anciennes versions *)
 
