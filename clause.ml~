@@ -103,10 +103,10 @@ struct
 
   let is_singleton id = 
     exception Is_not;
-    try (match Cls.fold (fun x v -> match (Elt.read x, v) with
+    try (match Cls.fold (fun x v -> begin match (Elt.read x, v) with
         |(0, 0) -> x
         |(0, _) -> raise Is_not
-        |(_, y) -> y) clauseArray.(id) 0  with
+        |(_, y) -> y end) clauseArray.(id) 0  with
       |0 -> raise Unsatisfiable
       |x -> x) with Is_not -> 0
 
