@@ -101,14 +101,18 @@ struct
   let is_empty = Mp.is_empty
   (* Teste si la table d'association est vide. *)
 
-  let is_singleton id = 
-    exception Is_not;
-    try (match Cls.fold (fun x v -> match (Elt.read x, v) with
-        |(0, 0) -> x
-        |(0, _) -> raise Is_not
-        |(_, y) -> y) clauseArray.(id) 0  with
-      |0 -> raise Unsatisfiable
-      |x -> x) with Is_not -> 0
+  exception Is_not
+    let is_singleton id = 
+      try (
+	match Cls.fold (fun x v -> match (Elt.read x, v) with
+          |(0, 0) -> x
+          |(0, _) -> raise Is_not
+          |(_, y) -> y) clauseArray.(id) 0
+	with
+	  |0 -> raise Unsatisfiable
+	  |x -> x
+      )
+      with Is_not -> 0
 
   (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
      encore assigné quand il est bien unique, 0 sinon.  Lève
