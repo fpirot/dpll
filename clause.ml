@@ -154,13 +154,13 @@ struct
         (St.elements s);
       print_newline ();
       print_string "New map:\n";
-      List.iter (fun (x, lst) ->
-        if lst <> [] then begin
-	  print_int x;
-	  print_string ": ";
-	  List.iter (fun l -> print_list l; print_char ' ') lst;
-	  print_newline() end)
-	(bindings (Mp.remove x m));
+      List.iter 
+	(fun (x, lst) ->
+          if lst <> [] then begin
+	    print_int x;
+	    print_string ": ";
+	    List.iter (fun l -> print_list l; print_char ' ') lst;
+	    print_newline() end) (bindings (Mp.remove x m));
       print_newline();
     end;
     (St.elements s, Mp.remove x m)
