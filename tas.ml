@@ -2,13 +2,13 @@ module type A =
 sig
   type t
   val compare : t -> t -> int
-end
+end;;
 
 module TasCore = functor (A: A) ->
 struct
   type elt = A.t
   type constr = elt * int
-  type tas = Nil | N of constr * tas * tas
+  type t = Nil | N of constr * t * t
 
   let (<<) (a: constr) (b: constr) = A.compare (fst a) (fst b) = -1
   let (>>) (a: constr) (b: constr) = A.compare (fst a) (fst b) = 1
@@ -84,4 +84,4 @@ sig
   val bindings : t -> elt list
 end;;
 
-module Make = functor (A: A) -> (TasCore (A): TasAbstract)
+module Make = (TasCore : TasAbstract);;
