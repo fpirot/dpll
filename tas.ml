@@ -35,12 +35,14 @@ struct
     |N (x,_,_) -> fst x
 
   let rec add x = function
-      |Nil -> singleton x
-      |N(y,fg,fd) -> if size fg < size fd then
-	  if fst y < x then N (incr_size y, add x fg, fd)
-	  else N ((x, snd y + 1), add (fst y) fg, fd)
-	else if fst y < x then N (incr_size y, fg, add x fd)
-	  else N ((x, snd y + 1), fg, add (fst y) fd)
+    |Nil -> singleton x
+    |N(y,fg,fd) ->
+      if size fg < size fd then
+	if fst y < x then N (incr_size y, add x fg, fd)
+	else N ((x, snd y + 1), add (fst y) fg, fd)
+      else 
+	if fst y < x then N (incr_size y, fg, add x fd)
+	else N ((x, snd y + 1), fg, add (fst y) fd)
 
   let extract_min =
     let rec aux = function
