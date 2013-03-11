@@ -73,7 +73,7 @@ end;;
 module type TasAbstract = functor (A: A) ->
 sig
   type t
-  type elt
+  type elt = A.t
   val size : t -> int
   val singleton : elt -> t
   val empty : t
@@ -85,3 +85,30 @@ sig
 end;;
 
 module Make = (TasCore : TasAbstract);;
+
+(* Tests *)
+(*
+module Tas = Make (struct
+  type t = int
+  let compare = compare
+end);;
+
+let t = ref Tas.empty;;
+
+for i = 1 to 10 do
+  t := Tas.add i !t
+done;;
+
+Tas.min_elt !t;;
+
+Tas.size !t;;
+
+let _,tas =  Tas.extract_min !t in t := tas;;
+
+Tas.size !t;;
+
+Tas.min_elt !t;;
+*)
+
+(* Attention, la fonction extract_min fait perdre des éléments de
+   temps en temps... *)
