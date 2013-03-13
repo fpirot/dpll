@@ -22,7 +22,8 @@ sig
   type elt = int*int
   val empty : t
   val add : elt -> t -> t
-  val fold : (elt -> t -> t) -> t -> t
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val iter : (elt -> unit) -> t -> unit
   val extract_min : t -> elt * t
 end;;
 
@@ -45,9 +46,12 @@ struct
 				poids.(n).(0) <- poids.(n).(0) + 1;
 				Elt.iter (fun x -> poids.(n).(abs x) <- poids.(n).(abs x) + 1) c)
 
+  let load length = Tas.iter (fun x -> poids.(length).(snd x) <- fst x)
+  (* Remet le tableau poids à un état précédent grâce à un tas en argument. *)
+
   let update_tas t = 
     let n = find_size_min () in
-    Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) Tas.empty
-  (* Actualise le tas qui correspond à l'ordre, selon les nouvelles valeurs de poids. *)
+    Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) t Tas.empty
+(* Actualise le tas qui correspond à l'ordre, selon les nouvelles valeurs de poids. *)
 
 end;;
