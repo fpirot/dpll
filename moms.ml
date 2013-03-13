@@ -45,10 +45,9 @@ struct
 				poids.(n).(0) <- poids.(n).(0) + 1;
 				Elt.iter (fun x -> poids.(n).(abs x) <- poids.(n).(abs x) + 1) c)
 
-  let find_xmoms t = 
+  let update_tas t = 
     let n = find_size_min () in
-    let tas = Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) Tas.empty in
-    Tas.extract_min tas
-  (* Choisit parmi une liste de variables celle qui correspond au choix de MoMS. *)
+    Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) Tas.empty
+  (* Actualise le tas qui correspond à l'ordre, selon les nouvelles valeurs de poids. *)
 
 end;;
