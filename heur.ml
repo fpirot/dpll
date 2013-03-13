@@ -1,6 +1,8 @@
 module HeurCore =
   struct
     
+    type order = (int * int) list
+    
     let random lst =
       let rec modif n = function
         |[] -> failwith "Heur.random"
@@ -13,6 +15,7 @@ module HeurCore =
 
 module type HeurAbstract =
   sig
+    type order
     val random : 'a list -> 'a list
   end;;
 

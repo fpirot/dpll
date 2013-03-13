@@ -6,6 +6,8 @@ module type CoreElt =
 
 module type HeurElt =
   sig
+    type order
+    (*val create : (int * int) list -> string -> order*)
     val random : 'a list -> 'a list
   end;;
 
@@ -16,7 +18,7 @@ module OrderCore = functor (Cor : CoreElt) -> functor (Heur : HeurElt) ->
     
     type order = (int * int) list
     
-    let create () = Cor.ord
+    let create () = Cor.ord(*Heur.create Cor.ord Cor.heur*)
     
     let hd l = snd (List.hd l)
     
