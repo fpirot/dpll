@@ -55,7 +55,7 @@ struct
 	  let p1, p2 = size t1, size t2 in
 	  match (a1 <<= a2, p1 >= p2) with
 	    |true, true -> N ((fst a1, snd a1 + snd a2), aux (fg1, fd1), t2)
-	    |false, false -> N ((fst a2, snd a2 + snd a1), t1, aux (fg1, fg2))
+	    |false, false -> N ((fst a2, snd a2 + snd a1), t1, aux (fg2, fd2))
 	    |false, true -> N ((fst a2, snd a2 + snd a1), aux (fg1, fd1), N ((fst a1, snd a2), fg2, fd2))
 	    |true, false -> N ((fst a1, snd a1 + snd a2), N ((fst a2, snd a1), fg1, fd1), aux (fg2, fd2)))
 	  |_ -> failwith "Error"
@@ -95,7 +95,7 @@ end;;
 module Make = (TasCore : TasAbstract);;
 
 (* Tests *)
-
+(*
 module Tas = Make (struct
   type t = int
   let compare = compare
@@ -108,16 +108,9 @@ for i = 1 to 10 do
   t := Tas.add i !t
 done;;
 
-Tas.min_elt !t;;
-
 Tas.size !t;;
+Tas.print !t;;
 
-let _,tas =  Tas.extract_min !t in t := tas;;
-
-Tas.size !t;;
-
-Tas.min_elt !t;;
-
-
-(* Attention, la fonction extract_min fait perdre des éléments de
-   temps en temps... *)
+let _,tas =  Tas.extract_min !t in t := tas;
+Tas.print !t;;
+*)
