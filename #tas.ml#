@@ -108,15 +108,10 @@ for i = 1 to 10 do
   t := Tas.add i !t
 done;;
 
-Tas.min_elt !t;;
+Tas.print !t;
 
-Tas.size !t;;
-
-let _,tas =  Tas.extract_min !t in t := tas;;
-
-Tas.size !t;;
-
-Tas.min_elt !t;;
+let _,tas =  Tas.extract_min !t in t := tas;
+Tas.print !t;;
 
 
 (* Attention, la fonction extract_min fait perdre des éléments de
