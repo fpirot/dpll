@@ -14,10 +14,20 @@ sig
   type elt = int
   val length : cls -> int
   val iter : (elt -> unit) -> cls -> unit
-end
+end;;
+
+module type Tas =
+sig
+  type t
+  type elt = int*int
+  val empty : t
+  val add : elt -> t -> t
+  val fold : (elt -> t -> t) -> t -> t
+  val extract_min : t -> elt * t
+end;;
 
 
-module Moms = functor (Core: Core) -> functor (Elt: Clause) ->
+module Moms = functor (Core: Core) -> functor (Elt: Clause) -> functor (Tas: Tas) ->
 struct
   let poids = Array.make_matrix (Core.length_max + 1) (Core.var + 1) 0
   (* poids.(p).(0) contiendra le nombre de clauses de poids p.
@@ -35,11 +45,10 @@ struct
 				poids.(n).(0) <- poids.(n).(0) + 1;
 				Elt.iter (fun x -> poids.(n).(abs x) <- poids.(n).(abs x) + 1) c)
 
-  let find_xmoms l = 
+  let find_xmoms t = 
     let n = find_size_min () in
-    let xmoms = ref 0 and v = ref 0 in
-    List.iter (fun x -> if poids.(n).(x) > !v then (v := poids.(n).(x); xmoms := x)) l;
-    !xmoms
+    let tas = Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) Tas.empty in
+    Tas.extract_min tas
   (* Choisit parmi une liste de variables celle qui correspond au choix de MoMS. *)
 
 end;;
