@@ -75,6 +75,10 @@ struct
     |N(x, fg, fd) -> A.print (fst x);
       if fg <> Nil then (print_string " ( "; print fg; print_string " ) ");
       if fd <> Nil then (print_string " ( "; print fd; print_string " ) ")
+
+  let rec iter f = function
+    |Nil -> ()
+    |N(x, fg, fd) -> f (fst x); iter f fg; iter f fd
 end;;
 
 module type TasAbstract = functor (A: A) ->
@@ -90,6 +94,7 @@ sig
   val extract_min : t -> elt * t
   val bindings : t -> elt list
   val print : t -> unit
+  val iter : (elt -> unit) -> t -> unit
 end;;
 
 module Make = (TasCore : TasAbstract);;
