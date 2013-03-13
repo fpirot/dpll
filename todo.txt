@@ -1,0 +1,1 @@
+Modifier le type cls dans oper en int * Elt.cls -> on modifie le int pendant la propagation pour gagne du temps.
