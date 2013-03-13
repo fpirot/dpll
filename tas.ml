@@ -79,6 +79,10 @@ struct
   let rec iter f = function
     |Nil -> ()
     |N(x, fg, fd) -> f (fst x); iter f fg; iter f fd
+
+  let rec fold f t a = match t with
+    |Nil -> a
+    |N (x, fg, fd) -> fold f fd (fold f fg (f (fst x) a))
 end;;
 
 module type TasAbstract = functor (A: A) ->
@@ -95,6 +99,7 @@ sig
   val bindings : t -> elt list
   val print : t -> unit
   val iter : (elt -> unit) -> t -> unit
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
 end;;
 
 module Make = (TasCore : TasAbstract);;
