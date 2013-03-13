@@ -1,9 +1,15 @@
-module type Core =
+module type CoreElt =
   sig
+    val heur : string
     val ord : (int * int) list
   end;;
 
-module OrderCore = functor (Cor : Core) ->
+module type HeurElt =
+  sig
+    val random : 'a list -> 'a list
+  end;;
+
+module OrderCore = functor (Cor : CoreElt) -> functor (Heur : HeurElt) ->
   struct
     
     let debug = false
@@ -23,7 +29,8 @@ module OrderCore = functor (Cor : Core) ->
       if debug then begin
         print_string "Order: ";
         List.iter (fun x -> print_int (snd x); print_char ' ') l;
-        print_string "\n\n" end; l
+        print_string "\n\n" end;
+      if Cor.heur = "Rand" then Heur.random l else l
         
     let is_empty l = l = []
     
@@ -31,7 +38,7 @@ module OrderCore = functor (Cor : Core) ->
   
   end;;
 
-module type OrderAbstract = functor (Cor : Core) ->
+module type OrderAbstract = functor (Cor : CoreElt) -> functor (Heur : HeurElt) ->
   sig 
     type order
     val create : unit -> order

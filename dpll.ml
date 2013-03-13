@@ -1,5 +1,6 @@
 module Core = Core.Make;;
-module Order = Order.Make (Core);;
+module Heur = Heur.Make;;
+module Order = Order.Make (Core) (Heur);;
 module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
