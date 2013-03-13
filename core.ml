@@ -59,8 +59,6 @@ end;;
 module Core =
   struct
     
-    type order = (int * int) list
-    
     let debug = false
     
     let (wlit, heur, path) =
@@ -92,44 +90,22 @@ module Core =
         print_string "Assignment: ";
         Array.iter (fun x -> print_int x; print_char ' ') assigArray;
         print_string "\n\n" end
-    
-    
-    let hd l = snd (List.hd l)
-    
-    let tl l =if debug then begin
-        print_string "Order: ";
-        List.iter (fun x -> print_int (snd x); print_char ' ') (List.tl l);
-        print_string "\n\n" end; List.tl l
-        
-    let update x y l = 
-      if debug then begin
-        print_string "Order: ";
-        List.iter (fun x -> print_int (snd x); print_char ' ') l;
-        print_string "\n\n" end; l
-        
-    let is_empty l = l = []
-    
+
     let fold = List.fold_right
-    
     
   end;;
 
 module type Abstract =
   sig
-    type order
     val var : int
     val cls : int
     val lst : int list list
-    val ord : order
+    val ord : (int * int) list
     val wlit : bool
     val heur : string
     val read : int -> int
     val write : int -> unit
     val reset : int -> unit
-    val hd : order -> int
-    val tl : order -> order
-    val update : int -> int -> order -> order
-    val is_empty : order -> bool
     val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 

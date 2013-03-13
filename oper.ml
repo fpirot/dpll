@@ -3,16 +3,19 @@
 
 module type CoreElt =
 sig
-  type order
-  type heuristic
-  val heur : heuristic
+  val wlit : bool
   val lst : int list list
-  val ord : order
-  val hd : order -> int
-  val tl : order -> order
   val read : int -> int
   val write : int -> unit
   val reset : int -> unit
+end;;
+
+module type OrderElt =
+sig
+  type order
+  val create : unit -> order
+  val hd : order -> int
+  val tl : order -> order
   val update : int -> int -> order -> order
   val is_empty : order -> bool
 end;;
@@ -52,10 +55,10 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: WlitElt) ->
+module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
 struct
   
-  type env = {clause: Elt.map; order: Cor.order}
+  type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
   let debug = false
@@ -67,7 +70,7 @@ struct
     print_string "["; print l
 
   let create () = 
-    {clause = Elt.create Cor.lst; order = Cor.ord}
+    {clause = Elt.create Cor.lst; order = Ord.create ()}
 
 
 
@@ -95,19 +98,19 @@ struct
   (* choisit la variable sur laquelle faire le prochain pari, en
      fonction de l'heuristique en cours. *)
   let rec choice ord =
-    if Cor.is_empty ord then raise Elt.Satisfiable
-    else let x = Cor.hd ord in
-	 if Cor.read x = 0 then x else choice (Cor.tl ord)
+    if Ord.is_empty ord then raise Elt.Satisfiable
+    else let x = Ord.hd ord in
+	 if Cor.read x = 0 then x else choice (Ord.tl ord)
 
 (* Extrait une variable selon l'ordre *)
 let split env =
   let k = choice env.order in
   let (ltrue, mtrue) = Elt.extract k env.clause
   and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = Cor.tl env.order}),
-   (lfalse, {clause = mfalse; order = Cor.tl env.order}))
+  (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
+   (lfalse, {clause = mfalse; order = Ord.tl env.order}))
 	 
-  let is_empty env = Cor.is_empty env.order
+  let is_empty env = Ord.is_empty env.order
 
   let select lc setv =
     List.fold_right (fun c s -> let x = Elt.is_singleton c in
@@ -173,14 +176,14 @@ let split env =
     
   let bindings env = Elt.bindings env.clause
 
-  let update env = {clause = env.clause; order = Cor.update 0 0 env.order}
+  let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
 
   let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
 
 
-module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Wlit: WlitElt) ->
+module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
 
 sig
   type env
