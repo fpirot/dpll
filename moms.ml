@@ -25,6 +25,7 @@ sig
   val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
   val iter : (elt -> unit) -> t -> unit
   val extract_min : t -> elt * t
+  val build : elt list -> t
 end;;
 
 
@@ -51,7 +52,8 @@ struct
 
   let update_tas t = 
     let n = find_size_min () in
-    Tas.fold (fun x t -> Tas.add (poids.(n).(snd x),snd x) t) t Tas.empty
+    let l = Tas.fold (fun x l -> (poids.(n).(snd x),snd x) :: l) t []
+    in Tas.build l
 (* Actualise le tas qui correspond à l'ordre, selon les nouvelles valeurs de poids. *)
 
 end;;
