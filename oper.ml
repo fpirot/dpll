@@ -31,7 +31,7 @@ sig
   val is_singleton : cls -> int
   val find : int -> map -> cls list
   val choose : cls -> int
-  val clause : int -> cls
+  val cls_make : int -> cls
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
@@ -163,7 +163,7 @@ let split env =
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause ; order = env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = env.order} setv'
     in aux env (Wlit.singleton x)
 
     

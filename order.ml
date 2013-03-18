@@ -18,10 +18,9 @@ end;;
 module type Clause =
 sig
   type cls
-  type elt = int
   val length : cls -> int
-  val clause : int -> cls
-  val cls_fold : (elt -> 'a -> 'a) -> cls -> 'a -> 'a
+  val cls_make : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;  
 
 module OrderCore = functor (Clause: Clause) -> functor (Cor: CoreElt) ->

@@ -26,11 +26,11 @@ struct
     
   module St = Set.Make
     (struct
-      type t = int
-      let compare = compare
+      type t = int * int
+      let compare x y = compare (fst x) (fst y)
      end)
-  (* Une structure d'ensemble d'entiers avec la comparaison
-     habituelle. *)
+  (* Une structure d'ensemble de représentants de clause, comparés
+     seulement sur leur indice = premier élément du couple. *)
     
   module Mp = Map.Make
     (struct
@@ -56,7 +56,10 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
     
-  type cls = int * Elt.cls
+  type cls = int * int
+  (* représentation d'une clause par (id, p) où id est son indice dans
+     le tableau référent, et p est sa longueur effective, en retirant les
+     litéraux d'assignation vraie de cette clause. *)
   type clause = Cls.t
   type set = St.t
   type map = St.t Mp.t
@@ -64,19 +67,27 @@ struct
   let empty = Mp.empty
   (* Table d'association vide. *)
 
-  let clause id = id
+  let length cls = snd cls
+
+  let clause cls = clauseArray.(fst cls)
+
+  let cls_make id = id, Cls.cardinal clauseArray.(id)
 
   let fill l =
     incr compt;
     clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
     if debug then begin
     end;
-    !compt
+    cls_make !compt
   (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
-      
-  let add id map =
+
+  let clause cls = clauseArray.(fst cls)
+
+  let cls_make id = id, Cls.cardinal clauseArray.(id)
+
+  let add cls map =
     Cls.fold (fun x m -> let s = try Mp.find x m with _ -> St.empty in
-			 Mp.add x (St.add id s) m) clauseArray.(id) map
+			 Mp.add x (St.add cls s) m) (clause cls) map
   (* Ajoute la clause d'indice id dans la table d'association. *)
       
   let reset () =
@@ -100,7 +111,7 @@ struct
       
   let is_empty = Mp.is_empty
   (* Teste si la table d'association est vide. *)
-
+(*
   let is_singleton id = 
     try (
       match Cls.fold 
@@ -113,9 +124,15 @@ struct
 	|x -> x
     )
     with Failure "is_not" -> 0
+*)
 
+  exception Val of int
+  let is_singleton cls =
+    if snd cls <> 1 then 0
+    else try Cls.fold (fun x v -> if Elt.read x = 0 then raise (Val x) else 0) (clause cls) 0
+      with Val x -> x
   (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
-     encore assigné quand il est bien unique, 0 sinon.  Lève
+     encore assigné quand il est bien unique, 0 sinon. Lève
      l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
   let mem = Mp.mem
@@ -123,19 +140,19 @@ struct
      clauses. *)
 
   let literals id = Cls.elements clauseArray.(id)
-  (* Donne les elements d'une clause *)
+  (* Donne les elements de la clause associée à l'indice id *)
 
-  let remove id map =
-    Cls.fold (fun x m -> try (Mp.add x (St.remove id (Mp.find x m)) m) with Not_found -> m) clauseArray.(id) map
+  let remove cls map =
+    Cls.fold (fun x m -> try (Mp.add x (St.remove cls (Mp.find x m)) m) with Not_found -> m) (clause cls) map
   (* Supprime une clause de la map *)
 
   let bindings m = let lst = Mp.bindings m in
 		   List.map (fun (k, s) ->
-		     (k, List.map (fun id -> Cls.elements clauseArray.(id)) (St.elements s))) lst
+		     (k, List.map (fun cls -> Cls.elements (clause cls)) (St.elements s))) lst
   (* Affichage des éléments de la table d'association sous forme de
      liste. *)
 		     
-  let elements id = Cls.elements clauseArray.(id)
+  let elements cls = Cls.elements (clause cls)
   (* Affichage des éléments d'une clause sous forme de liste. *)
 
   (*let extract x map = let s = Mp.find x map and m = remove x map
@@ -146,7 +163,7 @@ struct
     let m = St.fold (fun id m -> remove id m) s map in
     if debug then begin
       print_string "Extraction:\n";
-      List.iter (fun x ->
+      List.iter (fun (x,y) ->
 	print_int x;
 	print_string ": ";
 	print_list (Cls.elements clauseArray.(x));
@@ -169,11 +186,11 @@ struct
    litéral (lorsque l'on donne à une variable une assignation
    particulière). *)
 
-  let choose id = Cls.choose clauseArray.(id)
+  let choose cls = Cls.choose (clause cls)
     
   let find x m = try St.elements (Mp.find x m) with _ -> []
 
-  let cls_fold f id a = Cls.fold f clauseArray.(id) a
+  let cls_fold f cls a = Cls.fold f (clause cls) a
    
 end;;
 
@@ -184,6 +201,7 @@ sig
   type set
   type cls
   val empty : map
+  val length : cls -> int
   val fill : int list -> cls
   val add : cls -> map -> map
   val create : int list list -> map
@@ -198,7 +216,7 @@ sig
   val extract : int -> map -> cls list * map
   val choose : cls -> int
   val find : int -> map -> cls list
-  val clause : int -> cls
+  val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
