@@ -4,43 +4,48 @@ module type CoreElt =
     val ord : (int * int) list
   end;;
 
-module type HeurElt =
+module type Heur =
   sig
     type order
-    (*val create : (int * int) list -> string -> order*)
-    val random : 'a list -> 'a list
+    val create : unit -> order
+    val hd : order -> int
+    val tl : order -> order
+    val update : order -> order
+    val is_empty : order -> bool
   end;;
 
-module OrderCore = functor (Cor : CoreElt) -> functor (Heur : HeurElt) ->
+module OrderCore = functor (Cor : CoreElt) ->
   struct
     
-    let debug = false
+    module Rand = Rand.Make (Cor)
+    module Default = Default.Make (Cor)
     
-    type order = (int * int) list
+    type order = Default of Default.order | Rand of Rand.order
     
-    let create () = Cor.ord(*Heur.create Cor.ord Cor.heur*)
+    let create () = match Cor.heur with
+      | "Rand" -> Rand (Rand.create ())
+      | _ -> Default (Default.create ())
     
-    let hd l = snd (List.hd l)
+    let hd = function
+      | Default (ord) -> Default.hd ord
+      | Rand (ord) -> Rand.hd ord
     
-    let tl l =if debug then begin
-        print_string "Order: ";
-        List.iter (fun x -> print_int (snd x); print_char ' ') (List.tl l);
-        print_string "\n\n" end; List.tl l
-        
-    let update x y l = 
-      if debug then begin
-        print_string "Order: ";
-        List.iter (fun x -> print_int (snd x); print_char ' ') l;
-        print_string "\n\n" end;
-      if Cor.heur = "Rand" then Heur.random l else l
-        
-    let is_empty l = l = []
+    let tl = function
+      | Default (ord) -> Default (Default.tl ord)
+      | Rand (ord) -> Rand (Rand.tl ord)
     
-    let fold = List.fold_right
-  
+    let update x y = function
+      | Default (ord) -> Default (Default.update x y ord)
+      | Rand (ord) -> Rand (Rand.update x y ord)
+    
+    let is_empty = function
+      | Default (ord) -> Default.is_empty ord
+      | Rand (ord) -> Rand.is_empty ord
+    
   end;;
 
-module type OrderAbstract = functor (Cor : CoreElt) -> functor (Heur : HeurElt) ->
+
+module type OrderAbstract = functor (Cor : CoreElt) ->
   sig 
     type order
     val create : unit -> order
@@ -48,7 +53,6 @@ module type OrderAbstract = functor (Cor : CoreElt) -> functor (Heur : HeurElt) 
     val tl : order -> order
     val update : int -> int -> order -> order
     val is_empty : order -> bool
-    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   end;;
 
 module Make = (OrderCore : OrderAbstract);;
