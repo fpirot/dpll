@@ -1,10 +1,9 @@
 module type Clause =
 sig
   type cls
-  type elt = int
   val length : cls -> int
-  val clause : int -> cls
-  val cls_fold : (elt -> 'a -> 'a) -> cls -> 'a -> 'a
+  val cls_make : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
 module type Core =
@@ -53,8 +52,8 @@ struct
 
   let create () =
     let rec make_list l = function
-      |0 -> Elt.clause 0 :: l
-      |n -> make_list (Elt.clause (n-1) :: l) (n-1) in
+      |0 -> Elt.cls_make 0 :: l
+      |n -> make_list (Elt.cls_make (n-1) :: l) (n-1) in
     let l = make_list [] Cor.var in
     add l Map.empty
     

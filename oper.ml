@@ -24,14 +24,14 @@ end;;
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  type cls
+  type cls = int*int
   type map
   val empty : map
   val create : int list list -> map
   val is_singleton : cls -> int
   val find : int -> map -> cls list
   val choose : cls -> int
-  val clause : int -> cls
+  val cls_make : int -> cls
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
@@ -41,9 +41,10 @@ end;;
 module type WlitElt =
 sig
   type set
-  val update : int -> set * set
+  type setc
+  val update : int -> set * setc
   val init : unit -> unit
-  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
+  val fold : (int * int -> 'a -> 'a) -> setc -> 'a -> 'a
   val choose : set -> int
   val singleton : int -> set
   val empty : set
@@ -69,8 +70,6 @@ struct
 
   let create () = 
     {clause = Elt.create Cor.lst; order = Ord.create ()}
-
-
 
   let (propag, flush, restore, reset) = 
     let lst = ref []
@@ -101,12 +100,12 @@ struct
 	 if Cor.read x = 0 then x else choice order
 
 (* Extrait une variable selon l'ordre *)
-let split env =
-  let (k, ord) = Ord.extract env.order in
-  let (ltrue, mtrue) = Elt.extract k env.clause
-  and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = ord}),
-   (lfalse, {clause = mfalse; order = ord}))
+  let split env =
+    let (k, ord) = Ord.extract env.order in
+    let (ltrue, mtrue) = Elt.extract k env.clause
+    and (lfalse, mfalse) = Elt.extract (-k) env.clause in
+    (k, (ltrue, {clause = mtrue; order = ord}),
+     (lfalse, {clause = mfalse; order = ord}))
 	 
   let is_empty env = Ord.is_empty env.order
 
@@ -163,7 +162,7 @@ let split env =
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause ; order = env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove c m) ssat env.clause ; order = env.order} setv'
     in aux env (Wlit.singleton x)
 
     
@@ -176,7 +175,7 @@ let split env =
 (*
   let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
 *)
-  let init () = if Cor.wlit then Wlit.init () else ()
+  let init () = if Cor.wlit then Wlit.init ()
 
 end;;
 

@@ -1,4 +1,4 @@
-/!\ Une des dernières modifs fait foirer l'algo -> retrouver à partir de quel commit, et corriger tout ça...
+dans oper : les ensembles de clauses doivent être de type int set
 
 partout : gérer la dynamique des tailles de clauses
 

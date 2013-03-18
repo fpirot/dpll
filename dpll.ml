@@ -25,7 +25,7 @@ let verify lst =
 
 let dpll env = 
   let rec aux env =
-    let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
+    let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split env in
     try (
       if debug then begin
 	print_string "Gamble: ";
