@@ -1,6 +1,5 @@
 module Core = Core.Make;;
-module Heur = Heur.Make;;
-module Order = Order.Make (Core) (Heur);;
+module Order = Order.Make (Core);;
 module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
@@ -69,10 +68,9 @@ let dpll env =
 let t = Sys.time() in
 (try dpll (Oper.create ()) with 
   |Clause.Satisfiable -> 
-    print_string "\nL'instance est satisfiable, voilà une assignation des variables possible :\n";
+    print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
-    print_newline();
-    if verify Core.lst then print_string "Youpi !\n" else print_string "Hum, c'est embarrassant...\n"
+    print_newline()
   |Clause.Unsatisfiable ->
-    print_string "\nL'instance n'est pas satisfiable.\n");
-print_string "Résultat trouvé en "; print_float (Sys.time() -. t); print_string " secondes.\n\n";;
+    print_string "s UNSATISFIABLE\n");
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
