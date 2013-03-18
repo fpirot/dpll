@@ -1,18 +1,18 @@
 
 module type Clause =
 sig
-  exception Unsatisfiable
   val literals :int -> int list
 end;;
 
-module type Assig =
+module type Core =
 sig
+  exception Unsatisfiable
   val cls : int
   val var : int
   val read : int -> int
 end;;
 
-module WlitCore = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+module WlitCore = functor (Elt: Clause) -> functor (Assig: Core) -> 
 struct
 
   module St = Set.Make (
@@ -62,7 +62,7 @@ struct
   let watched_literals_of_clause id lbord lsat =
     let l = Elt.literals id in
     let rec aux w1 w2 = function
-      |[] -> if w1 = 0 then raise Elt.Unsatisfiable
+      |[] -> if w1 = 0 then raise Assig.Unsatisfiable
 	(* Si on n'a trouvé aucun litéral à surveiller, la clause
 	   n'est pas satisfiable avec la valuation actuelle. *)
 	else (lbord := St.add w1 !lbord; (w1,0))
@@ -126,7 +126,7 @@ struct
   let remove = St.remove
 end;;
 
-module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Core) -> 
 sig
   type set
   val update : int -> set * set

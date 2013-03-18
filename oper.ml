@@ -17,7 +17,6 @@ sig
   type order
   val create : unit -> order
   val extract : order -> int * order
-  val update : int -> int -> order -> order
   val is_empty : order -> bool
 end;;
 
@@ -174,9 +173,9 @@ let split env =
 
     
   let bindings env = Elt.bindings env.clause
-
+(*
   let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
-
+*)
   let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
@@ -196,7 +195,6 @@ sig
   val is_empty : env -> bool
   val propagation : env -> cls list -> int -> env
   val bindings : env -> (int * int list list) list
-  val update : env -> env
   val init : unit -> unit
 end;;
 

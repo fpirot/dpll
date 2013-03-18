@@ -24,7 +24,7 @@ sig
   val cls_fold : (elt -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;  
 
-module OrderCore = functor (Cor: CoreElt) -> functor (Clause: Clause) ->
+module OrderCore = functor (Clause: Clause) -> functor (Cor: CoreElt) ->
 struct
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
@@ -77,7 +77,7 @@ struct
 end;;
 
 
-module type OrderAbstract = functor (Cor : CoreElt) -> functor (Clause: Clause) ->
+module type OrderAbstract = functor (Clause: Clause) -> functor (Cor : CoreElt) ->
   sig 
     type order
     val create : unit -> order

@@ -45,8 +45,6 @@ struct
      stocker des indices dans nos structures de données plutôt que des
      clauses. *)
 
-  let clause id = id
-    
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
@@ -58,14 +56,16 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
     
-  type cls = int
+  type cls = int * Elt.cls
   type clause = Cls.t
   type set = St.t
   type map = St.t Mp.t
       
   let empty = Mp.empty
   (* Table d'association vide. *)
-    
+
+  let clause id = id
+
   let fill l =
     incr compt;
     clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
