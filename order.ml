@@ -26,7 +26,6 @@ end;;
 
 module OrderCore = functor (Cor: CoreElt) -> functor (Clause: Clause) ->
 struct
-  
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
   module Moms = Moms.Make (Clause) (Cor)
@@ -53,25 +52,38 @@ struct
     | Rand (ord) -> Rand (Rand.update x y ord)
 *)
   let extract = function
-    | Default (ord) -> Default.extract ord
-    | Rand (ord) -> Rand.extract ord
-    | Moms (ord) -> Moms.extract ord
-    | Dlis (ord) -> Dlis.extract ord
+    | Default (ord) -> let (x,order) = Default.extract ord in (x, Default (order))
+    | Rand (ord) -> let (x,order) = Rand.extract ord in (x, Rand (order))
+    | Moms (ord) -> let (x,order) = Moms.extract ord in (x, Moms (order))
+    | Dlis (ord) -> let (x,order) = Dlis.extract ord in (x, Dlis (order))
       
   let is_empty = function
     | Default (ord) -> Default.is_empty ord
     | Rand (ord) -> Rand.is_empty ord
     | Moms (ord) -> Moms.is_empty ord
     | Dlis (ord) -> Dlis.is_empty ord
+
+  let add l = function
+    | Default (ord) -> Default (ord)
+    | Rand (ord) -> Rand (ord)
+    | Moms (ord) -> Moms (Moms.add l ord)
+    | Dlis (ord) -> Dlis (Dlis.add l ord)
       
+  let remove l = function
+    | Default (ord) -> Default (ord)
+    | Rand (ord) -> Rand (ord)
+    | Moms (ord) -> Moms (Moms.remove l ord)
+    | Dlis (ord) -> Dlis (Dlis.remove l ord)
 end;;
 
 
-module type OrderAbstract = functor (Cor : CoreElt) ->
+module type OrderAbstract = functor (Cor : CoreElt) -> functor (Clause: Clause) ->
   sig 
     type order
     val create : unit -> order
-    val extract : oder -> int * order
+    val extract : order -> int * order
+    val add : Clause.cls list -> order -> order
+    val remove : Clause.cls list -> order -> order
     val is_empty : order -> bool
   end;;
 
