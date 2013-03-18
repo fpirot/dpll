@@ -2,7 +2,9 @@
 (* Module d'implementation des clauses. *)
 
 module type ClauseElt =
-sig
+sig 
+  exception Unsatisfiable
+  exception Satisfiable
   val cls : int
   val read : int -> int
   val write : int -> unit
@@ -11,9 +13,6 @@ end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
 struct
-
-  exception Unsatisfiable
-  exception Satisfiable
 
   module Cls = Set.Make
     (struct
@@ -60,6 +59,7 @@ struct
     print_string "["; print l
     
   type cls = int
+  type clause = Cls.t
   type set = St.t
   type map = St.t Mp.t
       
@@ -109,7 +109,7 @@ struct
           |(0, _) -> failwith "is_not"
           |(_, y) -> y) clauseArray.(id) 0
       with
-	|0 -> raise Unsatisfiable
+	|0 -> raise Elt.Unsatisfiable
 	|x -> x
     )
     with Failure "is_not" -> 0
@@ -164,23 +164,24 @@ struct
       print_newline();
     end;
     (St.elements s, Mp.remove x m)
-      
-  let choose id = Cls.choose clauseArray.(id)
-    
-  let find x m = try St.elements (Mp.find x m) with _ -> []
-(* Renvoie la liste de toutes les clauses attachées à un litéral, et
+   (* Renvoie la liste de toutes les clauses attachées à un litéral, et
    la table d'association privée de ces clauses et de la négation du
    litéral (lorsque l'on donne à une variable une assignation
    particulière). *)
+
+  let choose id = Cls.choose clauseArray.(id)
     
+  let find x m = try St.elements (Mp.find x m) with _ -> []
+
+  let cls_fold f id a = Cls.fold f clauseArray.(id) a
+   
 end;;
 
 
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
 sig
-  exception Unsatisfiable
-  exception Satisfiable
   type map
+  type set
   type cls
   val empty : map
   val fill : int list -> cls
@@ -198,6 +199,7 @@ sig
   val choose : cls -> int
   val find : int -> map -> cls list
   val clause : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
 module Make = (ClauseCore : ClauseAbstract);;

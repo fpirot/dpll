@@ -3,6 +3,8 @@
 
 module type CoreElt =
 sig
+  exception Satisfiable
+  exception Unsatisfiable 
   val wlit : bool
   val lst : int list list
   val read : int -> int
@@ -14,8 +16,7 @@ module type OrderElt =
 sig
   type order
   val create : unit -> order
-  val hd : order -> int
-  val tl : order -> order
+  val extract : order -> int * order
   val update : int -> int -> order -> order
   val is_empty : order -> bool
 end;;
@@ -24,8 +25,6 @@ end;;
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  exception Satisfiable
-  exception Unsatisfiable 
   type cls
   type map
   val empty : map
@@ -91,24 +90,24 @@ struct
 	 print_newline()
        end;
        List.iter (fun x -> Cor.reset x)
-	 (try List.hd (!lst) with Failure _ -> raise Elt.Unsatisfiable);
+	 (try List.hd (!lst) with Failure _ -> raise Cor.Unsatisfiable);
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
   (* choisit la variable sur laquelle faire le prochain pari, en
      fonction de l'heuristique en cours. *)
   let rec choice ord =
-    if Ord.is_empty ord then raise Elt.Satisfiable
-    else let x = Ord.hd ord in
-	 if Cor.read x = 0 then x else choice (Ord.tl ord)
+    if Ord.is_empty ord then raise Cor.Satisfiable
+    else let (x, order) = Ord.extract ord in
+	 if Cor.read x = 0 then x else choice order
 
 (* Extrait une variable selon l'ordre *)
 let split env =
-  let k = choice env.order in
+  let (k, ord) = Ord.extract env.order in
   let (ltrue, mtrue) = Elt.extract k env.clause
   and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
-   (lfalse, {clause = mfalse; order = Ord.tl env.order}))
+  (k, (ltrue, {clause = mtrue; order = ord}),
+   (lfalse, {clause = mfalse; order = ord}))
 	 
   let is_empty env = Ord.is_empty env.order
 

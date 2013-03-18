@@ -40,7 +40,7 @@ let dpll env =
       (* On stocke l'ensemble des assignations effectuées avec le pari
 	 x, pour gérer le backtrack. *)
       aux env')
-    with Clause.Unsatisfiable -> 
+    with Core.Unsatisfiable -> 
       try (
 	Oper.flush();
 	(* On stocke les assignations qui étaient en cours. *)
@@ -56,9 +56,9 @@ let dpll env =
 	let env' = Oper.propagation envfalse ltrue (-x) in
 	Oper.flush();
 	aux env')
-      with Clause.Unsatisfiable -> (Oper.restore(); 
+      with Core.Unsatisfiable -> (Oper.restore(); 
 				    (* On annule les dernières assignations. *)
-				    raise Clause.Unsatisfiable)
+				    raise Core.Unsatisfiable)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   aux env;;
@@ -67,10 +67,10 @@ let dpll env =
 
 let t = Sys.time() in
 (try dpll (Oper.create ()) with 
-  |Clause.Satisfiable -> 
+  |Core.Satisfiable -> 
     print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline()
-  |Clause.Unsatisfiable ->
+  |Core.Unsatisfiable ->
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
