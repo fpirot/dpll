@@ -70,7 +70,8 @@ let t = Sys.time() in
   |Core.Satisfiable -> 
     print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
-    print_newline()
+    print_newline();
+    if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
   |Core.Unsatisfiable ->
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
