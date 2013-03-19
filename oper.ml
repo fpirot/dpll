@@ -143,8 +143,8 @@ struct
 	   une liste, afin de désassigner convenablement lors du
 	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and (_, m) = Elt.extract x env.clause
-	and lc' = Elt.find (-x) env.clause in
+	and (_, m) = Elt.extract x env.clause in
+	let lc' = Elt.find (-x) m in
 	aux {clause = m; order = env.order} lc' setv'
       end
     in aux env lc Wlit.empty

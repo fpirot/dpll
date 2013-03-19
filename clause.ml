@@ -112,13 +112,13 @@ struct
   let is_empty = Mp.is_empty
   (* Teste si la table d'association est vide. *)
 (*
-  let is_singleton id = 
+  let is_singleton cls = 
     try (
       match Cls.fold 
 	(fun x v -> match (Elt.read x, v) with
           |(0, 0) -> x
           |(0, _) -> failwith "is_not"
-          |(_, y) -> y) clauseArray.(id) 0
+          |(_, y) -> y) (clause cls) 0
       with
 	|0 -> raise Elt.Unsatisfiable
 	|x -> x
@@ -158,33 +158,39 @@ struct
   (*let extract x map = let s = Mp.find x map and m = remove x map
     in (St.elements s, m)*)
     
+  let decr_size cls = if snd cls > 1 then (fst cls, snd cls - 1) else failwith "Unsatisfiable"
+
   let extract x map = 
     let s = try Mp.find x map with _ -> St.empty in
-    let m = St.fold (fun id m -> remove id m) s map in
-    if debug then begin
-      print_string "Extraction:\n";
-      List.iter (fun (x,y) ->
-	print_int x;
-	print_string ": ";
-	print_list (Cls.elements clauseArray.(x));
-	print_newline())
-        (St.elements s);
-      print_newline ();
-      print_string "New map:\n";
-      List.iter 
-	(fun (x, lst) ->
-          if lst <> [] then begin
-	    print_int x;
-	    print_string ": ";
-	    List.iter (fun l -> print_list l; print_char ' ') lst;
-	    print_newline() end) (bindings (Mp.remove x m));
-      print_newline();
-    end;
-    (St.elements s, Mp.remove x m)
-   (* Renvoie la liste de toutes les clauses attachées à un litéral, et
-   la table d'association privée de ces clauses et de la négation du
-   litéral (lorsque l'on donne à une variable une assignation
-   particulière). *)
+    let m = St.fold (fun cls m -> remove cls m) s map in
+    (* On retire toutes les clauses attachées au litéral x de la map. *)
+    let s1 = try Mp.find (-x) map with _ -> St.empty in
+    let s2 = St.fold (fun c s -> St.add (decr_size c) s) s1 St.empty in
+    let m1 = if St.is_empty s2 then m else Mp.add (-x) s2 m in
+      if debug then begin
+	print_string "Extraction:\n";
+	List.iter (fun (x,y) ->
+	  print_int x;
+	  print_string ": ";
+	  print_list (Cls.elements clauseArray.(x));
+	  print_newline())
+          (St.elements s);
+	print_newline ();
+	print_string "New map:\n";
+	List.iter 
+	  (fun (x, lst) ->
+            if lst <> [] then begin
+	      print_int x;
+	      print_string ": ";
+	      List.iter (fun l -> print_list l; print_char ' ') lst;
+	      print_newline() end) (bindings (Mp.remove x m));
+	print_newline();
+      end;
+      (St.elements s, Mp.remove x m1)
+  (* Renvoie la liste de toutes les clauses attachées à un litéral, et
+     la table d'association privée de ces clauses et de la négation du
+     litéral (lorsque l'on donne à une variable une assignation
+     particulière). *)
 
   let choose cls = Cls.choose (clause cls)
     
