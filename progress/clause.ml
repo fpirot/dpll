@@ -3,6 +3,8 @@
 
 module type ClauseElt =
 sig
+  exception Satisfiable
+  exception Unsatisfiable
   val cls : int
   val read : int -> int
   val write : int -> unit
@@ -11,9 +13,6 @@ end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
 struct
-
-  exception Unsatisfiable
-  exception Satisfiable
 
   module Cls = Set.Make
     (struct
@@ -46,7 +45,7 @@ struct
      stocker des indices dans nos structures de données plutôt que des
      clauses. *)
 
-  let clause id = id
+  let clause id = clauseArray.(id)
     
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
@@ -65,6 +64,12 @@ struct
       
   let empty = Mp.empty
   (* Table d'association vide. *)
+
+  let cls_make id = id
+
+  let length id = Cls.fold (fun x t -> if Elt.read x = 0 then t+1 else t) (clause id) 0
+
+  let cls_fold f id a = Cls.fold f (clause id) a
     
   let fill l =
     incr compt;
@@ -109,7 +114,7 @@ struct
           |(0, _) -> failwith "is_not"
           |(_, y) -> y) clauseArray.(id) 0
       with
-	|0 -> raise Unsatisfiable
+	|0 -> raise Elt.Unsatisfiable
 	|x -> x
     )
     with Failure "is_not" -> 0
@@ -178,8 +183,6 @@ end;;
 
 module type ClauseAbstract = functor (Elt : ClauseElt) ->
 sig
-  exception Unsatisfiable
-  exception Satisfiable
   type map
   type cls
   val empty : map
@@ -197,7 +200,9 @@ sig
   val extract : int -> map -> cls list * map
   val choose : cls -> int
   val find : int -> map -> cls list
-  val clause : int -> cls
+  val length : cls -> int
+  val cls_make : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
 module Make = (ClauseCore : ClauseAbstract);;

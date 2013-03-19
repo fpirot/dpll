@@ -48,7 +48,7 @@ struct
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -76,8 +76,6 @@ struct
   let fill l =
     incr compt;
     clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
-    if debug then begin
-    end;
     cls_make !compt
   (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
 
@@ -166,18 +164,23 @@ struct
     (* On retire toutes les clauses attachées au litéral x de la map. *)
     let s1 = try Mp.find (-x) map with _ -> St.empty in
     let s2 = St.fold (fun c s -> St.add (decr_size c) s) s1 St.empty in
+      if debug then begin
+	List.iter (fun (x,y) -> print_int x; print_string ","; print_int y; print_string "; ") (St.elements s1);
+	List.iter (fun (x,y) -> print_int x; print_string ","; print_int y; print_string "; ") (St.elements s2);
+	print_newline()
+      end;
     let m1 = if St.is_empty s2 then m else Mp.add (-x) s2 m in
       if debug then begin
 	print_string "Extraction:\n";
-	List.iter (fun (x,y) ->
-	  print_int x;
+	List.iter (fun cls ->
+	  print_int (fst cls); print_string ", "; print_int (snd cls);
 	  print_string ": ";
-	  print_list (Cls.elements clauseArray.(x));
+	  print_list (Cls.elements (clause cls));
 	  print_newline())
           (St.elements s);
 	print_newline ();
 	print_string "New map:\n";
-	List.iter 
+	List.iter
 	  (fun (x, lst) ->
             if lst <> [] then begin
 	      print_int x;

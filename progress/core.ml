@@ -62,6 +62,9 @@ end;;
 
 module Core =
   struct
+
+    exception Satisfiable
+    exception Unsatisfiable
     
     let debug = false
     
@@ -101,6 +104,8 @@ module Core =
 
 module type Abstract =
   sig
+    exception Satisfiable
+    exception Unsatisfiable
     val var : int
     val cls : int
     val lst : int list list

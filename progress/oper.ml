@@ -3,6 +3,8 @@
 
 module type CoreElt =
 sig
+  exception Satisfiable
+  exception Unsatisfiable 
   val wlit : bool
   val lst : int list list
   val read : int -> int
@@ -14,9 +16,7 @@ module type OrderElt =
 sig
   type order
   val create : unit -> order
-  val hd : order -> int
-  val tl : order -> order
-  val update : int -> int -> order -> order
+  val extract : order -> int * order
   val is_empty : order -> bool
 end;;
 
@@ -24,8 +24,6 @@ end;;
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  exception Satisfiable
-  exception Unsatisfiable 
   type cls
   type map
   val empty : map
@@ -33,7 +31,7 @@ sig
   val is_singleton : cls -> int
   val find : int -> map -> cls list
   val choose : cls -> int
-  val clause : int -> cls
+  val cls_make : int -> cls
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
@@ -91,24 +89,17 @@ struct
 	 print_newline()
        end;
        List.iter (fun x -> Cor.reset x)
-	 (try List.hd (!lst) with Failure _ -> raise Elt.Unsatisfiable);
+	 (try List.hd (!lst) with Failure _ -> raise Cor.Unsatisfiable);
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
-  (* choisit la variable sur laquelle faire le prochain pari, en
-     fonction de l'heuristique en cours. *)
-  let rec choice ord =
-    if Ord.is_empty ord then raise Elt.Satisfiable
-    else let x = Ord.hd ord in
-	 if Cor.read x = 0 then x else choice (Ord.tl ord)
-
 (* Extrait une variable selon l'ordre *)
 let split env =
-  let k = choice env.order in
+  let k, ord = Ord.extract env.order in
   let (ltrue, mtrue) = Elt.extract k env.clause
   and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = Ord.tl env.order}),
-   (lfalse, {clause = mfalse; order = Ord.tl env.order}))
+  (k, (ltrue, {clause = mtrue; order = ord}),
+   (lfalse, {clause = mfalse; order = ord}))
 	 
   let is_empty env = Ord.is_empty env.order
 
@@ -165,7 +156,7 @@ let split env =
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.clause c) m) ssat env.clause ; order = env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = env.order} setv'
     in aux env (Wlit.singleton x)
 
     
@@ -175,9 +166,9 @@ let split env =
 
     
   let bindings env = Elt.bindings env.clause
-
+(*
   let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
-
+*)
   let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
@@ -197,7 +188,6 @@ sig
   val is_empty : env -> bool
   val propagation : env -> cls list -> int -> env
   val bindings : env -> (int * int list list) list
-  val update : env -> env
   val init : unit -> unit
 end;;
 

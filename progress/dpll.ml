@@ -1,6 +1,6 @@
 module Core = Core.Make;;
-module Order = Order.Make (Core);;
 module Clause = Clause.Make (Core);;
+module Order = Order.Make (Clause) (Core);;
 module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
 
@@ -25,7 +25,7 @@ let verify lst =
 
 let dpll env = 
   let rec aux env =
-    let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split (Oper.update env) in
+    let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split env in
     try (
       if debug then begin
 	print_string "Gamble: ";
@@ -40,7 +40,7 @@ let dpll env =
       (* On stocke l'ensemble des assignations effectuées avec le pari
 	 x, pour gérer le backtrack. *)
       aux env')
-    with Clause.Unsatisfiable -> 
+    with Core.Unsatisfiable -> 
       try (
 	Oper.flush();
 	(* On stocke les assignations qui étaient en cours. *)
@@ -56,9 +56,9 @@ let dpll env =
 	let env' = Oper.propagation envfalse ltrue (-x) in
 	Oper.flush();
 	aux env')
-      with Clause.Unsatisfiable -> (Oper.restore(); 
+      with Core.Unsatisfiable -> (Oper.restore(); 
 				    (* On annule les dernières assignations. *)
-				    raise Clause.Unsatisfiable)
+				    raise Core.Unsatisfiable)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   aux env;;
@@ -67,11 +67,11 @@ let dpll env =
 
 let t = Sys.time() in
 (try dpll (Oper.create ()) with 
-  |Clause.Satisfiable -> 
-    print_string "\nL'instance est satisfiable, voilà une assignation des variables possible :\n";
+  |Core.Satisfiable -> 
+    print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
-    if verify Core.lst then print_string "Youpi !\n" else print_string "Hum, c'est embarrassant...\n"
-  |Clause.Unsatisfiable ->
-    print_string "\nL'instance n'est pas satisfiable.\n");
-print_string "Résultat trouvé en "; print_float (Sys.time() -. t); print_string " secondes.\n\n";;
+    if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
+  |Core.Unsatisfiable ->
+    print_string "s UNSATISFIABLE\n");
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;

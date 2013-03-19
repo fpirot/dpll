@@ -134,7 +134,6 @@ struct
   let union = St.union
   let add = St.add
   let remove = St.remove
-  let removec = Stc.remove
 end;;
 
 module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Core) -> 
