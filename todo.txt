@@ -1,5 +1,3 @@
-/!\ Une des dernières modifs fait foirer l'algo -> retrouver à partir de quel commit, et corriger tout ça...
-
-partout : gérer la dynamique des tailles de clauses
+/!\ Le problème vient de la fonction extract dans les ordres...
 
 partout : gérer la màj des ordres quand on ajoute/enlève des clauses
