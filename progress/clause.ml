@@ -39,6 +39,8 @@ struct
      end)
   (* On gère une table d'association qui à chaque litéral associe
      l'ensemble des indices de clauses qui le contiennent. *)
+
+  let is_empty = Mp.is_empty
     
   let clauseArray = Array.make Elt.cls Cls.empty
   (* On référencie l'ensemble des clauses dans un tableau, afin de
@@ -203,6 +205,7 @@ sig
   val length : cls -> int
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val is_empty : map -> bool
 end;;
 
 module Make = (ClauseCore : ClauseAbstract);;

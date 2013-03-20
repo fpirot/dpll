@@ -35,6 +35,7 @@ sig
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
+  val is_empty : map -> bool
 end;;
 
 
@@ -101,7 +102,7 @@ let split env =
   (k, (ltrue, {clause = mtrue; order = ord}),
    (lfalse, {clause = mfalse; order = ord}))
 	 
-  let is_empty env = Ord.is_empty env.order
+  let is_empty env = Elt.is_empty env.clause
 
   let select lc setv =
     List.fold_right (fun c s -> let x = Elt.is_singleton c in

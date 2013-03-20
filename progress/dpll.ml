@@ -25,7 +25,9 @@ let verify lst =
 
 let dpll env = 
   let rec aux env =
-    let (x, (ltrue, envtrue), (lfalse, envfalse)) = Oper.split env in
+    let (x, (ltrue, envtrue), (lfalse, envfalse)) = try Oper.split env 
+      with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else raise Core.Unsatisfiable
+    in
     try (
       if debug then begin
 	print_string "Gamble: ";

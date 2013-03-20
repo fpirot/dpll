@@ -28,8 +28,9 @@ module DefaultCore = functor (Cor : CoreElt) ->
         List.iter (fun x -> print_int (snd x); print_char ' ') l;
         print_string "\n\n" end; l
 *)
-    let rec extract l = try (fst (List.hd l), List.tl l)
-      with _ -> raise Cor.Satisfiable    
+    let rec extract = function
+      |[] -> raise Not_found
+      |x :: l -> if Cor.read (fst x) = 0 then (fst x,l) else extract l
 
     let is_empty l = l = []
   
