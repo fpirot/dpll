@@ -5,7 +5,7 @@ module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
 
 
-let debug = true;;
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
@@ -68,7 +68,7 @@ let dpll env =
 	let env' = Oper.propagation envfalse ltrue (-x) in
 	Oper.flush();
 	aux env')
-      with Core.Unsatisfiable -> (Oper.flush(); Oper.restore(); 
+      with Core.Unsatisfiable -> (Oper.restore(); 
 				    (* On annule les dernières assignations. *)
 				    raise Core.Unsatisfiable)
   in Oper.init();

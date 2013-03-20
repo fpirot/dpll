@@ -66,7 +66,7 @@ module Core =
     exception Satisfiable
     exception Unsatisfiable
     
-    let debug = true
+    let debug = false
     
     let (wlit, heur, path) =
       let w = ref false

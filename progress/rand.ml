@@ -3,6 +3,7 @@ module type CoreElt =
     exception Satisfiable
     val heur : string
     val ord : (int * int) list
+    val read : int -> int
   end;;
 
 module RandCore = functor (Cor : CoreElt) ->
@@ -24,13 +25,16 @@ module RandCore = functor (Cor : CoreElt) ->
     
     let tl = List.tl
 *)
+    let filter = List.filter (fun x -> Cor.read x = 0)
+
     let extract lst =
+      let l = filter lst in
       let rec modif n = function
         |[] -> failwith "Heur.random"
         |a :: l -> if n = 0 then (a, l)
           else let (b, l) = modif (n - 1) l in (b, a::l) in
-      if lst = [] then raise Cor.Satisfiable
-      else modif (Random.int (List.length lst)) lst
+      if l = [] then raise Cor.Satisfiable
+      else modif (Random.int (List.length l)) l
 
     let is_empty l = l = []
     
