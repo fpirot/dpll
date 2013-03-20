@@ -52,7 +52,7 @@ struct
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -133,7 +133,9 @@ struct
   (* Donne les elements d'une clause *)
 
   let remove id map =
-    Cls.fold (fun x m -> try (Mp.add x (St.remove id (Mp.find x m)) m) with Not_found -> m) clauseArray.(id) map
+(*    Cls.fold (fun x m -> try (Mp.add x (St.remove id (Mp.find x m)) m) with Not_found -> m) clauseArray.(id) map *)
+    Cls.fold (fun x m -> let s = try (St.remove id (Mp.find x m)) with Not_found -> St.empty in
+	     if s <> St.empty then Mp.add x s m else Mp.remove x m) clauseArray.(id) map
   (* Supprime une clause de la map *)
 
   let bindings m = let lst = Mp.bindings m in

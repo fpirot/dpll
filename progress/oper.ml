@@ -60,7 +60,7 @@ struct
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"

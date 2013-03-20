@@ -9,7 +9,7 @@ module type CoreElt =
 module DefaultCore = functor (Cor : CoreElt) ->
   struct
     
-    let debug = false
+    let debug = true
     
     type order = (int * int) list
     
@@ -30,7 +30,17 @@ module DefaultCore = functor (Cor : CoreElt) ->
 *)
     let rec extract = function
       |[] -> raise Not_found
-      |x :: l -> if Cor.read (fst x) = 0 then (fst x,l) else extract l
+      |x :: l ->
+	if Cor.read (snd x) = 0 then 
+	  (if debug then begin 
+	    print_string "Order: ";
+	    print_int (snd x);
+	    print_string ", ";
+	    print_string "[";
+	    List.iter (fun y -> print_int (snd y); print_string " ") l;
+	    print_string "]" end;
+	   (snd x,l))
+	else extract l
 
     let is_empty l = l = []
   
