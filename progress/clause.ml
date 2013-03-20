@@ -177,11 +177,8 @@ struct
   let choose id = Cls.choose clauseArray.(id)
     
   let find x m = try St.elements (Mp.find x m) with _ -> []
-(* Renvoie la liste de toutes les clauses attachées à un litéral, et
-   la table d'association privée de ces clauses et de la négation du
-   litéral (lorsque l'on donne à une variable une assignation
-   particulière). *)
-    
+(* Renvoie la liste de toutes les clauses attachées à un litéral. *)
+
 end;;
 
 

@@ -12,15 +12,6 @@ sig
   val reset : int -> unit
 end;;
 
-module type OrderElt =
-sig
-  type order
-  val create : unit -> order
-  val extract : order -> int * order
-  val is_empty : order -> bool
-end;;
-
-
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
@@ -38,6 +29,16 @@ sig
   val is_empty : map -> bool
 end;;
 
+module type OrderElt =
+sig
+  type order
+  type cls
+  val create : unit -> order
+  val decr_size : cls list -> order -> order
+  val remove : cls list -> order -> order
+  val extract : order -> int * order
+  val is_empty : order -> bool
+end;;
 
 module type WlitElt =
 sig
@@ -54,7 +55,7 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
+module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt with type cls = Elt.cls) -> functor (Wlit: WlitElt) ->
 struct
   
   type env = {clause: Elt.map; order: Ord.order}
@@ -140,7 +141,8 @@ let split env =
 	let setv' = Wlit.remove x setv'
 	and (_, m) = Elt.extract x env.clause
 	and lc' = Elt.find (-x) env.clause in
-	aux {clause = m; order = env.order} lc' setv'
+	let ord = Ord.decr_size (Elt.find (-x) env.clause) (Ord.remove (Elt.find x env.clause) env.order) in
+	aux {clause = m; order = ord} lc' setv'
       end
     in aux env lc Wlit.empty
 

@@ -32,6 +32,16 @@ struct
 		   with Not_found -> m) c mp)
   (* Retire une liste de clauses à prendre en considération dans la map. *)
 
+  let decr_size = List.fold_right 
+    (fun c mp -> let n = Elt.length c in    
+		 Elt.cls_fold (fun x m -> try (let mx = Map.find x m in
+					       let v1 = (Map.find (n+1) mx) - 1
+					       and v2 = (Map.find n mx) + 1 in
+					       let mx1 = Map.add (n+1) v1 mx in
+					       Map.add x (Map.add n v2 mx1) m
+					       with Not_found -> m) c mp)
+(* Actualise la map lorsque l'on a une liste de clauses qui ont vu leur taille décrémenter d'une unité. *)
+
   let add = List.fold_right 
     (fun c mp -> let n = Elt.length c in
 		 Elt.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
@@ -64,6 +74,7 @@ sig
   type order
   val remove : Elt.cls list -> order -> order
   val add : Elt.cls list -> order -> order
+  val decr_size : Elt.cls list -> order -> order
   val extract : order -> int * order
   val is_empty : order -> bool
   val create : unit -> order
