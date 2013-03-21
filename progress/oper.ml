@@ -34,11 +34,10 @@ end;;
 module type Order = functor (Elt: OpElt) ->
 sig
   type order
-  val create : unit -> order
-  val decr_size : Elt.cls list -> order -> order
-  val remove : Elt.cls list -> order -> order
-  val extract : order -> int * order
   val is_empty : order -> bool
+  val create : unit -> order
+  val extract : Elt.map -> order -> int * order
+  val update : int -> Elt.map -> order -> order
 end;;
 
 module type WlitElt =
@@ -100,11 +99,11 @@ struct
 
 (* Extrait une variable selon l'ordre *)
 let split env =
-  let k, ord = Ord.extract env.order in
+  let k, ord = Ord.extract env.clause env.order in
   let (ltrue, mtrue) = Elt.extract k env.clause
   and (lfalse, mfalse) = Elt.extract (-k) env.clause in
   (k, (ltrue, {clause = mtrue; order = ord}),
-   (lfalse, {clause = mfalse; order = ord}))
+   (lfalse, {clause = mfalse; order = Ord.update (-k) env.clause env.order}))
 	 
   let is_empty env = Elt.is_empty env.clause
 
@@ -137,6 +136,7 @@ let split env =
 	  print_int x;
 	  print_newline()
 	end;
+	let ord = Ord.update x env.clause env.order in
 	Cor.write x; propag x;
 	(* On assigne x à vrai, et on rentre cette assignation dans
 	   une liste, afin de désassigner convenablement lors du
@@ -144,7 +144,6 @@ let split env =
 	let setv' = Wlit.remove x setv'
 	and (_, m) = Elt.extract x env.clause
 	and lc' = Elt.find (-x) env.clause in
-	let ord = Ord.decr_size (Elt.find (-x) env.clause) (Ord.remove (Elt.find x env.clause) env.order) in
 	aux {clause = m; order = ord} lc' setv'
       end
     in aux env lc Wlit.empty
@@ -158,11 +157,12 @@ let split env =
              print_int x;
              print_newline()
            end;
-	   let setv = Wlit.remove x setv in
+	   let ord = Ord.update x env.clause env.order
+	   and setv = Wlit.remove x setv in
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = ord} setv'
     in aux env (Wlit.singleton x)
 
     

@@ -1,9 +1,11 @@
 module type Clause =
 sig
+  type map
   type cls
   val length : cls -> int
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val find : int -> map -> cls list
 end;;
 
 module type Core =
@@ -35,12 +37,12 @@ struct
   let decr_size = List.fold_right 
     (fun c mp -> let n = Elt.length c in    
 		 Elt.cls_fold (fun x m -> try (let mx = Map.find x m in
-					       let v1 = (Map.find (n+1) mx) - 1
-					       and v2 = (Map.find n mx) + 1 in
-					       let mx1 = Map.add (n+1) v1 mx in
-					       Map.add x (Map.add n v2 mx1) m)
+					       let v1 = (Map.find n mx) - 1
+					       and v2 = (Map.find (n-1) mx) + 1 in
+					       let mx1 = Map.add n v1 mx in
+					       Map.add x (Map.add (n-1) v2 mx1) m)
 					       with Not_found -> m) c mp)
-(* Actualise la map lorsque l'on a une liste de clauses qui ont vu leur taille décrémenter d'une unité. *)
+(* Actualise la map lorsque l'on a une liste de clauses qui vont voir leur taille décrémenter d'une unité. *)
 
   let add = List.fold_right 
     (fun c mp -> let n = Elt.length c in
@@ -48,15 +50,24 @@ struct
 				      Map.add x (Map.add n ((try Map.find n mx with Not_found -> 0) + 1) mx) m) c mp)
 (* Ajoute une liste de clauses à prendre en considération dans la map. *)
 
-  let extract mp = 
-    let length_min = Map.fold (fun x mx n -> let (p,_) = Map.min_binding mx in min p n) mp (fst (Map.choose mp)) in
+  let extract map ord = 
+    let length_min = Map.fold (fun x mx n -> let (p,_) = Map.min_binding mx in min p n) ord (fst (Map.choose ord)) in
     let xmoms = fst (Map.fold (fun x mx (xm, max) ->
-      let p = try Map.find length_min mx with Not_found -> 0 in if (Cor.read x = 0 && p > max) then (x, p) else (xm, max)) mp (0,0)) in
+      let p = try Map.find length_min mx with Not_found -> 0 in if (Cor.read x = 0 && p > max) then (x, p) else (xm, max)) ord (0,0)) in
     if xmoms = 0 then raise Cor.Satisfiable
-    else (xmoms, Map.remove xmoms (Map.remove (-xmoms) mp))
-(* Renvoie le couple (xmoxs, map), avec xmoms le litéral choisi par
-   l'heuristique MOMS, et map la table d'association privée de la
-   variable corresopndante. *)
+    else 
+      let l1 = Elt.find xmoms map 
+      and l2 = Elt.find (-xmoms) map in
+      (xmoms, decr_size l2 (remove l1 (Map.remove xmoms (Map.remove (-xmoms) ord))))
+  (* Renvoie le couple (xmoxs, map), avec xmoms le litéral choisi par
+     l'heuristique MOMS, et map la table d'association privée de la
+     variable corresopndante. *)
+
+  let update x map ord = 
+    let l1 = Elt.find x map 
+    and l2 = Elt.find (-x) map in
+    decr_size l2 (remove l1 (Map.remove (-x) (Map.remove x ord)))
+  (* Met l'ordre à jour lorsque l'on affecte le litéral x à vrai. *)
 
   let is_empty = Map.is_empty
 
@@ -72,11 +83,10 @@ end;;
 module type MomsAbstract = functor (Elt: Clause) -> functor (Cor: Core) ->
 sig
   type order
-  val remove : Elt.cls list -> order -> order
-  val decr_size : Elt.cls list -> order -> order
-  val extract : order -> int * order
   val is_empty : order -> bool
   val create : unit -> order
+  val extract : Elt.map -> order -> int * order
+  val update : int -> Elt.map -> order -> order
 end;;
 
 module Make = (MomsCore : MomsAbstract)
