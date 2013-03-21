@@ -23,7 +23,7 @@ sig
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;  
 
-module OrderCore = functor (Clause: Clause) -> functor (Cor: CoreElt) ->
+module OrderCore = functor (Cor: CoreElt) -> functor (Clause: Clause) ->
 struct
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
@@ -62,11 +62,11 @@ struct
     | Moms (ord) -> Moms.is_empty ord
     | Dlis (ord) -> Dlis.is_empty ord
 
-  let add l = function
+  let decr_size l = function
     | Default (ord) -> Default (ord)
     | Rand (ord) -> Rand (ord)
-    | Moms (ord) -> Moms (Moms.add l ord)
-    | Dlis (ord) -> Dlis (Dlis.add l ord)
+    | Moms (ord) -> Moms (Moms.decr_size l ord)
+    | Dlis (ord) -> Dlis (Dlis.decr_size l ord)
       
   let remove l = function
     | Default (ord) -> Default (ord)
@@ -76,12 +76,12 @@ struct
 end;;
 
 
-module type OrderAbstract = functor (Clause: Clause) -> functor (Cor : CoreElt) ->
+module type OrderAbstract = functor (Cor : CoreElt) -> functor (Clause: Clause) ->
   sig 
     type order
     val create : unit -> order
     val extract : order -> int * order
-    val add : Clause.cls list -> order -> order
+    val decr_size : Clause.cls list -> order -> order
     val remove : Clause.cls list -> order -> order
     val is_empty : order -> bool
   end;;

@@ -38,7 +38,7 @@ struct
 					       let v1 = (Map.find (n+1) mx) - 1
 					       and v2 = (Map.find n mx) + 1 in
 					       let mx1 = Map.add (n+1) v1 mx in
-					       Map.add x (Map.add n v2 mx1) m
+					       Map.add x (Map.add n v2 mx1) m)
 					       with Not_found -> m) c mp)
 (* Actualise la map lorsque l'on a une liste de clauses qui ont vu leur taille décrémenter d'une unité. *)
 
@@ -73,7 +73,6 @@ module type MomsAbstract = functor (Elt: Clause) -> functor (Cor: Core) ->
 sig
   type order
   val remove : Elt.cls list -> order -> order
-  val add : Elt.cls list -> order -> order
   val decr_size : Elt.cls list -> order -> order
   val extract : order -> int * order
   val is_empty : order -> bool

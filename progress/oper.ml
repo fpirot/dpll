@@ -27,15 +27,16 @@ sig
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
   val is_empty : map -> bool
+  val length : cls -> int
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module type OrderElt =
+module type Order = functor (Elt: OpElt) ->
 sig
   type order
-  type cls
   val create : unit -> order
-  val decr_size : cls list -> order -> order
-  val remove : cls list -> order -> order
+  val decr_size : Elt.cls list -> order -> order
+  val remove : Elt.cls list -> order -> order
   val extract : order -> int * order
   val is_empty : order -> bool
 end;;
@@ -55,9 +56,11 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt with type cls = Elt.cls) -> functor (Wlit: WlitElt) ->
+module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Order: Order) -> functor (Wlit: WlitElt) ->
 struct
-  
+
+  module Ord = Order (Elt)
+
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
@@ -177,7 +180,8 @@ let split env =
 end;;
 
 
-module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
+module type OpAbstract = functor (Elt: OpElt) -> functor (Cor: CoreElt) -> 
+  functor (Ord: Order) -> functor (Wlit: WlitElt) ->
 
 sig
   type env
