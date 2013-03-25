@@ -1,3 +1,0 @@
-/!\ Le problème vient de la fonction extract dans les ordres...
-
-partout : gérer la màj des ordres quand on ajoute/enlève des clauses

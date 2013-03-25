@@ -62,16 +62,16 @@ end;;
 
 module Core =
   struct
-    
-    exception Unsatisfiable
-    exception Satisfiable
 
+    exception Satisfiable
+    exception Unsatisfiable
+    
     let debug = false
     
     let (wlit, heur, path) =
       let w = ref false
       and s = ref "Nil"
-      and p = ref "ex0.cnf" in
+      and p = ref "Test/ex0.cnf" in
         Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
         	("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
         	("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
@@ -79,7 +79,7 @@ module Core =
             (fun str -> p := str) "";
         (!w, !s, !p)
         
-    let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in ("Test/"^path))
+    let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
     
     
     let assigArray = Array.create var 0

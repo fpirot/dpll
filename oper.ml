@@ -12,19 +12,10 @@ sig
   val reset : int -> unit
 end;;
 
-module type OrderElt =
-sig
-  type order
-  val create : unit -> order
-  val extract : order -> int * order
-  val is_empty : order -> bool
-end;;
-
-
 module type OpElt =
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  type cls = int*int
+  type cls
   type map
   val empty : map
   val create : int list list -> map
@@ -35,16 +26,26 @@ sig
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> cls list * map
   val remove : cls -> map -> map
+  val is_empty : map -> bool
+  val length : cls -> int
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
+module type Order = functor (Elt: OpElt) ->
+sig
+  type order
+  val is_empty : order -> bool
+  val create : unit -> order
+  val extract : Elt.map -> order -> int * order
+  val update : int -> Elt.map -> order -> order
+end;;
 
 module type WlitElt =
 sig
   type set
-  type setc
-  val update : int -> set * setc
+  val update : int -> set * set
   val init : unit -> unit
-  val fold : (int * int -> 'a -> 'a) -> setc -> 'a -> 'a
+  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
   val choose : set -> int
   val singleton : int -> set
   val empty : set
@@ -54,9 +55,11 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
+module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Order: Order) -> functor (Wlit: WlitElt) ->
 struct
-  
+
+  module Ord = Order (Elt)
+
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
@@ -68,8 +71,11 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  let create () = 
-    {clause = Elt.create Cor.lst; order = Ord.create ()}
+  let create () = let m = Elt.create Cor.lst in
+    let ord = Ord.create() in
+    {clause = m; order = ord}
+
+
 
   let (propag, flush, restore, reset) = 
     let lst = ref []
@@ -92,22 +98,15 @@ struct
        lst := List.tl (!lst)),
      (fun () -> ls := []; lst := []))
 
-  (* choisit la variable sur laquelle faire le prochain pari, en
-     fonction de l'heuristique en cours. *)
-  let rec choice ord =
-    if Ord.is_empty ord then raise Cor.Satisfiable
-    else let (x, order) = Ord.extract ord in
-	 if Cor.read x = 0 then x else choice order
-
 (* Extrait une variable selon l'ordre *)
-  let split env =
-    let (k, ord) = Ord.extract env.order in
-    let (ltrue, mtrue) = Elt.extract k env.clause
-    and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-    (k, (ltrue, {clause = mtrue; order = ord}),
-     (lfalse, {clause = mfalse; order = ord}))
+let split env =
+  let k, ord = Ord.extract env.clause env.order in
+  let (ltrue, mtrue) = Elt.extract k env.clause
+  and (lfalse, mfalse) = Elt.extract (-k) env.clause in
+  (k, (ltrue, {clause = mtrue; order = ord}),
+   (lfalse, {clause = mfalse; order = Ord.update (-k) env.clause env.order}))
 	 
-  let is_empty env = Ord.is_empty env.order
+  let is_empty env = Elt.is_empty env.clause
 
   let select lc setv =
     List.fold_right (fun c s -> let x = Elt.is_singleton c in
@@ -138,14 +137,15 @@ struct
 	  print_int x;
 	  print_newline()
 	end;
+	let ord = Ord.update x env.clause env.order in
 	Cor.write x; propag x;
 	(* On assigne x à vrai, et on rentre cette assignation dans
 	   une liste, afin de désassigner convenablement lors du
 	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and (_, m) = Elt.extract x env.clause in
-	let lc' = Elt.find (-x) m in
-	aux {clause = m; order = env.order} lc' setv'
+	and (_, m) = Elt.extract x env.clause
+	and lc' = Elt.find (-x) env.clause in
+	aux {clause = m; order = ord} lc' setv'
       end
     in aux env lc Wlit.empty
 
@@ -158,11 +158,12 @@ struct
              print_int x;
              print_newline()
            end;
-	   let setv = Wlit.remove x setv in
+	   let ord = Ord.update x env.clause env.order
+	   and setv = Wlit.remove x setv in
 	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove c m) ssat env.clause ; order = env.order} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = ord} setv'
     in aux env (Wlit.singleton x)
 
     
@@ -175,12 +176,13 @@ struct
 (*
   let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
 *)
-  let init () = if Cor.wlit then Wlit.init ()
+  let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
 
 
-module type OpAbstract = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Ord : OrderElt) -> functor (Wlit: WlitElt) ->
+module type OpAbstract = functor (Elt: OpElt) -> functor (Cor: CoreElt) -> 
+  functor (Ord: Order) -> functor (Wlit: WlitElt) ->
 
 sig
   type env

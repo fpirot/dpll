@@ -5,7 +5,7 @@ module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function
@@ -31,10 +31,11 @@ let print_list l=
 
 let dpll env = 
   let rec aux env =
-    let (x, (ltrue, envtrue), (lfalse, envfalse)) = try Oper.split env 
+    let (x, envtrue, envfalse) = try Oper.split env 
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
-	    List.iter (fun (x,y) -> print_int x; print_string ": "; List.iter (fun x -> print_list x) y; print_newline()) (Oper.bindings env)
+	    List.iter (fun (x,y) -> print_int x; print_string ": "; 
+	      List.iter (fun (p,l) -> print_int p; print_string ", ";  print_list l) y; print_newline()) (Oper.bindings env)
 	  end;
 	  raise Core.Unsatisfiable
     in
@@ -47,7 +48,7 @@ let dpll env =
       Core.write x; Oper.propag x;
       (* On assigne la valeur de x, et on rentre cette assignation dans une
 	 liste pour gérer le backtrack. *)
-      let env' = Oper.propagation envtrue lfalse x in
+      let env' = Oper.propagation envtrue (Oper.find (-x) envtrue) x in
       Oper.flush();
       (* On stocke l'ensemble des assignations effectuées avec le pari
 	 x, pour gérer le backtrack. *)
@@ -65,7 +66,7 @@ let dpll env =
 	  print_newline();
 	end;
 	Core.write (-x); Oper.propag (-x);
-	let env' = Oper.propagation envfalse ltrue (-x) in
+	let env' = Oper.propagation envfalse (Oper.find x envtrue) (-x) in
 	Oper.flush();
 	aux env')
       with Core.Unsatisfiable -> (Oper.restore(); 

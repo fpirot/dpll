@@ -23,8 +23,8 @@ sig
   val find : int -> map -> cls list
   val choose : cls -> int
   val cls_make : int -> cls
-  val bindings : map -> (int * int list list) list
-  val extract : int -> map -> cls list * map
+  val bindings : map -> (int * (int * int list) list) list
+  val update : int -> map -> map
   val remove : cls -> map -> map
   val is_empty : map -> bool
   val length : cls -> int
@@ -63,7 +63,7 @@ struct
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -100,10 +100,10 @@ struct
 (* Extrait une variable selon l'ordre *)
 let split env =
   let k, ord = Ord.extract env.clause env.order in
-  let (ltrue, mtrue) = Elt.extract k env.clause
-  and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = ord}),
-   (lfalse, {clause = mfalse; order = Ord.update (-k) env.clause env.order}))
+  let mtrue = Elt.update k env.clause
+  and mfalse = Elt.update (-k) env.clause
+  and ord = Ord.update (-k) env.clause env.order in
+  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = ord})
 	 
   let is_empty env = Elt.is_empty env.clause
 
@@ -142,8 +142,8 @@ let split env =
 	   une liste, afin de désassigner convenablement lors du
 	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and (_, m) = Elt.extract x env.clause
-	and lc' = Elt.find (-x) env.clause in
+	and m = Elt.update x env.clause in
+	let lc' = Elt.find (-x) m in
 	aux {clause = m; order = ord} lc' setv'
       end
     in aux env lc Wlit.empty
@@ -177,12 +177,13 @@ let split env =
 *)
   let init () = if Cor.wlit then Wlit.init () else ()
 
+  let find x env = Elt.find x env.clause
+
 end;;
 
 
 module type OpAbstract = functor (Elt: OpElt) -> functor (Cor: CoreElt) -> 
   functor (Ord: Order) -> functor (Wlit: WlitElt) ->
-
 sig
   type env
   type cls
@@ -191,11 +192,12 @@ sig
   val flush : unit -> unit
   val restore : unit -> unit
   val reset : unit -> unit
-  val split : env -> (int * (cls list * env) * (cls list * env))
+  val split : env -> (int * env * env)
   val is_empty : env -> bool
   val propagation : env -> cls list -> int -> env
-  val bindings : env -> (int * int list list) list
+  val bindings : env -> (int * (int * int list) list) list
   val init : unit -> unit
+  val find : int -> env -> cls list
 end;;
 
 module Make = (OpCore : OpAbstract);;

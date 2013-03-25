@@ -1,11 +1,10 @@
 
 module type Clause =
 sig
-  type cls = int * int
   val literals :int -> int list
 end;;
 
-module type Core =
+module type Assig =
 sig
   exception Unsatisfiable
   val cls : int
@@ -13,25 +12,16 @@ sig
   val read : int -> int
 end;;
 
-module WlitCore = functor (Elt: Clause) -> functor (Assig: Core) -> 
+module WlitCore = functor (Elt: Clause) -> functor (Assig: Assig) -> 
 struct
-
-  module Stc = Set.Make (
-    struct
-      type t = Elt.cls
-      let compare x y = compare (fst x) (fst y)
-    end)
-  (* Ensemble de représentants de clauses. *)
 
   module St = Set.Make (
     struct
       type t = int
       let compare = compare
     end)
-  (* Ensemble de litéraux *)
 
   type set = St.t
-  type setc = Stc.t
 
   type wlit = int * int
   let zero = (0, 0)
@@ -83,7 +73,7 @@ struct
 		 if v = 0 then 
 		   if w1 = 0 then aux x 0 r
 		   else (w1,x)
-		 else if v = x then (lsat := Stc.add (id,0) !lsat; (0,0))
+		 else if v = x then (lsat := St.add id !lsat; (0,0))
 		 (* c est satisfiable, on la répertorie dans lsat. *)
 		 else aux w1 w2 r
     in aux 0 0 l
@@ -103,7 +93,7 @@ struct
 
   let fill_warray () =
     let n = Assig.cls in
-    let lbord = ref St.empty and lsat = ref Stc.empty in
+    let lbord = ref St.empty and lsat = ref St.empty in
     for i = 0 to n-1 do
       warray.(i) <- watched_literals_of_clause i lbord lsat
     done
@@ -115,10 +105,10 @@ struct
 
   let update x =
     let l = watched_to_clauses x in
-    let lbord = ref St.empty and lsat = ref Stc.empty in
+    let lbord = ref St.empty and lsat = ref St.empty in
     let rec aux = function
       |[] -> (!lbord, !lsat)
-      |i :: r -> if get_sat x i then (lsat := Stc.add (i,0) !lsat; aux r)
+      |i :: r -> if get_sat x i then (lsat := St.add i !lsat; aux r)
 	else (new_assoc i lbord lsat; aux r)
     in aux l
 (* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle
@@ -126,7 +116,7 @@ struct
    assigner à vrai par effet de bord, et la liste des clauses
    nouvellement satisfiables. *)
 
-  let fold = Stc.fold
+  let fold = St.fold
   let choose = St.choose
   let singleton = St.singleton
   let empty = St.empty
@@ -136,13 +126,12 @@ struct
   let remove = St.remove
 end;;
 
-module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Core) -> 
+module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Assig) -> 
 sig
   type set
-  type setc
-  val update : int -> set * setc
+  val update : int -> set * set
   val init : unit -> unit
-  val fold : (Elt.cls -> 'a -> 'a) -> setc -> 'a -> 'a
+  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
   val choose : set -> int
   val singleton : int -> set
   val empty : set
