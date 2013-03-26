@@ -5,8 +5,8 @@ struct
 		|[] -> Printf.fprintf channel "0\n"
 		|a::l -> Printf.fprintf channel "%d " a; clause channel l
 	
-	let file n v c s lst =
-		let channel = open_out (s^(string_of_int n)) in
+	let file (n, m) v c s lst =
+		let channel = open_out (s^(string_of_int n)^"/"^(string_of_int m)) in
 		Printf.fprintf channel "p cnf %d %d\n" v c;
 		List.iter (fun l -> clause channel l) lst;
 		close_out channel
@@ -17,14 +17,15 @@ end;;
 module Test =
 struct
 	
-	let (mode, nbr, var, cls, size, path) =
+	let nbr = 100
+	let (mode, prc, var, cls, size, path) =
       let s1 = ref 4
       and s2 = ref 6
       and v1 = ref 20
       and v2 = ref 30
       and c1 = ref 100
-      and c2 = ref 200
-      and n = ref 100
+      and c2 = ref 1000
+      and n = ref 10
       and m = ref ""
       and p = ref "Test/" in
         Arg.parse [("-setc", Arg.Tuple [Arg.Set_int c1; Arg.Set_int c2], "Number of clauses");
@@ -34,9 +35,17 @@ struct
         	("-clause", Arg.Unit(fun () -> m := "clause"), "Select the clause creation mode");
         	("-size", Arg.Unit(fun () -> m := "size"), "Select the size creation mode");
         	("-variable", Arg.Unit(fun () -> m := "variable"), "Select the variable creation mode");
-        	("-test", Arg.Set_int n, "Number of tests")]
-            (fun str -> ()) "";
+        	("-precision", Arg.Set_int n, "Number of tests")]
+            (fun str ->()) "";
         (!m, !n, (!v1, !v2), (!c1, !c2), (!s1, !s2), !p)
+
+	
+	let start () =
+		print_int (Sys.command "rm -R Test/*");
+		print_newline();
+		for k = 0 to nbr do
+			print_int (Sys.command ("mkdir Test/"^(string_of_int k)))
+		done; print_newline()
 
 	let random_literal v = 
 		Random.self_init();
@@ -52,25 +61,39 @@ struct
 		|0 -> []
 		|c -> (random_clause v s)::(random_sat s v (c - 1))
 	
-	let random () = match mode with
-		|"clause" -> let c = max 1 (((snd cls) - (fst cls))/nbr) in
+	let random () =
+		start ();
+		match mode with
+		|"clause" ->
+			let c = (snd cls) - (fst cls)
+			and v = ((fst cls) + (snd cls))/8 in
+				for k = 0 to nbr do
+					for l = 0 to prc - 1 do
+						Load.file (k, l) v ((c * k + (fst cls) * 100)/100) path (random_sat 3 v ((c * k + (fst cls) * 100)/100))
+				done done
+		|"variable" ->
+			let v = (snd var) - (fst var)
+			and c = ((fst var) + (snd var))*8 in
+				for k = 0 to nbr do
+					for l = 0 to prc - 1 do
+						Load.file (k, l) ((v * k + (fst var) * 100)/100) c path (random_sat 3 ((v * k + (fst var) * 100)/100) c)
+				done done
+		|"size" -> let s = (snd size) - (fst size) in
 			for k = 0 to nbr do
-				Load.file k (fst var) (c * k + (fst cls)) path (random_sat (fst size) (fst var) (c * k + (fst cls)))
-			done
-		|"variable" -> let v = max 1 (((snd var) - (fst var))/nbr) in
-			for k = 0 to nbr do
-				Load.file k (v * k + (fst var)) (fst cls) path (random_sat (fst size) (v * k + (fst var)) (fst cls))
-			done
-		|"size" -> let s = max 1 (((snd size) - (fst size))/nbr) in
-			for k = 0 to nbr do
-				Load.file k (fst var) (fst cls) path (random_sat (s * k + (fst size)) (fst var) (fst cls))
-			done
-		|_ -> print_string "Please, select a mode of creation with [-clause | -variable | -size]\n"
+				for l = 0 to prc - 1 do
+					Load.file (k, l) (fst var) (fst cls) path (random_sat ((s * k + (fst size) * 100)/100) (fst var) (fst cls))
+			done done
+		|_ -> failwith "Please, select a mode of creation with [-clause | -variable | -size]\n"
 	
 end;;
 
-Test.random ();
-print_int (Sys.command "./run-tests.sh");
-print_newline();
-print_int (Sys.command "gnuplot plot.p");
-print_newline();;
+try
+	(begin
+		print_newline ();
+		Test.random ();
+		print_int (Sys.command "./runcopie.sh");
+		print_newline();
+		print_int (Sys.command "gnuplot plot.p");
+		print_newline()
+	end)
+with Failure s -> print_string s;;
