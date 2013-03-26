@@ -34,10 +34,10 @@ let rec random_clause n = function
   |t -> (random_literal n) :: (random_clause n (t - 1))
 (* Génère une clause de taille t, aléatoire. *)
 
-let random_sat n p =
+let random_sat n p t =
   let rec aux = function
     | 0 -> []
-    | p -> (random_clause n (truncate (log (float n)/.(log 2.)))) :: (aux (p-1))
+    | p -> (random_clause n t) :: (aux (p-1))
   in {k = n; clauses = aux p};;
 (* n est le nombre de variables, p est le nombre de clauses. *)
 
@@ -52,9 +52,11 @@ let make_test n =
      in {k = n; clauses = aux n};;
 
 let main () =
-  let n = int_of_string (Sys.argv).(1) in
+  let n = try int_of_string (Sys.argv).(1) with _ -> 20 in
+  let k = try n * int_of_string (Sys.argv).(2) with _ -> int_of_float (4.3 *. float n) in
+  let t = try int_of_string (Sys.argv).(3) with _ -> 3 in
   let file = open_out "Test/ex0.cnf" in
-  let s = random_sat n (n*(truncate (log (float n)))) in
+  let s = random_sat n k t in
   output_sat file s;;
 
 main();;

@@ -152,7 +152,7 @@ struct
 		     (k, List.map (fun cls -> length cls, Cls.elements (clause cls)) (St.elements s))) lst
   (* Affichage des éléments de la table d'association sous forme de
      liste. *)
-		     
+
   let elements cls = Cls.elements (clause cls)
   (* Affichage des éléments d'une clause sous forme de liste. *)
 
