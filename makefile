@@ -7,10 +7,10 @@ all :
 	ocamlc -a clause.ml -o clause.cma
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc -a wlit.ml -o wlit.cma
-	ocamlc test.ml -o test
+	ocamlc Test/test_old.ml -o test
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
 	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma dpll.ml -o dpll
-	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
+	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 clean :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
