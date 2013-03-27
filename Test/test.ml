@@ -17,7 +17,7 @@ end;;
 module Test =
 struct
 	
-	let nbr = 100
+	let nbr = 10
 	let (mode, prc, var, cls, size, path) =
       let s1 = ref 4
       and s2 = ref 6
@@ -91,7 +91,7 @@ try
 	(begin
 		print_newline ();
 		Test.random ();
-		print_int (Sys.command "./runcopie.sh");
+		print_int (Sys.command "./run.sh");
 		print_newline();
 		print_int (Sys.command "gnuplot plot.p");
 		print_newline()
