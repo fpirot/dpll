@@ -172,7 +172,7 @@ struct
 	    print_newline() end) (bindings (Mp.remove x m));
       print_newline();
     end;
-    (St.elements s, Mp.remove x m)
+    Mp.remove x m
       
   let choose id = Cls.choose clauseArray.(id)
     
@@ -198,7 +198,7 @@ sig
   val remove : cls -> map -> map
   val bindings : map -> (int * int list list) list
   val elements : cls -> int list
-  val extract : int -> map -> cls list * map
+  val extract : int -> map -> map
   val choose : cls -> int
   val find : int -> map -> cls list
   val length : cls -> int

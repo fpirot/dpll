@@ -24,7 +24,7 @@ sig
   val choose : cls -> int
   val cls_make : int -> cls
   val bindings : map -> (int * int list list) list
-  val extract : int -> map -> cls list * map
+  val extract : int -> map -> map
   val remove : cls -> map -> map
   val is_empty : map -> bool
   val length : cls -> int
@@ -101,8 +101,8 @@ struct
 (* Extrait une variable selon l'ordre *)
 let split env =
   let k, ord = Ord.extract env.clause env.order in
-  let (_, mtrue) = Elt.extract k env.clause
-  and (_, mfalse) = Elt.extract (-k) env.clause in
+  let mtrue = Elt.extract k env.clause
+  and mfalse = Elt.extract (-k) env.clause in
   (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
 	 
   let is_empty env = Elt.is_empty env.clause
@@ -142,7 +142,7 @@ let split env =
 	   une liste, afin de désassigner convenablement lors du
 	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and (_, m) = Elt.extract x env.clause in
+	and m = Elt.extract x env.clause in
 	aux {clause = m; order = ord} x setv'
       end
     in aux env x Wlit.empty
