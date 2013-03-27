@@ -31,7 +31,7 @@ let print_list l=
 
 let dpll env = 
   let rec aux env =
-    let (x, (ltrue, envtrue), (lfalse, envfalse)) = try Oper.split env 
+    let (x, envtrue, envfalse) = try Oper.split env 
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";
@@ -49,7 +49,7 @@ let dpll env =
       Core.write x; Oper.propag x;
       (* On assigne la valeur de x, et on rentre cette assignation dans une
 	 liste pour gérer le backtrack. *)
-      let env' = Oper.propagation envtrue lfalse x in
+      let env' = Oper.propagation x envtrue in
       Oper.flush();
       (* On stocke l'ensemble des assignations effectuées avec le pari
 	 x, pour gérer le backtrack. *)
@@ -67,7 +67,7 @@ let dpll env =
 	  print_newline();
 	end;
 	Core.write (-x); Oper.propag (-x);
-	let env' = Oper.propagation envfalse ltrue (-x) in
+	let env' = Oper.propagation (-x) envfalse in
 	Oper.flush();
 	aux env')
       with Core.Unsatisfiable -> (Oper.restore(); 

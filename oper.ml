@@ -101,14 +101,13 @@ struct
 (* Extrait une variable selon l'ordre *)
 let split env =
   let k, ord = Ord.extract env.clause env.order in
-  let (ltrue, mtrue) = Elt.extract k env.clause
-  and (lfalse, mfalse) = Elt.extract (-k) env.clause in
-  (k, (ltrue, {clause = mtrue; order = ord}),
-   (lfalse, {clause = mfalse; order = Ord.update (-k) env.clause env.order}))
+  let (_, mtrue) = Elt.extract k env.clause
+  and (_, mfalse) = Elt.extract (-k) env.clause in
+  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
 	 
   let is_empty env = Elt.is_empty env.clause
 
-  let select lc setv =
+  let engendre x env =
     List.fold_right (fun c s -> let x = Elt.is_singleton c in
 				if x <> 0 then (
 				  if debug then begin
@@ -117,15 +116,15 @@ let split env =
 				    print_newline()
 				  end;
 				  Wlit.add x s)
-				else s) lc setv
+				else s) (Elt.find (-x) env.clause) Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
      ainsi un ensemble de nouvelles assignations contraintes par
      celle en cours. *)
 
-  let simple_propagation env lc =
-    let rec aux env lc setv =
-      let setv' = select lc setv in
+  let simple_propagation x env =
+    let rec aux env x setv =
+      let setv' = Wlit.union (engendre x env) setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
@@ -143,13 +142,12 @@ let split env =
 	   une liste, afin de désassigner convenablement lors du
 	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and (_, m) = Elt.extract x env.clause
-	and lc' = Elt.find (-x) env.clause in
-	aux {clause = m; order = ord} lc' setv'
+	and (_, m) = Elt.extract x env.clause in
+	aux {clause = m; order = ord} x setv'
       end
-    in aux env lc Wlit.empty
+    in aux env x Wlit.empty
 
-  let wlit_propagation env lc x =
+  let wlit_propagation x env =
     let rec aux env setv = 
       if Wlit.is_empty setv then env
       else let x = Wlit.choose setv in
@@ -167,10 +165,9 @@ let split env =
     in aux env (Wlit.singleton x)
 
     
-  let propagation env lc x =
-    if Cor.wlit then wlit_propagation env lc x
-    else simple_propagation env lc
-
+  let propagation x env =
+    if Cor.wlit then wlit_propagation x env
+    else simple_propagation x env
     
   let bindings env = Elt.bindings env.clause
 (*
@@ -192,9 +189,9 @@ sig
   val flush : unit -> unit
   val restore : unit -> unit
   val reset : unit -> unit
-  val split : env -> (int * (cls list * env) * (cls list * env))
+  val split : env -> (int * env * env)
   val is_empty : env -> bool
-  val propagation : env -> cls list -> int -> env
+  val propagation : int -> env -> env
   val bindings : env -> (int * int list list) list
   val init : unit -> unit
 end;;
