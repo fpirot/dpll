@@ -9,7 +9,7 @@ module type CoreElt =
 module DefaultCore = functor (Cor : CoreElt) ->
   struct
 
-    let debug = false
+    let debug = true
     
     type order = (int * int) list
     
@@ -38,7 +38,7 @@ module DefaultCore = functor (Cor : CoreElt) ->
 	    print_string ", ";
 	    print_string "[";
 	    List.iter (fun y -> print_int (snd y); print_string " ") l;
-	    print_string "]" end;
+	    print_string "]\n" end;
 	   (snd x,l))
 	else extract l
 

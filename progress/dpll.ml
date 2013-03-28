@@ -5,7 +5,7 @@ module Wlit = Wlit.Make (Clause);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function

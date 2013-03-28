@@ -54,12 +54,12 @@ sig
   val update : int -> set * setc
   val init : unit -> unit
   val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
-  val choose : set -> int
+  val choose : set -> (int * cls)
   val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
-  val add : int -> set -> set
+  val add : (int * cls) -> set -> set
   val remove : int -> set -> set
 end;;
 
@@ -73,7 +73,7 @@ struct
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -102,7 +102,7 @@ let split env =
 				    print_int x;
 				    print_newline()
 				  end;	  
-				  Cor.write ~father:c x; Wlit.add x s)
+				  Wlit.add (x, c) s)
 				else s) (Elt.find (-x) env.clause) Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
@@ -118,14 +118,15 @@ let split env =
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
 	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let x = Wlit.choose setv' in
+	let (x, c) = Wlit.choose setv' in
 	if debug then begin
 	  print_string "Choice: ";
 	  print_int x;
 	  print_newline()
 	end;
-	let ord = Ord.update x env.clause env.order in
-	let setv' = Wlit.remove x setv'
+	Cor.write ~father:c x; 
+	let ord = Ord.update x env.clause env.order
+	and setv' = Wlit.remove x setv'
 	and m = Elt.extract x env.clause in
 	aux {clause = m; order = ord} x setv'
       end
@@ -134,12 +135,13 @@ let split env =
   let wlit_propagation x env =
     let rec aux env setv = 
       if Wlit.is_empty setv then env
-      else let x = Wlit.choose setv in
+      else let (x, c) = Wlit.choose setv in
 	   if debug then begin
              print_string "WLit choose: ";
              print_int x;
              print_newline()
            end;
+	   Cor.write ~father:c x;
 	   let ord = Ord.update x env.clause env.order
 	   and setv = Wlit.remove x setv in
 	   let (sbord, ssat) = Wlit.update x in

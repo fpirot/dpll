@@ -25,8 +25,8 @@ struct
 
   module St = Set.Make (
     struct
-      type t = int
-      let compare = compare
+      type t = int * cls
+      let compare x y = compare (fst x) (fst y)
     end)
 
   module Stc = Set.Make (
@@ -80,7 +80,7 @@ struct
       |[] -> if w1 = 0 then raise Assig.Unsatisfiable
 	(* Si on n'a trouvé aucun litéral à surveiller, la clause
 	   n'est pas satisfiable avec la valuation actuelle. *)
-	else (Assig.write ~father: id w1; lbord := St.add w1 !lbord; (w1,0))
+	else (Assig.write ~father: id w1; lbord := St.add (w1, id) !lbord; (w1,0))
       (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors
 	 pour que la clause soit satisfaite, il doit forcément être à
 	 vrai. On effectue l'assignation nécessaire. *)
@@ -133,12 +133,12 @@ struct
 
   let fold = Stc.fold
   let choose = St.choose
-  let singleton = St.singleton
+  let singleton x = St.singleton (x, -1)
   let empty = St.empty
   let is_empty = St.is_empty
   let union = St.union
   let add = St.add
-  let remove = St.remove
+  let remove x = St.remove (x, 0)
 end;;
 
 module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Assig) -> 
@@ -149,12 +149,12 @@ sig
   val update : int -> set * setc
   val init : unit -> unit
   val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
-  val choose : set -> int
+  val choose : set -> (int * cls)
   val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
-  val add : int -> set -> set
+  val add : (int * cls) -> set -> set
   val remove : int -> set -> set
 end;;
 

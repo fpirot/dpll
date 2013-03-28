@@ -55,7 +55,7 @@ struct
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
     
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -78,8 +78,6 @@ struct
   let fill l =
     incr compt;
     clauseArray.(!compt) <- Elt.fold (fun x s -> Cls.add x s) l Cls.empty;
-    if debug then begin
-    end;
     !compt
   (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
       
@@ -96,7 +94,7 @@ struct
   let create lst =
     reset ();
     let m = Elt.fold (fun l m -> add (fill l) m) lst Mp.empty in
-		  if debug then begin
+(*		  if debug then begin
 		    print_string "clauseArray:\n";
 		    Array.iteri (fun i x ->
 		      print_int i;
@@ -105,7 +103,7 @@ struct
 		      print_newline())
 		      clauseArray;
 		    print_newline()
-		  end; m
+		  end; *) m
       
   let is_empty = Mp.is_empty
   (* Teste si la table d'association est vide. *)
@@ -116,9 +114,13 @@ struct
 	(fun x v -> match (Elt.read x, v) with
           |(0, 0) -> x
           |(0, _) -> failwith "is_not"
-          |(_, y) -> y) clauseArray.(id) 0
+	  |(_, y) ->  y) clauseArray.(id) 0
       with
-	|0 -> raise Elt.Unsatisfiable
+	|0 -> if debug then begin
+	  print_string "Clause insatisfiable: ";
+	  print_list (Cls.elements (clause id));
+	  print_newline() end;
+	  raise Elt.Unsatisfiable
 	|x -> x
     )
     with Failure "is_not" -> 0
@@ -156,7 +158,7 @@ struct
     let s = try Mp.find x map with _ -> St.empty in
     let m = St.fold (fun id m -> remove id m) s map in
     if debug then begin
-      print_string "Extraction:\n";
+      print_string "Extraction of "; print_int x; print_string ":\n";
       List.iter (fun x ->
 	print_int x;
 	print_string ": ";
@@ -164,7 +166,7 @@ struct
 	print_newline())
         (St.elements s);
       print_newline ();
-      print_string "New map:\n";
+(*      print_string "New map:\n";
       List.iter 
 	(fun (x, lst) ->
           if lst <> [] then begin
@@ -173,7 +175,7 @@ struct
 	    List.iter (fun l -> print_list l; print_char ' ') lst;
 	    print_newline() end) (bindings (Mp.remove x m));
       print_newline();
-    end;
+*)    end;
     Mp.remove x m
       
   let choose id = Cls.choose clauseArray.(id)

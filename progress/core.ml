@@ -75,12 +75,6 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  type cls = int
-
-  let depth = ref 0
-
-  let fix_depth i = depth := i
-
   let (wlit, heur, path) =
     let w = ref false
     and s = ref "Nil"
@@ -104,6 +98,16 @@ struct
    tableau de liste en partant du principe qu'il y a au plus n étages
    de paris, avec n le nombre de variables. *)
 
+  let depth = ref 0
+
+  let fix_depth i = depth := i;
+    if debug then begin
+      print_string "Stack: ";
+      for k = 0 to i-1 do print_list stack.(k) done;
+      print_newline() end
+
+  type cls = int 
+
   type assig = {mutable value: int; mutable father: cls; mutable depth: int}
   (* Le type assig contient comme information la valeur de vérité
      value prise par le litéral (0 si indéfinie), la clause qui a
@@ -126,9 +130,8 @@ struct
   let restore i = 
     if debug then begin
       print_string "Restore: ";
-      Array.iter (fun l -> print_list l) stack;
-      print_newline()
-    end;
+      for k = 0 to i do (fun l -> print_list l) stack.(k) done;
+      print_newline() end;
     for k = i to !depth do
       List.iter reset stack.(k);
       stack.(k) <- [] done
