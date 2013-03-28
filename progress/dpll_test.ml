@@ -1,10 +1,10 @@
 module Core = Core.Make;;
-module Clause = Clause.Make;;
-module Order = Order.Make;;
-module Wlit = Wlit.Make (Clause);;
+module Clause = Clause.Make (Core);;
+module Order = Order.Make (Core);;
+module Wlit = Wlit.Make (Clause) (Core);;
 module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
 
-
+exception TimeOut;;
 let debug = false;;
 
 let rec valuation n =
@@ -22,6 +22,11 @@ let rec valuation n =
 let verify lst =
   List.for_all (fun l -> List.exists (fun x -> Core.read x = x) l) lst
 
+let (set_time, get_time) =
+	let t = ref 0. in
+		((fun () -> t := Sys.time()),
+		(fun () -> if Sys.time() -. !t > 10. then raise TimeOut))
+
 let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -30,8 +35,8 @@ let print_list l=
     print_string "["; print l
 
 let dpll env = 
-  let rec aux i env =
-    (* i est la profondeur actuelle des paris. *)
+  let rec aux env =
+  	get_time ();
     let (x, envtrue, envfalse) = try Oper.split env 
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
@@ -39,51 +44,52 @@ let dpll env =
 	      List.iter (fun x -> print_list x) y;
 	      print_newline()) (Oper.bindings env)
 	  end;
-	raise Core.Unsatisfiable
+	  raise Core.Unsatisfiable
     in
-    Core.fix_depth i;
     try (
       if debug then begin
 	print_string "Gamble: ";
 	print_int x;
 	print_newline();
       end;
-      Core.write x;
+      Core.write x; Oper.propag x;
       (* On assigne la valeur de x, et on rentre cette assignation dans une
 	 liste pour gérer le backtrack. *)
       let env' = Oper.propagation x envtrue in
-      aux (i+1) env')
-      (* On va un niveau plus profond dans les paris. *)
-    with Core.Unsatisfiable ->
+      Oper.flush();
+      (* On stocke l'ensemble des assignations effectuées avec le pari
+	 x, pour gérer le backtrack. *)
+      aux env')
+    with Core.Unsatisfiable -> 
       try (
-	Core.restore i;
+	Oper.flush();
+	(* On stocke les assignations qui étaient en cours. *)
+	Oper.restore();
 	(* On annule les assignations effectuées à l'étape
 	   précédente. *)
-	Core.fix_depth i;
 	if debug then begin
 	  print_string "Gamble: ";
 	  print_int (-x);
 	  print_newline();
 	end;
-	Core.write (-x);
-	let env' = Oper.propagation (-x) envfalse in
-	aux (i+1) env')
-      with Core.Unsatisfiable -> (Core.restore i; 
+	Core.write (-x); Oper.propag (-x);
+	let env' = Oper.propagation x envfalse in
+	Oper.flush();
+	aux env')
+      with Core.Unsatisfiable -> (Oper.restore(); 
 				    (* On annule les dernières assignations. *)
 				    raise Core.Unsatisfiable)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
+  set_time ();
   aux env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
-let t = Sys.time() in
-(try dpll 0 (Oper.create ()) with 
+try dpll (Oper.create ()) with 
   |Core.Satisfiable -> 
-    print_string "s SATISFIABLE\nc Possible assignation: ";
-    List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
-    print_newline();
-    if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
+    if verify Core.lst then print_string "c SATISFIABLE\n" else print_string "c ERROR\n"
   |Core.Unsatisfiable ->
-    print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
+    print_string "s UNSATISFIABLE\n"
+  |TimeOut ->
+  	print_string "s TIME OUT\n";;

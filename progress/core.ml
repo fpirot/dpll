@@ -61,62 +61,117 @@ end;;
 (* Regroupe les modules d'initialisation *)
 
 module Core =
-  struct
+struct
 
-    exception Satisfiable
-    exception Unsatisfiable
-    
-    let debug = true
+  exception Satisfiable
+  exception Unsatisfiable
 
-    let (wlit, heur, path) =
-      let w = ref false
-      and s = ref "Nil"
-      and p = ref "Test/ex0.cnf" in
-        Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
-        	("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
-        	("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
-        	("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
-            (fun str -> p := str) "";
-        (!w, !s, !p)
-        
-    let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
-    
-    
-    let assigArray = Array.create var 0
-    
-    let read x = assigArray.((abs x) - 1)
-    
-    let write x = assigArray.((abs x) - 1) <- x;
-      if debug then begin
-        print_string "Assignment: ";
-        Array.iter (fun x -> print_int x; print_char ' ') assigArray;
-        print_string "\n\n" end
-        
-    let reset x = assigArray.((abs x) - 1) <- 0;
-      if debug then begin
-        print_string "Assignment: ";
-        Array.iter (fun x -> print_int x; print_char ' ') assigArray;
-        print_string "\n\n" end
+  let debug = true
 
-    let fold = List.fold_right
+  let print_list l=
+    let rec print = function
+      |[] -> print_string "]"
+      |[a] -> print_int a; print_string "]"
+      |a::l -> print_int a; print_string "; "; print l in
+    print_string "["; print l
+
+  type cls = int
+
+  let depth = ref 0
+
+  let fix_depth i = depth := i
+
+  let (wlit, heur, path) =
+    let w = ref false
+    and s = ref "Nil"
+    and p = ref "Test/ex0.cnf" in
+    Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
+               ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
+               ("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
+               ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
+      (fun str -> p := str) "";
+    (!w, !s, !p)
+      
+  let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
     
-  end;;
+
+  (* ********************************************************* *)
+  (*        Gestion des affectations et des backtracks         *)
+  (* ********************************************************* *)
+      
+  let stack = Array.make var []
+(* La "pile" contenant les assignations successives : on utilise un 
+   tableau de liste en partant du principe qu'il y a au plus n étages
+   de paris, avec n le nombre de variables. *)
+
+  type assig = {mutable value: int; mutable father: cls; mutable depth: int}
+  (* Le type assig contient comme information la valeur de vérité
+     value prise par le litéral (0 si indéfinie), la clause qui a
+     engendré son assignation (-1 si c'est un pari), et la profondeur
+     depth de son assignation dans la pile de propagation. *)
+
+  let zero = {value = 0; father = -1; depth = 0}
+
+  let assigArray = let t = Array.make var zero in
+		   for i = 0 to var-1 do t.(i) <- {value = 0; father = -1; depth = 0} done; t
+    
+  let reset x = assigArray.((abs x) - 1) <-  {value = 0; father = -1; depth = 0};
+    if debug then begin
+      print_string "Assignment: ";
+      Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
+      print_string "\n\n" end
+
+  let propag x = stack.(!depth) <- (x :: stack.(!depth))
+
+  let restore i = 
+    if debug then begin
+      print_string "Restore: ";
+      Array.iter (fun l -> print_list l) stack;
+      print_newline()
+    end;
+    for k = i to !depth do
+      List.iter reset stack.(k);
+      stack.(k) <- [] done
+
+  let read x = assigArray.((abs x) - 1).value
+
+  let write ?(father = -1) x = assigArray.((abs x) - 1).value <- x;
+    assigArray.((abs x) - 1).depth <- !depth;
+    assigArray.((abs x) - 1).father <- father;
+    propag x;
+    if debug then begin
+      print_string "Assignment: ";
+      Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
+      print_string "\n\n" end
+
+  let father x = assigArray.((abs x) - 1).father
+
+  let depth x = assigArray.((abs x) - 1).depth
+
+  let fold = List.fold_right
+    
+end;;
 
 module type Abstract =
-  sig
-    exception Satisfiable
-    exception Unsatisfiable
-    val var : int
-    val cls : int
-    val lst : int list list
-    val ord : (int * int) list
-    val wlit : bool
-    val heur : string
-    val read : int -> int
-    val write : int -> unit
-    val reset : int -> unit
-    val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
-  end;;
+sig
+  exception Satisfiable
+  exception Unsatisfiable
+  type cls = int
+  val var : int
+  val cls : int
+  val lst : int list list
+  val ord : (int * int) list
+  val wlit : bool
+  val heur : string
+  val fix_depth : int -> unit
+  val restore : int -> unit
+  val read : int -> int
+  val write : ?father:int -> int -> unit
+  val father : int -> int
+  val depth : int -> int
+  val reset : int -> unit
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+end;;
 
 module Make = (Core : Abstract);;
 

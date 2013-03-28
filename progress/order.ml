@@ -1,8 +1,16 @@
 module type CoreElt =
 sig
   exception Satisfiable
-  val read : int -> int
+  exception Unsatisfiable
+  type cls = int
+  val var : int
   val cls : int
+  val wlit : bool
+  val lst : int list list
+  val read : int -> int
+  val write : ?father: cls -> int -> unit
+  val reset : int -> unit
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val heur : string
   val ord : (int * int) list
 end;;
@@ -15,18 +23,30 @@ sig
   val is_empty : order -> bool
 end;;
 
-module type Clause =
+module type Clause = functor (Elt: CoreElt) ->
+(* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  type cls
+  type cls = Elt.cls
   type map
-  val length : cls -> int
-  val cls_make : int -> cls
-  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val empty : map
+  val create : int list list -> map
+  val is_singleton : cls -> int
   val find : int -> map -> cls list
-end;;  
+  val choose : cls -> int
+  val cls_make : int -> cls
+  val bindings : map -> (int * int list list) list
+  val extract : int -> map -> map
+  val remove : cls -> map -> map
+  val is_empty : map -> bool
+  val length : cls -> int
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+end;;
 
-module OrderCore = functor (Cor: CoreElt) -> functor (Clause: Clause) ->
+module OrderCore = functor (Cor: CoreElt) -> functor (Elt: Clause) ->
 struct
+
+  module Clause = Elt (Cor)
+
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
   module Moms = Moms.Make (Clause) (Cor)
@@ -77,8 +97,8 @@ module type OrderAbstract = functor (Cor : CoreElt) -> functor (Clause: Clause) 
     type order
     val is_empty : order -> bool
     val create : unit -> order
-    val extract : Clause.map -> order -> int * order
-    val update : int -> Clause.map -> order -> order
+    val extract : Clause(Cor).map -> order -> int * order
+    val update : int -> Clause(Cor).map -> order -> order
   end;;
 
 module Make = (OrderCore : OrderAbstract);;

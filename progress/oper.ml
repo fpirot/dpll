@@ -4,18 +4,24 @@
 module type CoreElt =
 sig
   exception Satisfiable
-  exception Unsatisfiable 
+  exception Unsatisfiable
+  type cls = int
+  val var : int
+  val cls : int
   val wlit : bool
   val lst : int list list
   val read : int -> int
-  val write : int -> unit
+  val write : ?father: cls -> int -> unit
   val reset : int -> unit
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+  val heur : string
+  val ord : (int * int) list
 end;;
 
-module type OpElt =
+module type OpElt = functor (Elt: CoreElt) ->
 (* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  type cls
+  type cls = Elt.cls
   type map
   val empty : map
   val create : int list list -> map
@@ -23,29 +29,31 @@ sig
   val find : int -> map -> cls list
   val choose : cls -> int
   val cls_make : int -> cls
-  val bindings : map -> (int * (int * int list) list) list
-  val update : int -> map -> map
+  val bindings : map -> (int * int list list) list
+  val extract : int -> map -> map
   val remove : cls -> map -> map
   val is_empty : map -> bool
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module type Order = functor (Elt: OpElt) ->
+module type Order = functor (Cor: CoreElt) -> functor (Elt: OpElt) ->
 sig
   type order
   val is_empty : order -> bool
   val create : unit -> order
-  val extract : Elt.map -> order -> int * order
-  val update : int -> Elt.map -> order -> order
+  val extract : Elt(Cor).map -> order -> int * order
+  val update : int -> Elt(Cor).map -> order -> order
 end;;
 
-module type WlitElt =
+module type WlitElt = functor (Elt: CoreElt) ->
 sig
+  type cls = Elt.cls
   type set
-  val update : int -> set * set
+  type setc
+  val update : int -> set * setc
   val init : unit -> unit
-  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
+  val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
   val choose : set -> int
   val singleton : int -> set
   val empty : set
@@ -55,15 +63,17 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (Elt : OpElt) -> functor (Cor : CoreElt) -> functor (Order: Order) -> functor (Wlit: WlitElt) ->
+module OpCore = functor (OpElt : OpElt) -> functor (Cor : CoreElt) -> functor (Order: Order) -> functor (WlitElt: WlitElt) ->
 struct
 
-  module Ord = Order (Elt)
+  module Elt = OpElt (Cor)
+  module Ord = Order (Cor) (OpElt)
+  module Wlit = WlitElt (Cor)
 
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Elt.cls
 
-  let debug = true
+  let debug = false
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -71,60 +81,38 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  let create () = 
-    {clause = Elt.create Cor.lst; order = Ord.create ()}
-
-
-
-  let (propag, flush, restore, reset) = 
-    let lst = ref []
-    and ls = ref [] in
-    ((fun x -> ls := x::(!ls)),
-     (fun () -> lst := (!ls)::(!lst); ls := [];
-       if debug then begin
-	 print_string "Flush: ";
-	 List.iter (fun l -> print_list l) (!lst);
-	 print_newline()
-       end;),
-     (fun () ->  
-       if debug then begin
-	 print_string "Restore: ";
-	 List.iter (fun l -> print_list l) (!lst);
-	 print_newline()
-       end;
-       List.iter (fun x -> Cor.reset x)
-	 (try List.hd (!lst) with Failure _ -> raise Cor.Unsatisfiable);
-       lst := List.tl (!lst)),
-     (fun () -> ls := []; lst := []))
+  let create () = let m = Elt.create Cor.lst in
+    let ord = Ord.create() in
+    {clause = m; order = ord}
 
 (* Extrait une variable selon l'ordre *)
 let split env =
   let k, ord = Ord.extract env.clause env.order in
-  let mtrue = Elt.update k env.clause
-  and mfalse = Elt.update (-k) env.clause
-  and ord = Ord.update (-k) env.clause env.order in
-  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = ord})
+  let mtrue = Elt.extract k env.clause
+  and mfalse = Elt.extract (-k) env.clause in
+  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
 	 
   let is_empty env = Elt.is_empty env.clause
 
-  let select lc setv =
+  let entail x env =
     List.fold_right (fun c s -> let x = Elt.is_singleton c in
 				if x <> 0 then (
 				  if debug then begin
 				    print_string "Select: ";
 				    print_int x;
 				    print_newline()
-				  end;
-				  Wlit.add x s)
-				else s) lc setv
+				  end;	  
+				  Cor.write ~father:c x; Wlit.add x s)
+				else s) (Elt.find (-x) env.clause) Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
      ainsi un ensemble de nouvelles assignations contraintes par
      celle en cours. *)
 
-  let simple_propagation env lc =
-    let rec aux env lc setv =
-      let setv' = select lc setv in
+  let simple_propagation x env =
+    let rec aux env x setv =
+      let set_entailed = entail x env in
+      let setv' = Wlit.union set_entailed setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
@@ -137,18 +125,13 @@ let split env =
 	  print_newline()
 	end;
 	let ord = Ord.update x env.clause env.order in
-	Cor.write x; propag x;
-	(* On assigne x à vrai, et on rentre cette assignation dans
-	   une liste, afin de désassigner convenablement lors du
-	   potentiel backtrack. *)
 	let setv' = Wlit.remove x setv'
-	and m = Elt.update x env.clause in
-	let lc' = Elt.find (-x) m in
-	aux {clause = m; order = ord} lc' setv'
+	and m = Elt.extract x env.clause in
+	aux {clause = m; order = ord} x setv'
       end
-    in aux env lc Wlit.empty
+    in aux env x Wlit.empty
 
-  let wlit_propagation env lc x =
+  let wlit_propagation x env =
     let rec aux env setv = 
       if Wlit.is_empty setv then env
       else let x = Wlit.choose setv in
@@ -159,17 +142,15 @@ let split env =
            end;
 	   let ord = Ord.update x env.clause env.order
 	   and setv = Wlit.remove x setv in
-	   Cor.write x; propag x;
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
 	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = ord} setv'
     in aux env (Wlit.singleton x)
 
     
-  let propagation env lc x =
-    if Cor.wlit then wlit_propagation env lc x
-    else simple_propagation env lc
-
+  let propagation x env =
+    if Cor.wlit then wlit_propagation x env
+    else simple_propagation x env
     
   let bindings env = Elt.bindings env.clause
 (*
@@ -177,27 +158,22 @@ let split env =
 *)
   let init () = if Cor.wlit then Wlit.init () else ()
 
-  let find x env = Elt.find x env.clause
-
 end;;
 
 
 module type OpAbstract = functor (Elt: OpElt) -> functor (Cor: CoreElt) -> 
   functor (Ord: Order) -> functor (Wlit: WlitElt) ->
+
 sig
   type env
   type cls
   val create : unit -> env
-  val propag : int -> unit
-  val flush : unit -> unit
-  val restore : unit -> unit
-  val reset : unit -> unit
-  val split : env -> (int * env * env)
   val is_empty : env -> bool
-  val propagation : env -> cls list -> int -> env
-  val bindings : env -> (int * (int * int list) list) list
+  val split : env -> (int * env * env)
+  val entail : int -> env -> Wlit(Cor).set
+  val propagation : int -> env -> env
+  val bindings : env -> (int * int list list) list
   val init : unit -> unit
-  val find : int -> env -> cls list
 end;;
 
 module Make = (OpCore : OpAbstract);;
