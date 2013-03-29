@@ -1,4 +1,3 @@
-
 (* Module d'operation sur les clauses propres a DPLL *)
 
 module type CoreElt =
@@ -12,43 +11,43 @@ sig
   val lst : int list list
   val read : int -> int
   val write : ?father: cls -> int -> unit
-  val reset : int -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val heur : string
   val ord : (int * int) list
-end;;
-
-module type OpElt = functor (Elt: CoreElt) ->
-(* Module qui référencie l'ensemble des clauses du problème. *)
-sig
-  type cls = Elt.cls
-  type map
-  val empty : map
-  val create : int list list -> map
   val is_singleton : cls -> int
-  val find : int -> map -> cls list
   val choose : cls -> int
   val cls_make : int -> cls
-  val bindings : map -> (int * int list list) list
-  val extract : int -> map -> map
-  val remove : cls -> map -> map
-  val is_empty : map -> bool
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module type Order = functor (Cor: CoreElt) -> functor (Elt: OpElt) ->
+module type OpElt =
+(* Module qui référencie l'ensemble des clauses du problème. *)
 sig
-  type order
-  val is_empty : order -> bool
-  val create : unit -> order
-  val extract : Elt(Cor).map -> order -> int * order
-  val update : int -> Elt(Cor).map -> order -> order
+  type cls
+  type map
+  val empty : map
+  val create : int list list -> map
+  val find : int -> map -> cls list
+  val bindings : map -> (int * int list list) list
+  val extract : int -> map -> map
+  val remove : cls -> map -> map
+  val is_empty : map -> bool
 end;;
 
-module type WlitElt = functor (Elt: CoreElt) ->
+module type Order =
 sig
-  type cls = Elt.cls
+  type order
+  type map
+  val is_empty : order -> bool
+  val create : unit -> order
+  val extract : map -> order -> int * order
+  val update : int -> map -> order -> order
+end;;
+
+module type WlitElt =
+sig
+  type cls
   type set
   type setc
   val update : int -> set * setc
@@ -63,18 +62,16 @@ sig
   val remove : int -> set -> set
 end;;
 
-module OpCore = functor (OpElt : OpElt) -> functor (Cor : CoreElt) -> functor (Order: Order) -> functor (WlitElt: WlitElt) ->
+module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
+ -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
 struct
 
-  module Elt = OpElt (Cor)
-  module Ord = Order (Cor) (OpElt)
-  module Wlit = WlitElt (Cor)
-
   type env = {clause: Elt.map; order: Ord.order}
-  type cls = Elt.cls
+  type cls = Cor.cls
+  type set = Wlit.set
 
   let debug = true
-  let print_list l=
+  let print_list l =
     let rec print = function
       |[] -> print_string "]"
       |[a] -> print_int a; print_string "]"
@@ -95,7 +92,7 @@ let split env =
   let is_empty env = Elt.is_empty env.clause
 
   let entail x env =
-    List.fold_right (fun c s -> let x = Elt.is_singleton c in
+    List.fold_right (fun c s -> let x = Cor.is_singleton c in
 				if x <> 0 then (
 				  if debug then begin
 				    print_string "Select: ";
@@ -146,7 +143,7 @@ let split env =
 	   and setv = Wlit.remove x setv in
 	   let (sbord, ssat) = Wlit.update x in
 	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Elt.cls_make c) m) ssat env.clause ; order = ord} setv'
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Cor.cls_make c) m) ssat env.clause ; order = ord} setv'
     in aux env (Wlit.singleton x)
 
     
@@ -163,16 +160,17 @@ let split env =
 end;;
 
 
-module type OpAbstract = functor (Elt: OpElt) -> functor (Cor: CoreElt) -> 
-  functor (Ord: Order) -> functor (Wlit: WlitElt) ->
+module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
+ -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
 
 sig
   type env
   type cls
+  type set
   val create : unit -> env
   val is_empty : env -> bool
   val split : env -> (int * env * env)
-  val entail : int -> env -> Wlit(Cor).set
+  val entail : int -> env -> set
   val propagation : int -> env -> env
   val bindings : env -> (int * int list list) list
   val init : unit -> unit

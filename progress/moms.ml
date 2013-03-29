@@ -1,21 +1,22 @@
-module type Clause =
-sig
-  type map
-  type cls = int
-  val length : cls -> int
-  val cls_make : int -> cls
-  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val find : int -> map -> cls list
-end;;
-
 module type Core =
 sig
   exception Satisfiable
+  type cls = int
   val cls : int
   val read : int -> int
+  val length : cls -> int
+  val cls_make : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module MomsCore = functor (Elt: Clause) -> functor (Cor: Core) ->
+module type Clause =
+sig
+  type cls
+  type map
+  val find : int -> map -> cls list
+end;;
+
+module MomsCore = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) -> 
 struct
   module Map = Map.Make (struct
     type t = int
@@ -32,16 +33,16 @@ struct
      la taille de ces clauses. *)
 
   let remove = List.fold_right
-    (fun c mp -> let n = Elt.length c in
-		 Elt.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
+    (fun c mp -> let n = Cor.length c in
+		 Cor.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
 					  let v = (try Map.find n mx with Not_found -> 0) - 1 in
 					  let mx' = if v > 0 then Map.add n v mx else Map.remove n mx in
 					  if is_empty mx' then Map.remove x m else Map.add x mx' m) c mp)
   (* Retire une liste de clauses à prendre en considération dans la map. *)
 
   let decr_size = List.fold_right
-    (fun c mp -> let n = Elt.length c in
-		 Elt.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
+    (fun c mp -> let n = Cor.length c in
+		 Cor.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
 					  let v1 = (try Map.find n mx with Not_found -> 0) - 1
 					  and v2 = (try Map.find (n-1) mx with Not_found -> 0) + 1 in
 					  let mx1 = if v1 > 0 then Map.add n v1 mx else Map.remove n mx in
@@ -50,8 +51,8 @@ struct
      leur taille décrémenter d'une unité. *)
 
   let add = List.fold_right 
-    (fun c mp -> let n = Elt.length c in
-		 Elt.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
+    (fun c mp -> let n = Cor.length c in
+		 Cor.cls_fold (fun x m -> let mx = try Map.find x m with Not_found -> Map.empty in
 					  Map.add x (Map.add n ((try Map.find n mx with Not_found -> 0) + 1) mx) m) c mp)
   (* Ajoute une liste de clauses à prendre en considération dans la map. *)
 
@@ -95,14 +96,14 @@ struct
 
   let create () =
     let rec make_list l = function
-      |0 -> Elt.cls_make 0 :: l
-      |n -> make_list (Elt.cls_make (n-1) :: l) (n-1) in
+      |0 -> Cor.cls_make 0 :: l
+      |n -> make_list (Cor.cls_make (n-1) :: l) (n-1) in
     let l = make_list [] Cor.cls in
     add l Map.empty
     
 end;;
 
-module type MomsAbstract = functor (Elt: Clause) -> functor (Cor: Core) ->
+module type MomsAbstract = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) -> 
 sig
   type order
   val is_empty : order -> bool

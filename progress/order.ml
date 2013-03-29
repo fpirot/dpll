@@ -1,56 +1,33 @@
-module type CoreElt =
+module type Core =
 sig
   exception Satisfiable
-  exception Unsatisfiable
   type cls = int
-  val var : int
   val cls : int
-  val wlit : bool
-  val lst : int list list
-  val read : int -> int
-  val write : ?father: cls -> int -> unit
-  val reset : int -> unit
-  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
-  val heur : string
   val ord : (int * int) list
-end;;
-
-module type Heur =
-sig
-  type order
-  val create : unit -> order
-  val extract : order -> int * order
-  val is_empty : order -> bool
-end;;
-
-module type Clause = functor (Elt: CoreElt) ->
-(* Module qui référencie l'ensemble des clauses du problème. *)
-sig
-  type cls = Elt.cls
-  type map
-  val empty : map
-  val create : int list list -> map
-  val is_singleton : cls -> int
-  val find : int -> map -> cls list
-  val choose : cls -> int
-  val cls_make : int -> cls
-  val bindings : map -> (int * int list list) list
-  val extract : int -> map -> map
-  val remove : cls -> map -> map
-  val is_empty : map -> bool
+  val heur : string
+  val read : int -> int
   val length : cls -> int
+  val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module OrderCore = functor (Cor: CoreElt) -> functor (Elt: Clause) ->
+module type Clause =
+sig
+  type cls
+  type map
+  val find : int -> map -> cls list
+end;;
+
+
+module OrderCore = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) ->
 struct
 
-  module Clause = Elt (Cor)
+  type map = Elt.map
 
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
-  module Moms = Moms.Make (Clause) (Cor)
-  module Dlis = Dlis.Make (Clause) (Cor)
+  module Moms = Moms.Make (Cor) (Elt)
+  module Dlis = Dlis.Make (Cor) (Elt)
     
   type order = Default of Default.order | Rand of Rand.order | Moms of Moms.order | Dlis of Dlis.order
       
@@ -92,13 +69,14 @@ struct
 end;;
 
 
-module type OrderAbstract = functor (Cor : CoreElt) -> functor (Clause: Clause) ->
+module type OrderAbstract = functor (Cor : Core) -> functor (Elt: Clause with type cls = Cor.cls) ->
   sig 
     type order
+    type map = Elt.map
     val is_empty : order -> bool
     val create : unit -> order
-    val extract : Clause(Cor).map -> order -> int * order
-    val update : int -> Clause(Cor).map -> order -> order
+    val extract : map -> order -> int * order
+    val update : int -> map -> order -> order
   end;;
 
 module Make = (OrderCore : OrderAbstract);;

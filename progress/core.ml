@@ -88,6 +88,10 @@ struct
       
   let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
     
+  let fold = List.fold_right
+
+  type cls = int
+  (* On repère une clause par son indice dans clauseArray. *)
 
   (* ********************************************************* *)
   (*        Gestion des affectations et des backtracks         *)
@@ -105,8 +109,6 @@ struct
       print_string "Stack: ";
       for k = 0 to i-1 do print_list stack.(k) done;
       print_newline() end
-
-  type cls = int 
 
   type assig = {mutable value: int; mutable father: cls; mutable depth: int}
   (* Le type assig contient comme information la valeur de vérité
@@ -151,7 +153,67 @@ struct
 
   let depth x = assigArray.((abs x) - 1).depth
 
-  let fold = List.fold_right
+
+  (* ********************************************************* *)
+  (*          Référencement des clauses du problème            *)
+  (* ********************************************************* *)
+
+  module Cls = Set.Make
+    (struct
+      type t = int
+      let compare x y = compare (abs x) (abs y)
+     end)
+  (* Les clauses sont des ensembles d'entiers (+x pour le litéral
+     vrai de la variable x, -x pour sa négation), avec la relation
+     de comparaison sur les valeurs absolues (entre nom de
+     variable). *)
+
+  let clauseArray = Array.make cls Cls.empty
+  (* On référencie l'ensemble des clauses dans un tableau, afin de
+     stocker des indices dans nos structures de données plutôt que des
+     clauses. *)
+
+  let compt = ref (-1)
+  (* L'indice en cours dans le tableau. *)
+
+  let fill l =
+    incr compt;
+    clauseArray.(!compt) <- fold (fun x s -> Cls.add x s) l Cls.empty;
+    !compt
+  (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
+
+  let clause id = clauseArray.(id)
+
+  let cls_make id = id
+
+  let cls_fold f cls = Cls.fold f (clause cls)
+
+  let length cls = cls_fold (fun x t -> if read x = 0 then t+1 else t) cls 0
+
+  let is_singleton cls = 
+    try (
+      match Cls.fold 
+	(fun x v -> match (read x, v) with
+          |(0, 0) -> x
+          |(0, _) -> failwith "is_not"
+	  |(_, y) ->  y) (clause cls) 0
+      with
+	|0 -> if debug then begin
+	  print_string "Clause insatisfiable: ";
+	  print_list (Cls.elements (clause cls));
+	  print_newline() end;
+	  raise Unsatisfiable
+	|x -> x
+    )
+    with Failure "is_not" -> 0
+  (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
+     encore assigné quand il est bien unique, 0 sinon.  Lève
+     l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
+
+  let literals cls = Cls.elements (clause cls)
+  (* Donne les elements d'une clause *)
+      
+  let choose cls = Cls.choose (clause cls)
     
 end;;
 
@@ -172,8 +234,15 @@ sig
   val write : ?father:int -> int -> unit
   val father : int -> int
   val depth : int -> int
-  val reset : int -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+  val fill : int list -> cls
+  val cls_make : int -> cls
+  val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val literals : cls -> int list
+  val length : cls -> int
+  val choose : cls -> int
+  val is_singleton : cls -> int
+
 end;;
 
 module Make = (Core : Abstract);;

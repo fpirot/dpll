@@ -31,7 +31,7 @@ let print_list l=
 
 let dpll env = 
   let rec aux env =
-    let (x, envtrue, envfalse) = try Oper.split env 
+    let (x, envtrue, envfalse) = try Oper.split env
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";

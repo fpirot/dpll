@@ -1,8 +1,8 @@
 module Core = Core.Make;;
-module Clause = Clause.Make;;
-module Order = Order.Make;;
-module Wlit = Wlit.Make (Clause);;
-module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
+module Clause = Clause.Make (Core);;
+module Wlit = Wlit.Make (Core);;
+module Order = Order.Make (Core) (Clause);;
+module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) ;;
 
 
 let debug = true;;
