@@ -130,9 +130,11 @@ let split env =
     in aux env x Wlit.empty
 
   let wlit_propagation x env =
-    let rec aux env setv = 
-      if Wlit.is_empty setv then env
-      else let (x, c) = Wlit.choose setv in
+    let rec aux env x setv = 
+      let (sbord, ssat) = Wlit.update x in
+      let setv' = Wlit.union sbord setv in
+      if Wlit.is_empty setv' then env
+      else let (x, c) = Wlit.choose setv' in
 	   if debug then begin
              print_string "WLit choose: ";
              print_int x;
@@ -140,11 +142,9 @@ let split env =
            end;
 	   Cor.write ~father:c x;
 	   let ord = Ord.update x env.clause env.order
-	   and setv = Wlit.remove x setv in
-	   let (sbord, ssat) = Wlit.update x in
-	   let setv' = Wlit.union sbord setv in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Cor.cls_make c) m) ssat env.clause ; order = ord} setv'
-    in aux env (Wlit.singleton x)
+	   and setv' = Wlit.remove x setv' in
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Cor.cls_make c) m) ssat env.clause ; order = ord} x setv'
+    in aux env x Wlit.empty
 
     
   let propagation x env =
@@ -152,17 +152,14 @@ let split env =
     else simple_propagation x env
     
   let bindings env = Elt.bindings env.clause
-(*
-  let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
-*)
+
   let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
 
 
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
- -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
-
+    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
 sig
   type env
   type cls
