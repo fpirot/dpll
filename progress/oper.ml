@@ -134,16 +134,19 @@ let split env =
       let (sbord, ssat) = Wlit.update x in
       let setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
-      else let (x, c) = Wlit.choose setv' in
-	   if debug then begin
-             print_string "WLit choose: ";
-             print_int x;
-             print_newline()
-           end;
-	   Cor.write ~father:c x;
-	   let ord = Ord.update x env.clause env.order
-	   and setv' = Wlit.remove x setv' in
-	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Cor.cls_make c) m) ssat env.clause ; order = ord} x setv'
+      else begin
+	let (x, c) = Wlit.choose setv' in
+	if debug then begin
+          print_string "WLit choose: ";
+          print_int x;
+          print_newline()
+        end;
+	Cor.write ~father:c x;
+	let ord = Ord.update x env.clause env.order
+	and setv' = Wlit.remove x setv'
+	and m = Elt.extract x env.clause in
+	aux {clause = m ; order = ord} x setv'
+      end
     in aux env x Wlit.empty
 
     

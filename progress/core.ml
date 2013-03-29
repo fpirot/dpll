@@ -214,7 +214,7 @@ struct
   (* Donne les elements d'une clause *)
       
   let choose cls = Cls.choose (clause cls)
-    
+
 end;;
 
 module type Abstract =
