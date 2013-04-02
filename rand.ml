@@ -12,19 +12,7 @@ module RandCore = functor (Cor : CoreElt) ->
     type order = int list
     
     let create () = List.map (fun x -> snd x) Cor.ord
-(*    
-    let update x y lst =
-      let rec modif n = function
-        |[] -> failwith "Heur.random"
-        |a :: l -> if n = 0 then (a, l)
-          else let (b, l) = modif (n - 1) l in (b, a::l) in
-      if lst = [] then []
-      else let (a, l) = modif (Random.int (List.length lst)) lst in a::l
-    
-    let hd = List.hd
-    
-    let tl = List.tl
-*)
+
     let filter = List.filter (fun x -> Cor.read x = 0)
 
     let extract lst =

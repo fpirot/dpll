@@ -129,7 +129,12 @@ struct
 
   let propag x = stack.(!depth) <- (x :: stack.(!depth))
 
-  let restore i = 
+  let track i = let lst = ref [] in
+		for k = i to !depth do
+		  List.iter (fun x -> lst := x :: !lst) stack.(k) done;
+		!lst
+
+  let restore_assig i = 
     if debug then begin
       print_string "Restore: ";
       for k = 0 to i do (fun l -> print_list l) stack.(k) done;
@@ -173,12 +178,15 @@ struct
      stocker des indices dans nos structures de données plutôt que des
      clauses. *)
 
+  let lengthArray = Array.make cls 0
+
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
 
   let fill l =
     incr compt;
     clauseArray.(!compt) <- fold (fun x s -> Cls.add x s) l Cls.empty;
+    lengthArray.(!compt) <- Cls.cardinal clauseArray.(!compt);
     !compt
   (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
 
@@ -188,32 +196,26 @@ struct
 
   let cls_fold f cls = Cls.fold f (clause cls)
 
-  let length cls = cls_fold (fun x t -> if read x = 0 then t+1 else t) cls 0
+  let length cls = lengthArray.(cls)
 
-  let is_singleton cls = 
-    try (
-      match Cls.fold 
-	(fun x v -> match (read x, v) with
-          |(0, 0) -> x
-          |(0, _) -> failwith "is_not"
-	  |(_, y) ->  y) (clause cls) 0
-      with
-	|0 -> if debug then begin
-	  print_string "Clause insatisfiable: ";
-	  print_list (Cls.elements (clause cls));
-	  print_newline() end;
-	  raise Unsatisfiable
-	|x -> x
-    )
-    with Failure "is_not" -> 0
-  (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
+  let choose cls = Cls.choose (clause cls)
+
+  let is_singleton cls = match length cls with
+    | 0 -> raise Unsatisfiable
+    | 1 -> choose cls
+    | _ -> 0
+  (* Renvoie l'unique élément de la clause d'indice cls qui n'est pas
      encore assigné quand il est bien unique, 0 sinon.  Lève
      l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
+  let decr_size cls = lengthArray.(cls) <- lengthArray.(cls) - 1
+
+  let incr_size cls = lengthArray.(cls) <- lengthArray.(cls) + 1
+
   let literals cls = Cls.elements (clause cls)
   (* Donne les elements d'une clause *)
-      
-  let choose cls = Cls.choose (clause cls)
+    
+  let restore_length = List.iter (List.iter incr_size)
 
 end;;
 
@@ -229,109 +231,23 @@ sig
   val wlit : bool
   val heur : string
   val fix_depth : int -> unit
-  val restore : int -> unit
+  val restore_assig : int -> unit
   val read : int -> int
   val write : ?father:int -> int -> unit
   val father : int -> int
   val depth : int -> int
+  val track : int -> int list
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val literals : cls -> int list
   val length : cls -> int
+  val decr_size : cls -> unit
   val choose : cls -> int
   val is_singleton : cls -> int
+  val restore_length : cls list list -> unit
 
 end;;
 
 module Make = (Core : Abstract);;
-
-
-(* Tests *)
-
-(*
-Make.var;;
-Make.cls;;
-Make.lst;;
-Make.wlit;;
-Make.heur;;
-Make.hd Make.ord;;
-Make.read 1;;
-Make.write 3 ;;
-Make.read 3;;
-Make.update 0 0 Make.ord;;
-*)
-
-(* Anciennes versions *)
-
-
-(* Assig *)
-(* Gere l'assignation des variables *)
-
-(*
-module type AssigElt =
-  sig
-    type t
-    val zero : t
-    val nbr : int
-  end;;
-(* nbr est le nombre de variables dans l'instance de SAT, indiquée en début de problème. *)
-
-module AssigCore = functor (Elt : AssigElt) ->
-  struct
-    type t = Elt.t
-    let assigArray = Array.create Elt.nbr Elt.zero
-    let read n = assigArray.(n - 1)
-    let write n x = assigArray.(n - 1) <- x
-  end;;
-
-module type AssigAbstract = functor (Elt : AssigElt) ->
-  sig
-    type t = Elt.t
-    val read : int -> t
-    val write : int -> t -> unit
-  end;;
-
-module Assig = (AssigCore : AssigAbstract);;
-
-
-(* Order *)
-
-(* Determine l'ordre dans lequel on considere les variables.
-La fonction d'ordre en elle meme n'est pas encore implementee  *)
-
-module OrderCore =
-
-  struct
-    type order = (int * int) list
-    let hd l = snd (List.hd l)
-    let tl = List.tl
-
-    let init l = List.map (fun x -> x, x) l
-  end;;
-
-
-module type OrderAbstract =
-  sig
-    type order
-    val hd : order -> int
-
-    val tl : order -> order
-    val init : int list -> order
-  end;;
-
-
-module Order = (OrderCore: OrderAbstract);;
-*)
-
-
-
-(*
-module Core = Make
-  (struct
-    let var = 10
-    let cls = 10
-    let lst = []
-  end);;
-*)

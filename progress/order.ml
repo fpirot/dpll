@@ -36,13 +36,25 @@ struct
     | "Moms" -> Moms (Moms.create ())
     | "Dlis" -> Dlis (Dlis.create ())
     | _ -> Default (Default.create ())
-
+(*      
+  let hd = function
+    | Default (ord) -> Default.hd ord
+    | Rand (ord) -> Rand.hd ord
+      
+  let tl = function
+    | Default (ord) -> Default (Default.tl ord)
+    | Rand (ord) -> Rand (Rand.tl ord)
+      
+  let update x y = function
+    | Default (ord) -> Default (Default.update x y ord)
+    | Rand (ord) -> Rand (Rand.update x y ord)
+*)
   let extract map = function
     | Default (ord) -> let (x,order) = Default.extract ord in (x, Default (order))
     | Rand (ord) -> let (x,order) = Rand.extract ord in (x, Rand (order))
     | Moms (ord) -> let (x,order) = Moms.extract map ord in (x, Moms (order))
     | Dlis (ord) -> let (x,order) = Dlis.extract map ord in (x, Dlis (order))
-							 
+      
   let is_empty = function
     | Default (ord) -> Default.is_empty ord
     | Rand (ord) -> Rand.is_empty ord
@@ -58,13 +70,13 @@ end;;
 
 
 module type OrderAbstract = functor (Cor : Core) -> functor (Elt: Clause with type cls = Cor.cls) ->
-sig 
-  type order
-  type map = Elt.map
-  val is_empty : order -> bool
-  val create : unit -> order
-  val extract : map -> order -> int * order
-  val update : int -> map -> order -> order
-end;;
+  sig 
+    type order
+    type map = Elt.map
+    val is_empty : order -> bool
+    val create : unit -> order
+    val extract : map -> order -> int * order
+    val update : int -> map -> order -> order
+  end;;
 
 module Make = (OrderCore : OrderAbstract);;

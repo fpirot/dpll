@@ -1,33 +1,40 @@
-
-module type Clause =
+module type Core =
 sig
-  val literals :int -> int list
-end;;
-
-module type Assig =
-sig
+  exception Satisfiable
   exception Unsatisfiable
-  val cls : int
+  type cls = int
   val var : int
+  val cls : int
   val read : int -> int
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+  val literals : cls -> int list
 end;;
 
-module WlitCore = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+module WlitCore =  functor (Cor: Core) -> 
 struct
+
+  type cls = Cor.cls
 
   module St = Set.Make (
     struct
-      type t = int
+      type t = int * cls
+      let compare x y = compare (fst x) (fst y)
+    end)
+
+  module Stc = Set.Make (
+    struct
+      type t = cls
       let compare = compare
     end)
 
   type set = St.t
+  type setc = Stc.t
 
   type wlit = int * int
   let zero = (0, 0)
-  let warray = Array.make Assig.cls zero
+  let warray = Array.make Cor.cls zero
 
-  let assoc = Array.make Assig.var []
+  let assoc = Array.make Cor.var []
   (* table d'association : à la variable i est associée l'ensemble
      des clauses (représentées par leur indice dans un tableau les
      listant toutes) dans lesquelle elle est surveillée. *)
@@ -50,7 +57,7 @@ struct
      d'indice id satisfiable, au vu des litéraux qu'elle surveille. *)
 
   let fill_assoc () = 
-    let n = Assig.cls in
+    let n = Cor.cls in
     for i = 0 to n-1 do
       let (a,b) = warray.(i) in
       if a <> 0 then  assoc.((abs a) - 1) <- i :: assoc.((abs a) - 1);
@@ -60,20 +67,20 @@ struct
      clauses. *)
 
   let watched_literals_of_clause id lbord lsat =
-    let l = Elt.literals id in
+    let l = Cor.literals id in
     let rec aux w1 w2 = function
-      |[] -> if w1 = 0 then raise Assig.Unsatisfiable
+      |[] -> if w1 = 0 then raise Cor.Unsatisfiable
 	(* Si on n'a trouvé aucun litéral à surveiller, la clause
 	   n'est pas satisfiable avec la valuation actuelle. *)
-	else (lbord := St.add w1 !lbord; (w1,0))
+	else (lbord := St.add (w1, id) !lbord; (w1,0))
       (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors
 	 pour que la clause soit satisfaite, il doit forcément être à
-	 vrai. *)
-      |x :: r -> let v = Assig.read x in
+	 vrai. On effectue l'assignation nécessaire. *)
+      |x :: r -> let v = Cor.read x in
 		 if v = 0 then 
 		   if w1 = 0 then aux x 0 r
 		   else (w1,x)
-		 else if v = x then (lsat := St.add id !lsat; (0,0))
+		 else if v = x then (lsat := Stc.add id !lsat; (0,0))
 		 (* c est satisfiable, on la répertorie dans lsat. *)
 		 else aux w1 w2 r
     in aux 0 0 l
@@ -92,8 +99,8 @@ struct
      modifie les tables convenablement. *)
 
   let fill_warray () =
-    let n = Assig.cls in
-    let lbord = ref St.empty and lsat = ref St.empty in
+    let n = Cor.cls in
+    let lbord = ref St.empty and lsat = ref Stc.empty in
     for i = 0 to n-1 do
       warray.(i) <- watched_literals_of_clause i lbord lsat
     done
@@ -105,10 +112,10 @@ struct
 
   let update x =
     let l = watched_to_clauses x in
-    let lbord = ref St.empty and lsat = ref St.empty in
+    let lbord = ref St.empty and lsat = ref Stc.empty in
     let rec aux = function
       |[] -> (!lbord, !lsat)
-      |i :: r -> if get_sat x i then (lsat := St.add i !lsat; aux r)
+      |i :: r -> if get_sat x i then (lsat := Stc.add i !lsat; aux r)
 	else (new_assoc i lbord lsat; aux r)
     in aux l
 (* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle
@@ -116,28 +123,30 @@ struct
    assigner à vrai par effet de bord, et la liste des clauses
    nouvellement satisfiables. *)
 
-  let fold = St.fold
+  let fold = Stc.fold
   let choose = St.choose
-  let singleton = St.singleton
+  let singleton x = St.singleton (x, -1)
   let empty = St.empty
   let is_empty = St.is_empty
   let union = St.union
   let add = St.add
-  let remove = St.remove
+  let remove x = St.remove (x, 0)
 end;;
 
-module type WlitAbstract = functor (Elt: Clause) -> functor (Assig: Assig) -> 
+module type WlitAbstract = functor (Cor: Core) -> 
 sig
   type set
-  val update : int -> set * set
+  type setc
+  type cls = Cor.cls
+  val update : int -> set * setc
   val init : unit -> unit
-  val fold : (int -> 'a -> 'a) -> set -> 'a -> 'a
-  val choose : set -> int
+  val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
+  val choose : set -> (int * cls)
   val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
-  val add : int -> set -> set
+  val add : (int * cls) -> set -> set
   val remove : int -> set -> set
 end;;
 

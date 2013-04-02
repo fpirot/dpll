@@ -5,7 +5,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) ;;
 
 
-let debug = true;;
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
@@ -53,10 +53,10 @@ let dpll env =
 	 liste pour gérer le backtrack. *)
       let env' = Oper.propagation x envtrue in
       aux (i+1) env')
-      (* On va un niveau plus profond dans les paris. *)
+    (* On va un niveau plus profond dans les paris. *)
     with Core.Unsatisfiable ->
       try (
-	Core.restore i;
+	Oper.restore env i;
 	(* On annule les assignations effectuées à l'étape
 	   précédente. *)
 	Core.fix_depth i;
@@ -68,9 +68,9 @@ let dpll env =
 	Core.write (-x);
 	let env' = Oper.propagation (-x) envfalse in
 	aux (i+1) env')
-      with Core.Unsatisfiable -> (Core.restore i; 
+      with Core.Unsatisfiable -> (Oper.restore env i;
 				    (* On annule les dernières assignations. *)
-				    raise Core.Unsatisfiable)
+				  raise Core.Unsatisfiable)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   aux env;;

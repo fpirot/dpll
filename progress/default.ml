@@ -9,7 +9,7 @@ module type CoreElt =
 module DefaultCore = functor (Cor : CoreElt) ->
   struct
 
-    let debug = true
+    let debug = false
     
     type order = (int * int) list
     

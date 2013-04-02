@@ -13,6 +13,7 @@ sig
   val read : int -> int
   val write : ?father: int -> int -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+  val decr_size : cls -> unit
 end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
@@ -38,7 +39,7 @@ struct
 
   let is_empty = Mp.is_empty
     
-  let debug = true
+  let debug = false
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -81,7 +82,11 @@ struct
 
   let extract x map = 
     let s = try Mp.find x map with _ -> St.empty in
+    (* s = ensemble des clauses contenant le litéral x *)
     let m = St.fold (fun cls m -> remove cls m) s map in
+    (* On retire toutes les apparitions des clauses contenant x, qui deviennent satisfaites, de la map. *)
+    let s1 = try Mp.find (-x) map with _ -> St.empty in
+    St.iter Elt.decr_size s1;
     if debug then begin
       print_string "Extraction of "; print_int x; print_string ":\n";
       List.iter (fun x -> print_list (Elt.literals x)) (St.elements s) end;

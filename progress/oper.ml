@@ -11,6 +11,7 @@ sig
   val lst : int list list
   val read : int -> int
   val write : ?father: cls -> int -> unit
+  val track : int -> int list
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val heur : string
   val ord : (int * int) list
@@ -19,6 +20,8 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val restore_length : cls list list -> unit
+  val restore_assig : int -> unit
 end;;
 
 module type OpElt =
@@ -70,7 +73,7 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  let debug = true
+  let debug = false
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -130,39 +133,42 @@ let split env =
     in aux env x Wlit.empty
 
   let wlit_propagation x env =
-    let rec aux env x setv = 
-      let (sbord, ssat) = Wlit.update x in
-      let setv' = Wlit.union sbord setv in
-      if Wlit.is_empty setv' then env
-      else begin
-	let (x, c) = Wlit.choose setv' in
-	if debug then begin
-          print_string "WLit choose: ";
-          print_int x;
-          print_newline()
-        end;
-	Cor.write ~father:c x;
-	let ord = Ord.update x env.clause env.order
-	and setv' = Wlit.remove x setv'
-	and m = Elt.extract x env.clause in
-	aux {clause = m ; order = ord} x setv'
-      end
-    in aux env x Wlit.empty
+    let rec aux env setv = 
+      if Wlit.is_empty setv then env
+      else let (x, c) = Wlit.choose setv in
+	   if debug then begin
+             print_string "WLit choose: ";
+             print_int x;
+             print_newline()
+           end;
+	   Cor.write ~father:c x;
+	   let ord = Ord.update x env.clause env.order
+	   and setv = Wlit.remove x setv in
+	   let (sbord, ssat) = Wlit.update x in
+	   let setv' = Wlit.union sbord setv in
+	   aux {clause = Wlit.fold (fun c m -> Elt.remove (Cor.cls_make c) m) ssat env.clause ; order = ord} setv'
+    in aux env (Wlit.singleton x)
 
     
   let propagation x env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
+
+  let restore env i = Cor.restore_assig i;
+    Cor.restore_length (List.map (fun x -> Elt.find x env.clause) (Cor.track i))
     
   let bindings env = Elt.bindings env.clause
-
+(*
+  let update env = {clause = env.clause; order = Ord.update 0 0 env.order}
+*)
   let init () = if Cor.wlit then Wlit.init () else ()
 
 end;;
 
 
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
+ -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
+
 sig
   type env
   type cls
@@ -174,6 +180,7 @@ sig
   val propagation : int -> env -> env
   val bindings : env -> (int * int list list) list
   val init : unit -> unit
+  val restore : env -> int -> unit
 end;;
 
 module Make = (OpCore : OpAbstract);;

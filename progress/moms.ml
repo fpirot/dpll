@@ -23,7 +23,7 @@ struct
     let compare = compare
   end)
 
-  let debug = true
+  let debug = false
 
   let is_empty = Map.is_empty
 

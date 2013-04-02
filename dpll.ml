@@ -1,11 +1,11 @@
 module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
-module Order = Order.Make (Core);;
-module Wlit = Wlit.Make (Clause) (Core);;
-module Oper = Oper.Make (Clause) (Core) (Order) (Wlit);;
+module Wlit = Wlit.Make (Core);;
+module Order = Order.Make (Core) (Clause);;
+module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) ;;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function
@@ -30,47 +30,45 @@ let print_list l=
     print_string "["; print l
 
 let dpll env = 
-  let rec aux env =
-    let (x, envtrue, envfalse) = try Oper.split env
+  let rec aux i env =
+    (* i est la profondeur actuelle des paris. *)
+    let (x, envtrue, envfalse) = try Oper.split env 
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";
 	      List.iter (fun x -> print_list x) y;
 	      print_newline()) (Oper.bindings env)
 	  end;
-	  raise Core.Unsatisfiable
+	raise Core.Unsatisfiable
     in
+    Core.fix_depth i;
     try (
       if debug then begin
 	print_string "Gamble: ";
 	print_int x;
 	print_newline();
       end;
-      Core.write x; Oper.propag x;
+      Core.write x;
       (* On assigne la valeur de x, et on rentre cette assignation dans une
 	 liste pour gérer le backtrack. *)
       let env' = Oper.propagation x envtrue in
-      Oper.flush();
-      (* On stocke l'ensemble des assignations effectuées avec le pari
-	 x, pour gérer le backtrack. *)
-      aux env')
-    with Core.Unsatisfiable -> 
+      aux (i+1) env')
+      (* On va un niveau plus profond dans les paris. *)
+    with Core.Unsatisfiable ->
       try (
-	Oper.flush();
-	(* On stocke les assignations qui étaient en cours. *)
-	Oper.restore();
+	Core.restore i;
 	(* On annule les assignations effectuées à l'étape
 	   précédente. *)
+	Core.fix_depth i;
 	if debug then begin
 	  print_string "Gamble: ";
 	  print_int (-x);
 	  print_newline();
 	end;
-	Core.write (-x); Oper.propag (-x);
+	Core.write (-x);
 	let env' = Oper.propagation (-x) envfalse in
-	Oper.flush();
-	aux env')
-      with Core.Unsatisfiable -> (Oper.restore(); 
+	aux (i+1) env')
+      with Core.Unsatisfiable -> (Core.restore i; 
 				    (* On annule les dernières assignations. *)
 				    raise Core.Unsatisfiable)
   in Oper.init();
@@ -80,7 +78,7 @@ let dpll env =
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
 let t = Sys.time() in
-(try dpll (Oper.create ()) with 
+(try dpll 0 (Oper.create ()) with 
   |Core.Satisfiable -> 
     print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
