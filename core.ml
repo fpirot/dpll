@@ -66,7 +66,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable
 
-  let debug = true
+  let debug = false
 
   let print_list l=
     let rec print = function

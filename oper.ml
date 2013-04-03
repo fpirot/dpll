@@ -80,7 +80,7 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  let debug = true
+  let debug = false
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -167,10 +167,10 @@ let split env =
       end
     in aux env x Wlit.empty (Graph.create ())
 
-
   let propagation x env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
+
 
   let bindings env = Elt.bindings env.clause
 

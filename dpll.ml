@@ -6,7 +6,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
-let debug = true;;
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
