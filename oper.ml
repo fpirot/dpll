@@ -63,8 +63,17 @@ sig
   val elements : set -> (int * cls) list
 end;;
 
+module type Graph =
+sig
+  type graph
+  val create : unit -> graph
+  val add : int -> int list -> graph -> graph
+  val find : int -> int -> graph -> int
+end;;
+
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
+    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map)
+	-> functor (Graph : Graph) ->
 struct
 
   type env = {clause: Elt.map; order: Ord.order}
@@ -108,9 +117,10 @@ let split env =
      en cours. *)
 
   let simple_propagation x env =
-    let rec aux env x setv =
-      let set_entailed = entail x env in
-      let setv' = Wlit.union set_entailed setv in
+    let rec aux env x setv g =
+      let sbord = entail x env in
+      let g' = Graph.add x (List.map fst (Wlit.elements sbord)) g 
+      and setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au
@@ -127,14 +137,15 @@ let split env =
 	let ord = Ord.update x env.clause env.order
 	and setv' = Wlit.remove x setv'
 	and m = Elt.extract x env.clause in
-	aux {clause = m; order = ord} x setv'
+	aux {clause = m; order = ord} x setv' g'
       end
-    in aux env x Wlit.empty
+    in aux env x Wlit.empty (Graph.create ())
 
   let wlit_propagation x env =
-    let rec aux env x setv = 
+    let rec aux env x setv g = 
       let (sbord, ssat) = Wlit.update x in
-      let setv' = Wlit.union sbord setv in
+      let g' = Graph.add x (List.map fst (Wlit.elements sbord)) g
+      and setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       else begin
 	let (x, c) = Wlit.choose setv' in
@@ -147,11 +158,11 @@ let split env =
 	let ord = Ord.update x env.clause env.order
 	and setv' = Wlit.remove x setv'
 	and m = Elt.extract x env.clause in
-	aux {clause = m ; order = ord} x setv'
+	aux {clause = m ; order = ord} x setv' g'
       end
-    in aux env x Wlit.empty
+    in aux env x Wlit.empty (Graph.create ())
 
-    
+
   let propagation x env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
@@ -164,7 +175,8 @@ end;;
 
 
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
+    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map)
+	-> functor (Graph: Graph) ->
 sig
   type env
   type cls

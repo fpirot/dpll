@@ -1,8 +1,9 @@
 module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Core);;
+module Graph = Graph.Make (Core);;
 module Order = Order.Make (Core) (Clause);;
-module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) ;;
+module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
 let debug = true;;
