@@ -102,9 +102,9 @@ struct
      tableau de liste en partant du principe qu'il y a au plus n étages
      de paris, avec n le nombre de variables. *)
 
-  let depth = ref 0
+  let dpth = ref 0
 
-  let fix_depth i = depth := i;
+  let fix_depth i = dpth := i;
     if debug then begin
       print_string "Stack: ";
       for k = 0 to i-1 do print_list stack.(k) done;
@@ -127,21 +127,21 @@ struct
       Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
       print_string "\n\n" end
 
-  let propag x = stack.(!depth) <- (x :: stack.(!depth))
+  let propag x = stack.(!dpth) <- (x :: stack.(!dpth))
 
   let restore i = 
     if debug then begin
       print_string "Restore: ";
       for k = 0 to i do (fun l -> print_list l) stack.(k) done;
       print_newline() end;
-    for k = i to !depth do
+    for k = i to !dpth do
       List.iter reset stack.(k);
       stack.(k) <- [] done
 
   let read x = assigArray.((abs x) - 1).value
 
   let write ?(father = -1) x = assigArray.((abs x) - 1).value <- x;
-    assigArray.((abs x) - 1).depth <- !depth;
+    assigArray.((abs x) - 1).depth <- !dpth;
     assigArray.((abs x) - 1).father <- father;
     propag x;
     if debug then begin
@@ -174,6 +174,8 @@ struct
 
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
+
+  let add_clause c = incr compt; clauseArray.(!compt) <- c; !compt
 
   let fill l =
     incr compt;
@@ -214,6 +216,24 @@ struct
       
   let choose cls = Cls.choose (clause cls)
 
+
+  (* ************************************************* *)
+  (*        Gestion intelligente du backtrack          *)
+  (* ************************************************* *)
+
+  let backtrack x =
+    let add = Cls.fold (fun x r -> if depth x = !dpth then x :: r else r) in
+    let rec aux c = function
+      |[] -> c
+      |x :: l -> let c1 = clause (father x) in
+		 let l1 = add c1 l in
+		 aux (Cls.union c1 (Cls.remove x c)) l1 in
+    let c = clause (father x) in
+    let c1 = aux c (add c []) in
+    let cls = add_clause c1 in
+    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
+    (cls, d)
+    
 end;;
 
 module type Abstract =
@@ -231,9 +251,9 @@ sig
   val restore : int -> unit
   val read : int -> int
   val write : ?father:int -> int -> unit
-  val father : int -> int
+(*  val father : int -> int
   val depth : int -> int
-  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+*)  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
@@ -241,6 +261,7 @@ sig
   val length : cls -> int
   val choose : cls -> int
   val is_singleton : cls -> int
+  val backtrack : int -> (cls * int)
 
 end;;
 

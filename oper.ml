@@ -101,6 +101,11 @@ let split env =
 	 
   let is_empty env = Elt.is_empty env.clause
 
+
+(* ***************************************************** *)
+(*       Gestion de la propagation des contraintes       *)
+(* ***************************************************** *)
+
   let entail x env =
     List.fold_right (fun c s -> let x = Cor.is_singleton c in
 				if x <> 0 then (
@@ -166,7 +171,7 @@ let split env =
   let propagation x env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
-      
+
   let bindings env = Elt.bindings env.clause
 
   let init () = if Cor.wlit then Wlit.init () else ()
