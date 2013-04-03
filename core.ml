@@ -103,6 +103,7 @@ struct
      de paris, avec n le nombre de variables. *)
 
   let dpth = ref 0
+  (* La profondeur de paris en cours. *)
 
   let fix_depth i = dpth := i;
     if debug then begin
@@ -126,6 +127,7 @@ struct
       print_string "Assignment: ";
       Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
       print_string "\n\n" end
+  (* Réinitialise la valuation de la variable |x|. *)
 
   let propag x = stack.(!dpth) <- (x :: stack.(!dpth))
 
@@ -137,6 +139,8 @@ struct
     for k = i to !dpth do
       List.iter reset stack.(k);
       stack.(k) <- [] done
+  (* Annule les assignations effectuées aux profondeurs plus grandes que
+     i *)
 
   let read x = assigArray.((abs x) - 1).value
 
@@ -148,10 +152,14 @@ struct
       print_string "Assignment: ";
       Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
       print_string "\n\n" end
+  (* Ecrit la valuation x pour la variable |x|, avec en argument
+     optionnel la clause à l'origine de cette valuation. *)
 
   let father x = assigArray.((abs x) - 1).father
+  (* Renvoie la clause qui a engendré la valuation x. *)
 
   let depth x = assigArray.((abs x) - 1).depth
+  (* Renvoie la profondeur à laquelle x a été assigné. *)
 
 
   (* ********************************************************* *)
@@ -223,17 +231,24 @@ struct
 
   let backtrack x =
     let add = Cls.fold (fun x r -> if depth x = !dpth then x :: r else r) in
+    (* Rajoute à une liste tous les litéraux d'une clause qui ont été
+       affectés pendant la propagation en cours. *)
     let rec aux c = function
       |[] -> c
       |x :: l -> let c1 = clause (father x) in
 		 let l1 = add c1 l in
 		 aux (Cls.union c1 (Cls.remove x c)) l1 in
+    (* Renvoie la clause engendrée par le backtrack. *)
     let c = clause (father x) in
     let c1 = aux c (add c []) in
-    let cls = add_clause c1 in
-    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
+    let cls = add_clause c1
+    (* On ajoute la clause ainsi créée. *)
+    and d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
+    (* On cherche la profondeur de backtrack maximale dans cette
+       clause. *)
     (cls, d)
-    
+(* Donne le représentant de la nouvelle clause, ainsi que la
+   profondeur à laquelle le backtrack doit remonter. *)
 end;;
 
 module type Abstract =
@@ -252,7 +267,7 @@ sig
   val read : int -> int
   val write : ?father:int -> int -> unit
 (*  val father : int -> int
-  val depth : int -> int
+    val depth : int -> int
 *)  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
   val cls_make : int -> cls
