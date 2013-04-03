@@ -39,15 +39,15 @@ struct
 
 	let create () = []
 
-	let add a lst =
+	let add x l lst =
 		if debug then begin
 			print_string "List: ";
-			print_intlist a;
+			print_intlist (x, l);
 			print_string " ";
 			List.iter (fun l -> print_intlist l) lst;
 			print_newline();
 		end;
-		a::lst
+		(x, l)::lst
 
 
 	let find s t lst =
@@ -68,23 +68,23 @@ struct
 				print_some c) cnx;
 			print_newline();
 			print_newline();
-		and receive x y = match cnx.(x - 1), cnx.(y - 1) with
+		and receive x y = match cnx.(abs x - 1), cnx.(abs y - 1) with
 			|_, None -> ()
 			|None, Some(c, d) -> failwith "Graph: receive"
-			|Some(a, b), Some(c, d) -> cnx.(x - 1) <-
+			|Some(a, b), Some(c, d) -> cnx.(abs x - 1) <-
 				(if a < c then Some(a, b) else Some(c, d)) in
 
 			List.iter (fun (x, l) -> adj.(abs x - 1) <- List.fold_right
-					(fun y s -> adj.(y - 1) <- St.add x adj.(y - 1); St.add y s)
+					(fun y s -> adj.(abs y - 1) <- St.add x adj.(abs y - 1); St.add y s)
 				l adj.(abs x - 1)) lst;
 			(*cnx.(s - 1) <- Some (0, Cor.read s);*)
 			if debug then print ();
 
 			let rec calc x =
-				if St.is_empty adj.(x - 1) then ()
+				if St.is_empty adj.(abs x - 1) then ()
 				else begin
-					cnx.(x - 1) <- Some (next (), Cor.read x);
-					St.iter (fun y -> match cnx.(y - 1) with
+					cnx.(abs x - 1) <- Some (next (), Cor.read x);
+					St.iter (fun y -> match cnx.(abs y - 1) with
 						|None ->
 							(*adj.(x - 1) <- St.remove y adj.(x - 1);
 							adj.(y - 1) <- St.remove x adj.(y - 1);*)
@@ -92,12 +92,12 @@ struct
 							calc y;
 							if debug then print ();
 						|Some(a, b) -> if debug then print()
-					) adj.(x - 1);
-					St.iter (fun y -> receive x y) adj.(x - 1);
+					) adj.(abs x - 1);
+					St.iter (fun y -> receive x y) adj.(abs x - 1);
 				end
 			in
 
-	calc s; match cnx.(t - 1) with
+	calc s; match cnx.(abs t - 1) with
 		|None -> failwith "Graph: calc"
 		|Some(a, b) -> b
 
@@ -107,7 +107,7 @@ module type GraphAbstract = functor (Cor : CoreElt) ->
 sig
 	type graph
 	val create : unit -> graph
-	val add : int * int list -> graph -> graph
+	val add : int -> int list -> graph -> graph
 	val find : int -> int -> graph -> int
 end;;
 
