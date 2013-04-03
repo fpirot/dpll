@@ -38,7 +38,7 @@ let dpll env =
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";
 	      List.iter (fun x -> print_list x) y;
 	      print_newline()) (Oper.bindings env)
-	  end;
+ 	  end;
 	raise Core.Unsatisfiable
     in
     Core.fix_depth i;

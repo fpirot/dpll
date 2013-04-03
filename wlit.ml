@@ -131,6 +131,7 @@ struct
   let union = St.union
   let add = St.add
   let remove x = St.remove (x, 0)
+  let elements = St.elements
 end;;
 
 module type WlitAbstract = functor (Cor: Core) -> 
@@ -148,6 +149,7 @@ sig
   val union : set -> set -> set
   val add : (int * cls) -> set -> set
   val remove : int -> set -> set
+  val elements : set -> (int * cls) list
 end;;
 
 module Make = (WlitCore: WlitAbstract);;

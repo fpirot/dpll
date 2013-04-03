@@ -25,8 +25,8 @@ struct
 
   let rec read s channel = Scanf.bscanf channel "%0c"
     (fun c -> if c = 'c' then
-      read (Scanf.bscanf channel "%[^\n]\n" (fun x -> s^ x ^ "\n")) channel
-    else s)
+	read (Scanf.bscanf channel "%[^\n]\n" (fun x -> s^ x ^ "\n")) channel
+      else s)
 
 
   let init str n channel =
@@ -98,9 +98,9 @@ struct
   (* ********************************************************* *)
       
   let stack = Array.make var []
-(* La "pile" contenant les assignations successives : on utilise un 
-   tableau de liste en partant du principe qu'il y a au plus n étages
-   de paris, avec n le nombre de variables. *)
+  (* La "pile" contenant les assignations successives : on utilise un
+     tableau de liste en partant du principe qu'il y a au plus n étages
+     de paris, avec n le nombre de variables. *)
 
   let depth = ref 0
 
@@ -120,7 +120,7 @@ struct
 
   let assigArray = let t = Array.make var zero in
 		   for i = 0 to var-1 do t.(i) <- {value = 0; father = -1; depth = 0} done; t
-    
+		     
   let reset x = assigArray.((abs x) - 1) <-  {value = 0; father = -1; depth = 0};
     if debug then begin
       print_string "Assignment: ";
@@ -163,10 +163,9 @@ struct
       type t = int
       let compare x y = compare (abs x) (abs y)
      end)
-  (* Les clauses sont des ensembles d'entiers (+x pour le litéral
-     vrai de la variable x, -x pour sa négation), avec la relation
-     de comparaison sur les valeurs absolues (entre nom de
-     variable). *)
+  (* Les clauses sont des ensembles d'entiers (+x pour le litéral vrai
+     de la variable x, -x pour sa négation), avec la relation de
+     comparaison sur les valeurs absolues (entre nom de variable). *)
 
   let clauseArray = Array.make cls Cls.empty
   (* On référencie l'ensemble des clauses dans un tableau, afin de
