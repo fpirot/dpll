@@ -216,7 +216,7 @@ struct
     )
     with Failure "is_not" -> 0
   (* Renvoie l'unique élément de la clause d'indice id qui n'est pas
-     encore assigné quand il est bien unique, 0 sinon.  Lève
+     encore assigné quand il est bien unique, 0 sinon. Lève
      l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
   let literals cls = Cls.elements (clause cls)
@@ -266,9 +266,7 @@ sig
   val restore : int -> unit
   val read : int -> int
   val write : ?father:int -> int -> unit
-(*  val father : int -> int
-    val depth : int -> int
-*)  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
+  val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
