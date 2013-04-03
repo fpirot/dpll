@@ -64,7 +64,7 @@ sig
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
- -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
+    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map) ->
 struct
 
   type env = {clause: Elt.map; order: Ord.order}
@@ -104,8 +104,8 @@ let split env =
 				else s) (Elt.find (-x) env.clause) Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
-     ainsi un ensemble de nouvelles assignations contraintes par
-     celle en cours. *)
+     ainsi un ensemble de nouvelles assignations contraintes par celle
+     en cours. *)
 
   let simple_propagation x env =
     let rec aux env x setv =
@@ -113,8 +113,9 @@ let split env =
       let setv' = Wlit.union set_entailed setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
-	 s'arrête. On rentre la liste des assignations effectuée au cours de
-	 cette propagation dans une liste, et on passe au prochain pari. *)
+	 s'arrête. On rentre la liste des assignations effectuée au
+	 cours de cette propagation dans une liste, et on passe au
+	 prochain pari. *)
       else begin
 	let (x, c) = Wlit.choose setv' in
 	if debug then begin
@@ -154,7 +155,7 @@ let split env =
   let propagation x env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
-    
+      
   let bindings env = Elt.bindings env.clause
 
   let init () = if Cor.wlit then Wlit.init () else ()
