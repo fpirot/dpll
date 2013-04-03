@@ -1,7 +1,29 @@
 module type CoreElt =
 sig
+	val graph : bool
 	val var : int
 	val read : int -> int
+end;;
+
+module Print =
+struct
+	
+	let file v g a =
+		let channel = open_out "graph.dot" in
+		Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" v v;
+		Array.iteri (fun i x -> match x with
+			|None ->()
+			|Some(a, b) -> if abs b = i then let v = abs_float (2. *. float b) /. (float v) in
+				Printf.fprintf channel "\n%d[shape=box,style=bold,color=\034%f %f %f\034];" b v v v) a;
+		List.iter (fun (x, l) ->
+			List.iter (fun y ->
+				match a.(abs y - 1) with
+					|None -> ()
+					|Some(a, b) -> let v = abs_float (2. *. float b) /. (float v) in
+						Printf.fprintf channel "\nnode [style=filled,color=\034%f %f %f\034];\n%d -> %d;" v v v x y) l) g;
+		Printf.fprintf channel "}";
+		close_out channel
+	
 end;;
 
 module GraphCore = functor (Cor : CoreElt) ->
@@ -97,7 +119,9 @@ struct
 				end
 			in
 
-	calc s; match cnx.(abs t - 1) with
+	calc s;
+	if Cor.graph then Print.file Cor.var lst cnx;
+	match cnx.(abs t - 1) with
 		|None -> failwith "Graph: calc"
 		|Some(a, b) -> b
 
@@ -116,31 +140,33 @@ module Make = (GraphCore : GraphAbstract);;
 
 (* Test *)
 
-(*
+
 module Graph = Make (struct
 		let var  = 10
+		let graph = true
 		let read x = x
 	end);;
 
 let g = Graph.create ();;
-let g = Graph.add (1, [2]) g;;
-let g = Graph.add (2, [3; 4]) g;;
-let g = Graph.add (3, [4]) g;;
-let g = Graph.add (4, [5; 6; 7]) g;;
-let g = Graph.add (5, [6; 7]) g;;
-let g = Graph.add (6, [7]) g;;
-let g = Graph.add (7, [8]) g;;
-let g = Graph.add (8, []) g;;
+let g = Graph.add 1 [-2] g;;
+let g = Graph.add (-2) [3; -4] g;;
+let g = Graph.add 3 [-4] g;;
+let g = Graph.add (-4) [5; -6; 7] g;;
+let g = Graph.add 5 [-6; 7] g;;
+let g = Graph.add (-6) [7] g;;
+let g = Graph.add 7 [-8] g;;
+let g = Graph.add (-8) [] g;;
 Graph.find 1 8 g;;
 
+(*
 let g = Graph.create ();;
-let g = Graph.add (1, [2; 7]) g;;
-let g = Graph.add (2, [7]) g;;
-let g = Graph.add (3, [4; 7]) g;;
-let g = Graph.add (4, [7]) g;;
-let g = Graph.add (5, [6; 7]) g;;
-let g = Graph.add (6, [7]) g;;
-let g = Graph.add (7, []) g;;
+let g = Graph.add 1 [2; 7] g;;
+let g = Graph.add 2 [7] g;;
+let g = Graph.add 3 [4; 7] g;;
+let g = Graph.add 4 [7] g;;
+let g = Graph.add 5 [6; 7] g;;
+let g = Graph.add 6 [7] g;;
+let g = Graph.add 7 [] g;;
 Graph.find 1 7 g;;
 *)
 
