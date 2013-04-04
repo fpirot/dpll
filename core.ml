@@ -196,6 +196,8 @@ struct
   let cls_make id = id
 
   let cls_fold f cls = Cls.fold f (clause cls)
+  
+  let iter f cls = Cls.iter f (clause cls)
 
   let length cls = cls_fold (fun x t -> if read x = 0 then t+1 else t) cls 0
 
@@ -268,6 +270,7 @@ sig
   val write : ?father:int -> int -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
+  val iter : (int -> unit) -> cls -> unit
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val literals : cls -> int list
@@ -275,7 +278,7 @@ sig
   val choose : cls -> int
   val is_singleton : cls -> int
   val backtrack : int -> (cls * int)
-
+	val father : int -> cls
 end;;
 
 module Make = (Core : Abstract);;
