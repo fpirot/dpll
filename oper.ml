@@ -3,22 +3,25 @@
 module type CoreElt =
 sig
   exception Satisfiable
-  exception Unsatisfiable
   type cls = int
+  exception Unsatisfiable of cls
   val var : int
   val cls : int
   val wlit : bool
   val lst : int list list
   val read : int -> int
   val write : ?father: cls -> int -> unit
+  val father : int -> cls
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val heur : string
   val ord : (int * int) list
   val is_singleton : cls -> int
   val choose : cls -> int
+  val literals : cls -> int list
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val backtrack : cls -> (cls * int)
 end;;
 
 module type OpElt =
@@ -31,7 +34,7 @@ sig
   val find : int -> map -> cls list
   val bindings : map -> (int * int list list) list
   val extract : int -> map -> map
-  val remove : cls -> map -> map
+  val add : cls -> map -> map
   val is_empty : map -> bool
 end;;
 
@@ -39,8 +42,10 @@ module type Order =
 sig
   type order
   type map
+  type cls
   val is_empty : order -> bool
   val create : unit -> order
+  val add : cls -> order -> order
   val extract : map -> order -> int * order
   val update : int -> map -> order -> order
 end;;
@@ -65,22 +70,26 @@ end;;
 
 module type Graph =
 sig
+  type cls
   type graph
   val create : unit -> graph
-  val add : int -> int list -> graph -> graph
+  val add : int -> cls -> graph -> graph
   val find : int -> int -> graph -> int
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map)
-	-> functor (Graph : Graph) ->
+    -> functor (Wlit: WlitElt with type cls = Cor.cls)
+        -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls)
+	    -> functor (Graph : Graph with type cls = Cor.cls) ->
 struct
 
   type env = {clause: Elt.map; order: Ord.order}
   type cls = Cor.cls
   type set = Wlit.set
 
-  let debug = false
+  exception Backtrack of (int * env)
+
+  let debug = true
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -89,22 +98,22 @@ struct
     print_string "["; print l
 
   let create () = let m = Elt.create Cor.lst in
-    let ord = Ord.create() in
-    {clause = m; order = ord}
+		  let ord = Ord.create() in
+		  {clause = m; order = ord}
 
-(* Extrait une variable selon l'ordre *)
-let split env =
-  let k, ord = Ord.extract env.clause env.order in
-  let mtrue = Elt.extract k env.clause
-  and mfalse = Elt.extract (-k) env.clause in
-  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
-	 
+  (* Extrait une variable selon l'ordre *)
+  let split env =
+    let k, ord = Ord.extract env.clause env.order in
+    let mtrue = Elt.extract k env.clause
+    and mfalse = Elt.extract (-k) env.clause in
+    (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
+      
   let is_empty env = Elt.is_empty env.clause
 
 
-(* ***************************************************** *)
-(*       Gestion de la propagation des contraintes       *)
-(* ***************************************************** *)
+  (* ***************************************************** *)
+  (*       Gestion de la propagation des contraintes       *)
+  (* ***************************************************** *)
 
   let entail x env =
     List.fold_right (fun c s -> let x = Cor.is_singleton c in
@@ -112,6 +121,8 @@ let split env =
 				  if debug then begin
 				    print_string "Select: ";
 				    print_int x;
+				    print_string ", because of ";
+				    print_list (Cor.literals c);
 				    print_newline()
 				  end;	  
 				  Wlit.add (x, c) s)
@@ -124,7 +135,7 @@ let split env =
   let simple_propagation x env =
     let rec aux env x setv g =
       let sbord = entail x env in
-      let g' = Graph.add x (List.map fst (Wlit.elements sbord)) g 
+      let g' = Graph.add x (Cor.father x) g 
       and setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
@@ -149,7 +160,7 @@ let split env =
   let wlit_propagation x env =
     let rec aux env x setv g = 
       let (sbord, ssat) = Wlit.update x in
-      let g' = Graph.add x (List.map fst (Wlit.elements sbord)) g
+      let g' = Graph.add x (Cor.father x) g
       and setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       else begin
@@ -168,9 +179,13 @@ let split env =
     in aux env x Wlit.empty (Graph.create ())
 
   let propagation x env =
-    if Cor.wlit then wlit_propagation x env
-    else simple_propagation x env
-
+    try
+      if Cor.wlit then wlit_propagation x env
+      else simple_propagation x env
+    with Cor.Unsatisfiable c ->
+      let (cls, i) = Cor.backtrack c in
+      let env' = {clause = Elt.add cls env.clause; order = Ord.add cls env.order} in
+      raise (Backtrack (i, env'))
 
   let bindings env = Elt.bindings env.clause
 
@@ -180,12 +195,14 @@ end;;
 
 
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) -> functor (Ord: Order with type map = Elt.map)
-	-> functor (Graph: Graph) ->
+    -> functor (Wlit: WlitElt with type cls = Cor.cls) 
+        -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls) 
+	    -> functor (Graph: Graph with type cls = Cor.cls) ->
 sig
   type env
   type cls
   type set
+  exception Backtrack of (int * env)
   val create : unit -> env
   val is_empty : env -> bool
   val split : env -> (int * env * env)

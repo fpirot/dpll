@@ -5,7 +5,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) ;;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function
@@ -32,7 +32,7 @@ let print_list l=
 let dpll env = 
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
-    let (x, envtrue, envfalse) = try Oper.split env 
+    let x = try Oper.extract env 
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";
@@ -48,10 +48,11 @@ let dpll env =
 	print_int x;
 	print_newline();
       end;
+      let env1 = Oper.update x env in
       Core.write x;
       (* On assigne la valeur de x, et on rentre cette assignation dans une
 	 liste pour gérer le backtrack. *)
-      let env' = Oper.propagation x envtrue in
+      let env' = Oper.propagation x env1 in
       aux (i+1) env')
     (* On va un niveau plus profond dans les paris. *)
     with Core.Unsatisfiable ->
@@ -65,8 +66,9 @@ let dpll env =
 	  print_int (-x);
 	  print_newline();
 	end;
+	let env1 = Oper.update (-x) env in
 	Core.write (-x);
-	let env' = Oper.propagation (-x) envfalse in
+	let env' = Oper.propagation (-x) env1 in
 	aux (i+1) env')
       with Core.Unsatisfiable -> (Oper.restore env i;
 				    (* On annule les dernières assignations. *)

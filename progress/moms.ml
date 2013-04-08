@@ -57,34 +57,12 @@ struct
   (* Ajoute une liste de clauses à prendre en considération dans la map. *)
 
   let extract map ord =
-    if debug then begin
-      print_string "Order:\n";
-      if is_empty ord then print_string "is empty.\n";
-      List.iter (fun (x,t) -> print_int x; print_string ": (";
-	List.iter (fun (x,y) -> print_int x; print_string ": "; print_int y; print_string "; ") (Map.bindings t);
-	print_string ")\n") (Map.bindings ord) end;
     let length_min = Map.fold (fun x mx n -> let (p,_) = Map.min_binding mx in min p n) ord max_int in
-    if debug then (print_string "taille de clause min: "; print_int length_min; print_newline());
     let xmoms = fst (Map.fold (fun x mx (xm, max) ->
       let p = try Map.find length_min mx with Not_found -> 0 in
       if (Cor.read x = 0 && p > max) then (x, p) else (xm, max)) ord (0,0)) in
-    if xmoms = 0 then raise Cor.Satisfiable
-    else 
-      if debug then (print_string "xmoms := "; print_int xmoms; print_newline());
-    let l1 = try Elt.find xmoms map with Not_found -> []
-    and l2 = try Elt.find (-xmoms) map with Not_found -> [] in
-    let order = decr_size l2 (remove l1 (Map.remove xmoms (Map.remove (-xmoms) ord))) in
-    if debug then begin
-      print_string "Order: ";
-      print_int xmoms;
-      print_string ",\n";
-      List.iter (fun (x,t) -> print_int x; print_string ": (";
-	List.iter (fun (x,y) -> print_int x; print_string ": "; print_int y; print_string "; ") (Map.bindings t);
-	print_string ")\n") (Map.bindings order) end;
-    (xmoms, order)
-  (* Renvoie le couple (xmoxs, map), avec xmoms le litéral choisi par
-     l'heuristique MOMS, et map la table d'association privée de la
-     variable corresopndante. *)
+    if xmoms = 0 then raise Cor.Satisfiable else xmoms
+  (* Renvoie le choix xmoms selon l'ordre. *)
 
   let update x map ord = 
     let l1 = Elt.find x map 
@@ -108,7 +86,7 @@ sig
   type order
   val is_empty : order -> bool
   val create : unit -> order
-  val extract : Elt.map -> order -> int * order
+  val extract : Elt.map -> order -> int
   val update : int -> Elt.map -> order -> order
 end;;
 

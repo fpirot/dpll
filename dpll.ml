@@ -6,7 +6,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function
@@ -23,12 +23,12 @@ let rec valuation n =
 let verify lst =
   List.for_all (fun l -> List.exists (fun x -> Core.read x = x) l) lst
 
-let print_list l=
-    let rec print = function
-      |[] -> print_string "]"
-      |[a] -> print_int a; print_string "]"
-      |a::l -> print_int a; print_string "; "; print l in
-    print_string "["; print l
+let print_list l =
+  let rec print = function
+    |[] -> print_string "]"
+    |[a] -> print_int a; print_string "]"
+    |a::l -> print_int a; print_string "; "; print l in
+  print_string "["; print l
 
 let dpll env = 
   let rec aux i env =
@@ -40,8 +40,9 @@ let dpll env =
 	      List.iter (fun x -> print_list x) y;
 	      print_newline()) (Oper.bindings env)
  	  end;
-	raise Core.Unsatisfiable
+	raise (Core.Unsatisfiable (-1))
     in
+    Core.restore i;
     Core.fix_depth i;
     try (
       if debug then begin
@@ -50,13 +51,13 @@ let dpll env =
 	print_newline();
       end;
       Core.write x;
-      (* On assigne la valeur de x, et on rentre cette assignation dans une
-	 liste pour gérer le backtrack. *)
+      (* On assigne la valeur de x, et on rentre cette assignation
+	 dans une liste pour gérer le backtrack. *)
       let env' = Oper.propagation x envtrue in
       aux (i+1) env')
-      (* On va un niveau plus profond dans les paris. *)
-    with Core.Unsatisfiable ->
-      try (
+    (* On va un niveau plus profond dans les paris. *)
+    with Oper.Backtrack (k, env') -> begin
+      if i = k then begin
 	Core.restore i;
 	(* On annule les assignations effectuées à l'étape
 	   précédente. *)
@@ -68,10 +69,10 @@ let dpll env =
 	end;
 	Core.write (-x);
 	let env' = Oper.propagation (-x) envfalse in
-	aux (i+1) env')
-      with Core.Unsatisfiable -> (Core.restore i; 
-				    (* On annule les dernières assignations. *)
-				    raise Core.Unsatisfiable)
+	aux (i+1) env'
+      end
+      else aux k env'
+    end
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   aux env;;
@@ -85,6 +86,6 @@ let t = Sys.time() in
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
-  |Core.Unsatisfiable ->
+  |Core.Unsatisfiable -1 ->
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;

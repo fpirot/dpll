@@ -194,28 +194,36 @@ struct
 
   let cls_make id = id
 
-  let cls_fold f cls = Cls.fold f (clause cls)
+  let cls_fold f c = Cls.fold f (clause c)
 
-  let length cls = lengthArray.(cls)
+  let length c = lengthArray.(c)
 
-  let choose cls = Cls.choose (clause cls)
+  let choose c = Cls.choose (clause c)
 
-  let is_singleton cls = match length cls with
-    | 0 -> raise Unsatisfiable
-    | 1 -> choose cls
+  exception Singleton of int
+  let is_singleton c = match length c with
+    | 0 -> print_string "Unsatisfiable because of: ";
+	print_list (Cls.elements (clause c));
+	print_newline();
+	raise Unsatisfiable
+    | 1 -> (try Cls.iter (fun x -> if read x = 0 then raise (Singleton x)) (clause c); 0
+	   with Singleton x -> x)
+    | n when n < 0 -> print_string "Clause de taille négative?! ";
+	print_list (Cls.elements (clause c)); print_newline();
+	failwith "Error"
     | _ -> 0
-  (* Renvoie l'unique élément de la clause d'indice cls qui n'est pas
+  (* Renvoie l'unique élément de la clause d'indice c qui n'est pas
      encore assigné quand il est bien unique, 0 sinon.  Lève
      l'exception Unsatisfiable si la clause n'est pas satisfiable.*)
 
-  let decr_size cls = lengthArray.(cls) <- lengthArray.(cls) - 1
+  let decr_size c = lengthArray.(c) <- lengthArray.(c) - 1
 
-  let incr_size cls = lengthArray.(cls) <- lengthArray.(cls) + 1
+  let incr_size c = lengthArray.(c) <- lengthArray.(c) + 1
 
-  let literals cls = Cls.elements (clause cls)
+  let literals c = Cls.elements (clause c)
   (* Donne les elements d'une clause *)
     
-  let restore_length = List.iter (List.iter incr_size)
+  let restore_length x = lengthArray.(x) <- Cls.fold (fun x n -> if read x = 0 then n+1 else n) (clause x) 0
 
 end;;
 
@@ -246,7 +254,7 @@ sig
   val decr_size : cls -> unit
   val choose : cls -> int
   val is_singleton : cls -> int
-  val restore_length : cls list list -> unit
+  val restore_length : cls -> unit
 
 end;;
 

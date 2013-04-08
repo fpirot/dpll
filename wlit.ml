@@ -1,8 +1,8 @@
 module type Core =
 sig
-  exception Satisfiable
-  exception Unsatisfiable
   type cls = int
+  exception Satisfiable
+  exception Unsatisfiable of cls
   val var : int
   val cls : int
   val read : int -> int
@@ -69,7 +69,7 @@ struct
   let watched_literals_of_clause id lbord lsat =
     let l = Cor.literals id in
     let rec aux w1 w2 = function
-      |[] -> if w1 = 0 then raise Cor.Unsatisfiable
+      |[] -> if w1 = 0 then raise (Cor.Unsatisfiable id)
 	(* Si on n'a trouvé aucun litéral à surveiller, la clause
 	   n'est pas satisfiable avec la valuation actuelle. *)
 	else (lbord := St.add (w1, id) !lbord; (w1,0))

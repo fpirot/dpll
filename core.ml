@@ -63,35 +63,36 @@ end;;
 module Core =
 struct
 
+  type cls = int
+  (* On repère une clause par son indice dans un tableau dynamique. *)
   exception Satisfiable
-  exception Unsatisfiable
+  exception Unsatisfiable of cls
 
-  let debug = false
+  let debug = true
 
-  let print_list l=
+  let print_list l =
     let rec print = function
       |[] -> print_string "]"
       |[a] -> print_int a; print_string "]"
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  let (wlit, heur, path) =
+  let (wlit, graph, heur, path) =
     let w = ref false
+    and g = ref false
     and s = ref "Nil"
     and p = ref "Test/ex0.cnf" in
     Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
-               ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
+               ("-graph", Arg.Unit(fun () -> g := true), "Watched literals"); 
+	       ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
                ("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
                ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
       (fun str -> p := str) "";
-    (!w, !s, !p)
+    (!w, !g, !s, !p)
       
   let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
     
   let fold = List.fold_right
-
-  type cls = int
-  (* On repère une clause par son indice dans clauseArray. *)
 
   (* ********************************************************* *)
   (*        Gestion des affectations et des backtracks         *)
@@ -161,6 +162,7 @@ struct
   let depth x = assigArray.((abs x) - 1).depth
   (* Renvoie la profondeur à laquelle x a été assigné. *)
 
+  let write_father x c = assigArray.((abs x) - 1).father <- c
 
   (* ********************************************************* *)
   (*          Référencement des clauses du problème            *)
@@ -175,23 +177,35 @@ struct
      de la variable x, -x pour sa négation), avec la relation de
      comparaison sur les valeurs absolues (entre nom de variable). *)
 
-  let clauseArray = Array.make cls Cls.empty
+  type clause = Cls.t
+
+  module ClauseArray = Da.Make (Cls)
+
+  let clauseArray = ClauseArray.empty
   (* On référencie l'ensemble des clauses dans un tableau, afin de
      stocker des indices dans nos structures de données plutôt que des
      clauses. *)
 
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
-
+(*
   let add_clause c = incr compt; clauseArray.(!compt) <- c; !compt
+*)
 
+  let add_clause c = ClauseArray.add c clauseArray; ClauseArray.length clauseArray - 1
+(*
   let fill l =
     incr compt;
     clauseArray.(!compt) <- fold (fun x s -> Cls.add x s) l Cls.empty;
     !compt
-  (* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
-
+*)  
+  let fill l = ClauseArray.add (fold (fun x c -> Cls.add x c) l Cls.empty) clauseArray;
+    ClauseArray.length clauseArray - 1
+(* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
+(*
   let clause id = clauseArray.(id)
+*)
+  let clause id = if id = -1 then Cls.empty else ClauseArray.read id clauseArray
 
   let cls_make id = id
 
@@ -213,7 +227,7 @@ struct
 	  print_string "Clause insatisfiable: ";
 	  print_list (Cls.elements (clause cls));
 	  print_newline() end;
-	  raise Unsatisfiable
+	  raise (Unsatisfiable cls)
 	|x -> x
     )
     with Failure "is_not" -> 0
@@ -231,23 +245,51 @@ struct
   (*        Gestion intelligente du backtrack          *)
   (* ************************************************* *)
 
-  let backtrack x =
-    let add = Cls.fold (fun x r -> if depth x = !dpth then x :: r else r) in
-    (* Rajoute à une liste tous les litéraux d'une clause qui ont été
-       affectés pendant la propagation en cours. *)
-    let rec aux c = function
-      |[] -> c
-      |x :: l -> let c1 = clause (father x) in
-		 let l1 = add c1 l in
-		 aux (Cls.union c1 (Cls.remove x c)) l1 in
+  module Proof = struct
+    type t = F of Cls.t | N of Cls.t * Cls.t * t
+    let singleton x = F(x)
+    let hd = function
+      |F(x) -> x
+      |N(c, _, _) -> c
+    let built c1 c2 p = N(c1, c2, p)
+  end
+
+  type proof = Proof.t
+
+  let proof c = 
+    let add = Cls.fold (fun x s -> if (depth x = !dpth && father x <> -1) then (write_father x (-1); Cls.add x s) else s) in
+    (* Rajoute à un ensemble tous les litéraux d'une clause qui ont
+       été affectés pendant la propagation en cours. *)
+    let rec aux p s = 
+      (* s est un ensemble de litéraux; on utilisera les opérations
+	 sur les clauses pour le manipuler. *)
+      if Cls.is_empty s then p
+      else let x = Cls.choose s in
+	   let s1 = Cls.remove x s in
+	   if Cls.is_empty s1 then p
+	   (* On s'arrête quand on a trouvé un point d'articulation. *)
+	   else let c1 = clause (father x) in
+		let s2 = add c1 s1 in
+		aux (Proof.built (Cls.union c1 (Cls.remove x (Proof.hd p))) c1 p) s2 in
     (* Renvoie la clause engendrée par le backtrack. *)
-    let c = clause (father x) in
-    let c1 = aux c (add c []) in
+    aux (Proof.singleton c) (add c Cls.empty)
+  (* Génère une preuve de résolution suite *)
+
+  let backtrack c =
+    let p = proof (clause c) in
+    let c1 = Proof.hd p in
     let cls = add_clause c1
     (* On ajoute la clause ainsi créée. *)
-    and d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
+    and d = Cls.fold (fun x d -> if depth x < !dpth then max (depth x) d else d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
+    if debug then begin
+      print_string "Clause engendrée pendant le backtrack: ";
+      print_list (literals cls);
+      print_string "\nNouvelle profondeur de backtrack: ";
+      print_int d;
+      print_newline()
+    end;
     (cls, d)
 (* Donne le représentant de la nouvelle clause, ainsi que la
    profondeur à laquelle le backtrack doit remonter. *)
@@ -256,13 +298,16 @@ end;;
 module type Abstract =
 sig
   exception Satisfiable
-  exception Unsatisfiable
   type cls = int
+  exception Unsatisfiable of cls
+  type proof
+  type clause
   val var : int
   val cls : int
   val lst : int list list
   val ord : (int * int) list
   val wlit : bool
+  val graph : bool
   val heur : string
   val fix_depth : int -> unit
   val restore : int -> unit
@@ -277,97 +322,9 @@ sig
   val length : cls -> int
   val choose : cls -> int
   val is_singleton : cls -> int
-  val backtrack : int -> (cls * int)
-	val father : int -> cls
+  val proof : clause -> proof
+  val backtrack : cls -> (cls * int)
+  val father : int -> cls
 end;;
 
 module Make = (Core : Abstract);;
-
-
-(* Tests *)
-
-(*
-Make.var;;
-Make.cls;;
-Make.lst;;
-Make.wlit;;
-Make.heur;;
-Make.hd Make.ord;;
-Make.read 1;;
-Make.write 3 ;;
-Make.read 3;;
-Make.update 0 0 Make.ord;;
-*)
-
-(* Anciennes versions *)
-
-
-(* Assig *)
-(* Gere l'assignation des variables *)
-
-(*
-module type AssigElt =
-  sig
-    type t
-    val zero : t
-    val nbr : int
-  end;;
-(* nbr est le nombre de variables dans l'instance de SAT, indiquée en début de problème. *)
-
-module AssigCore = functor (Elt : AssigElt) ->
-  struct
-    type t = Elt.t
-    let assigArray = Array.create Elt.nbr Elt.zero
-    let read n = assigArray.(n - 1)
-    let write n x = assigArray.(n - 1) <- x
-  end;;
-
-module type AssigAbstract = functor (Elt : AssigElt) ->
-  sig
-    type t = Elt.t
-    val read : int -> t
-    val write : int -> t -> unit
-  end;;
-
-module Assig = (AssigCore : AssigAbstract);;
-
-
-(* Order *)
-
-(* Determine l'ordre dans lequel on considere les variables.
-La fonction d'ordre en elle meme n'est pas encore implementee  *)
-
-module OrderCore =
-
-  struct
-    type order = (int * int) list
-    let hd l = snd (List.hd l)
-    let tl = List.tl
-
-    let init l = List.map (fun x -> x, x) l
-  end;;
-
-
-module type OrderAbstract =
-  sig
-    type order
-    val hd : order -> int
-
-    val tl : order -> order
-    val init : int list -> order
-  end;;
-
-
-module Order = (OrderCore: OrderAbstract);;
-*)
-
-
-
-(*
-module Core = Make
-  (struct
-    let var = 10
-    let cls = 10
-    let lst = []
-  end);;
-*)

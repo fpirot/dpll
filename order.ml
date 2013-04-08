@@ -23,6 +23,7 @@ module OrderCore = functor (Cor: Core) -> functor (Elt: Clause with type cls = C
 struct
 
   type map = Elt.map
+  type cls = Cor.cls
 
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
@@ -42,7 +43,13 @@ struct
     | Rand (ord) -> let (x,order) = Rand.extract ord in (x, Rand (order))
     | Moms (ord) -> let (x,order) = Moms.extract map ord in (x, Moms (order))
     | Dlis (ord) -> let (x,order) = Dlis.extract map ord in (x, Dlis (order))
-							 
+	
+  let add x = function
+    | Default (ord) -> Default (ord)
+    | Rand (ord) -> Rand (ord)
+    | Moms (ord) -> Moms (Moms.add [x] ord)
+    | Dlis (ord) -> Dlis (Dlis.add [x] ord)
+						 
   let is_empty = function
     | Default (ord) -> Default.is_empty ord
     | Rand (ord) -> Rand.is_empty ord
@@ -61,8 +68,10 @@ module type OrderAbstract = functor (Cor : Core) -> functor (Elt: Clause with ty
 sig 
   type order
   type map = Elt.map
+  type cls = Cor.cls
   val is_empty : order -> bool
   val create : unit -> order
+  val add : Cor.cls -> order -> order
   val extract : map -> order -> int * order
   val update : int -> map -> order -> order
 end;;

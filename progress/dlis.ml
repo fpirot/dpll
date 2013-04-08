@@ -56,22 +56,9 @@ struct
 		 Cor.cls_fold (fun x m -> Map.add x ((try Map.find x m with Not_found -> 0.) +. v) m) c mp)
   (* Ajoute une liste de clauses à prendre en considération dans la map. *)
 
-  let extract map ord =
-    if debug then begin
-      print_string "Order:\n";
-      if is_empty ord then print_string "is empty.\n";
-      List.iter (fun (x,y) -> print_int x; print_string ": "; print_float y; print_string "; ") (Map.bindings ord);
-      print_string "\n"
-    end;
-    let xdlis = fst (Map.fold (fun x v (xm, max) -> if (Cor.read x = 0 && v > max) then (x,v) else (xm, max)) ord (0,0.)) in
-    if xdlis = 0 then raise Cor.Satisfiable
-    else 
-      let l1 = Elt.find xdlis map 
-      and l2 = Elt.find (-xdlis) map in
-      (xdlis, decr_size l2 (remove l1 (Map.remove xdlis (Map.remove (-xdlis) ord))))
-(* Renvoie le couple (xmoxs, map), avec xmoms le litéral choisi par
-   l'heuristique DLIS, et map la table d'association privée de la
-   variable corresopndante. *)
+  let extract map ord = let xdlis = fst (Map.fold (fun x v (xm, max) -> if (Cor.read x = 0 && v > max) then (x,v) else (xm, max)) ord (0,0.)) in
+  if xdlis = 0 then raise Cor.Satisfiable else xdlis
+(* Renvoie le choix xdlis selon l'ordre. *)
 
   let update x map ord = 
     let l1 = try Elt.find x map with Not_found -> []
@@ -92,7 +79,7 @@ sig
   type order
   val is_empty : order -> bool
   val create : unit -> order
-  val extract : Elt.map -> order -> int * order
+  val extract : Elt.map -> order -> int
   val update : int -> Elt.map -> order -> order
 end;;
 

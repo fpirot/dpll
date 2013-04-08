@@ -92,6 +92,7 @@ sig
   type order
   val is_empty : order -> bool
   val create : unit -> order
+  val add : Cor.cls list -> order -> order
   val extract : Elt.map -> order -> int * order
   val update : int -> Elt.map -> order -> order
 end;;

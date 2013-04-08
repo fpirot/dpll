@@ -1,5 +1,6 @@
 all :
-	ocamlc -a core.ml -o core.cma
+	ocamlc -a da.ml -o da.cma
+	ocamlc da.cma -a core.ml -o core.cma
 	ocamlc -a rand.ml -o rand.cma
 	ocamlc -a default.ml -o default.cma
 	ocamlc -a moms.ml -o moms.cma

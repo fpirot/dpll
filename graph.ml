@@ -177,7 +177,7 @@ end;;
 module type GraphAbstract = functor (Cor : CoreElt) ->
 sig
 	type graph
-	type cls
+	type cls = Cor.cls
 	val create : unit -> graph
 	val add : int -> cls -> graph -> graph
 	val find : int -> int -> graph -> int

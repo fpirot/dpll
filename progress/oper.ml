@@ -2,8 +2,6 @@
 
 module type CoreElt =
 sig
-  exception Satisfiable
-  exception Unsatisfiable
   type cls = int
   val var : int
   val cls : int
@@ -18,9 +16,10 @@ sig
   val is_singleton : cls -> int
   val choose : cls -> int
   val cls_make : int -> cls
+  val literals : cls -> int list
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val restore_length : cls list list -> unit
+  val restore_length : cls -> unit
   val restore_assig : int -> unit
 end;;
 
@@ -44,7 +43,7 @@ sig
   type map
   val is_empty : order -> bool
   val create : unit -> order
-  val extract : map -> order -> int * order
+  val extract : map -> order -> int
   val update : int -> map -> order -> order
 end;;
 
@@ -73,7 +72,7 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  let debug = false
+  let debug = true
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -85,12 +84,10 @@ struct
     let ord = Ord.create() in
     {clause = m; order = ord}
 
-(* Extrait une variable selon l'ordre *)
-let split env =
-  let k, ord = Ord.extract env.clause env.order in
-  let mtrue = Elt.extract k env.clause
-  and mfalse = Elt.extract (-k) env.clause in
-  (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
+  (* Extrait une variable selon l'ordre *)
+  let extract env = Ord.extract env.clause env.order
+
+  let update x env = {clause = Elt.extract x env.clause; order = Ord.update x env.clause env.order}
 	 
   let is_empty env = Elt.is_empty env.clause
 
@@ -100,6 +97,8 @@ let split env =
 				  if debug then begin
 				    print_string "Select: ";
 				    print_int x;
+				    print_string ", because of ";
+				    print_list (Cor.literals c);
 				    print_newline()
 				  end;	  
 				  Wlit.add (x, c) s)
@@ -154,8 +153,24 @@ let split env =
     if Cor.wlit then wlit_propagation x env
     else simple_propagation x env
 
-  let restore env i = Cor.restore_assig i;
-    Cor.restore_length (List.map (fun x -> Elt.find x env.clause) (Cor.track i))
+  let restore env i = 
+    let rec delete_redundance = function
+	|[] -> []
+	|[x] -> [x]
+	|x :: y :: l -> if x = y then x :: (delete_redundance l) else x :: (delete_redundance (y :: l)) in
+    let l = delete_redundance (List.sort compare (List.concat (List.map (fun x -> Elt.find (-x) env.clause) (Cor.track i)))) in
+    List.iter Cor.restore_length l;
+(*
+    let l = List.map (fun x -> Elt.find (-x) env.clause) (Cor.track i) in
+    Cor.restore_length l;
+    if debug then begin
+	print_string "Length restoration: \n";
+	List.iter (List.iter (fun x -> print_list (Cor.literals x);
+				       print_string " (";
+				       print_int (Cor.length x);
+				       print_string ")\n")) l
+    end;
+*)  Cor.restore_assig i
     
   let bindings env = Elt.bindings env.clause
 (*
@@ -175,7 +190,8 @@ sig
   type set
   val create : unit -> env
   val is_empty : env -> bool
-  val split : env -> (int * env * env)
+  val extract : env -> int
+  val update : int -> env -> env
   val entail : int -> env -> set
   val propagation : int -> env -> env
   val bindings : env -> (int * int list list) list

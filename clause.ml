@@ -3,8 +3,6 @@
 
 module type ClauseElt =
 sig
-  exception Satisfiable
-  exception Unsatisfiable
   val cls : int
   type cls = int
   val fill : int list -> cls
@@ -38,8 +36,8 @@ struct
 
   let is_empty = Mp.is_empty
     
-  let debug = false
-  let print_list l=
+  let debug = true
+  let print_list l =
     let rec print = function
       |[] -> print_string "]"
       |[a] -> print_int a; print_string "]\n"

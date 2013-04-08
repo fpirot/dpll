@@ -3,8 +3,6 @@
 
 module type ClauseElt =
 sig
-  exception Satisfiable
-  exception Unsatisfiable
   val cls : int
   type cls = int
   val fill : int list -> cls
@@ -14,6 +12,7 @@ sig
   val write : ?father: int -> int -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val decr_size : cls -> unit
+  val length : cls -> int
 end;;
 
 module ClauseCore = functor (Elt : ClauseElt) ->
@@ -39,11 +38,11 @@ struct
 
   let is_empty = Mp.is_empty
     
-  let debug = false
+  let debug = true
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
-      |[a] -> print_int a; print_string "]\n"
+      |[a] -> print_int a; print_string "]"
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
@@ -89,7 +88,9 @@ struct
     St.iter Elt.decr_size s1;
     if debug then begin
       print_string "Extraction of "; print_int x; print_string ":\n";
-      List.iter (fun x -> print_list (Elt.literals x)) (St.elements s) end;
+      List.iter (fun x -> print_list (Elt.literals x); print_string " ("; print_int (Elt.length x); print_string ") \n") (St.elements s);
+      print_string "Length update: ";
+      List.iter (fun x -> print_list (Elt.literals x); print_string " ("; print_int (Elt.length x); print_string ") \n") (St.elements s1) end;
     Mp.remove x m
 
   let find x m = try St.elements (Mp.find x m) with _ -> []
