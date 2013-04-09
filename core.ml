@@ -70,6 +70,18 @@ struct
 
   let debug = true
 
+  let printint x =
+    let e = if x < 0 then 1 else 0 in
+    let s = int_of_float (log (float (abs x)) /. log 10.) in
+    let n = 3 - s - e in
+    let rec space = function
+      |n when n < 0 -> ()
+      |0 -> print_char ' '
+      |n -> print_char ' '; space (n-1) in
+    print_int x; space n
+  (* Affiche un entier sur un nombre de caractères fixé à 4, en
+     complétant avec des espaces. *)
+
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -125,8 +137,12 @@ struct
 		     
   let reset x = assigArray.((abs x) - 1) <-  {value = 0; father = -1; depth = 0};
     if debug then begin
-      print_string "Assignment: ";
-      Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
+      print_string "Assignment:\n";
+      Array.iter (fun x -> printint x.value; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.father; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.depth; print_char ' ') assigArray;
       print_string "\n\n" end
   (* Réinitialise la valuation de la variable |x|. *)
 
@@ -135,7 +151,7 @@ struct
   let restore i = 
     if debug then begin
       print_string "Restore: ";
-      for k = 0 to i do (fun l -> print_list l) stack.(k) done;
+      for k = 0 to !dpth do (fun l -> print_list l) stack.(k) done;
       print_newline() end;
     for k = i to !dpth do
       List.iter reset stack.(k);
@@ -150,8 +166,12 @@ struct
     assigArray.((abs x) - 1).father <- father;
     propag x;
     if debug then begin
-      print_string "Assignment: ";
-      Array.iter (fun x -> print_int x.value; print_char ' ') assigArray;
+      print_string "Assignment:\n";
+      Array.iter (fun x -> printint x.value; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.father; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.depth; print_char ' ') assigArray;
       print_string "\n\n" end
   (* Ecrit la valuation x pour la variable |x|, avec en argument
      optionnel la clause à l'origine de cette valuation. *)
@@ -162,7 +182,15 @@ struct
   let depth x = assigArray.((abs x) - 1).depth
   (* Renvoie la profondeur à laquelle x a été assigné. *)
 
-  let write_father x c = assigArray.((abs x) - 1).father <- c
+  let write_father x c = assigArray.((abs x) - 1).father <- c;
+    if debug then begin
+      print_string "Assignment:\n";
+      Array.iter (fun x -> printint x.value; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.father; print_char ' ') assigArray;
+      print_newline();
+      Array.iter (fun x -> printint x.depth; print_char ' ') assigArray;
+      print_string "\n\n" end
 
   (* ********************************************************* *)
   (*          Référencement des clauses du problème            *)
