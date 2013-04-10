@@ -264,12 +264,15 @@ struct
   (* ************************************************* *)
 
   module Proof = struct
-    type t = F of Cls.t | N of Cls.t * Cls.t * t
+    type t = F of Cls.t | N of (Cls.t * int) * Cls.t * t
     let singleton x = F(x)
     let hd = function
       |F(x) -> x
-      |N(c, _, _) -> c
-    let built c1 c2 p = N(c1, c2, p)
+      |N(c, _, _) -> fst c
+    let size = function
+      |F(x) -> 1
+      |N(c, _, _) -> snd c
+    let built c1 c2 p = N((c1, (size p) + 2), c2, p)
   end
 
   type proof = Proof.t
