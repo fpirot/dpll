@@ -182,16 +182,6 @@ struct
   let depth x = assigArray.((abs x) - 1).depth
   (* Renvoie la profondeur à laquelle x a été assigné. *)
 
-  let write_father x c = assigArray.((abs x) - 1).father <- c;
-    if debug then begin
-      print_string "Assignment:\n";
-      Array.iter (fun x -> printint x.value; print_char ' ') assigArray;
-      print_newline();
-      Array.iter (fun x -> printint x.father; print_char ' ') assigArray;
-      print_newline();
-      Array.iter (fun x -> printint x.depth; print_char ' ') assigArray;
-      print_string "\n\n" end
-
   (* ********************************************************* *)
   (*          Référencement des clauses du problème            *)
   (* ********************************************************* *)
@@ -284,10 +274,15 @@ struct
 
   type proof = Proof.t
 
-  let proof c = 
-    let add = Cls.fold (fun x s -> if (depth x = !dpth && father x <> -1) then (write_father x (-1); Cls.add x s) else s) in
+  let proof c =
+    let t = Array.init var (fun x -> depth (x+1) = !dpth && father (x+1) <> -1) in
+    (* t.(abs x - 1) vaudra true x sera un litéral affecté par la
+       propagation en cours, non encore considéré. *)
+    let add = Cls.fold (fun x s -> if t.((abs x) - 1) then (t.((abs x) - 1) <- false; Cls.add x s) else s) in
     (* Rajoute à un ensemble tous les litéraux d'une clause qui ont
-       été affectés pendant la propagation en cours. *)
+       été affectés pendant la propagation en cours, et écrit -1 sur
+       leur père pour ne pas les reprendre en considération par la
+       suite. *)
     let rec aux p s = 
       (* s est un ensemble de litéraux; on utilisera les opérations
 	 sur les clauses pour le manipuler. *)
@@ -298,10 +293,24 @@ struct
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
 	   else let c1 = clause (father x) in
 		let s2 = add c1 s1 in
-		aux (Proof.built (Cls.union c1 (Cls.remove x (Proof.hd p))) c1 p) s2 in
+		if debug then begin
+		  print_string "Clause père de "; 
+		  print_int x; 
+		  print_string ": ";
+		  print_list (Cls.elements c1);
+		  print_string "\nNouveau set: ";
+		  print_list (Cls.elements s2);
+		  print_newline() end;
+		aux (Proof.built (Cls.remove x (Cls.union c1 (Proof.hd p))) c1 p) s2 in
     (* Renvoie la clause engendrée par le backtrack. *)
-    aux (Proof.singleton c) (add c Cls.empty)
-  (* Génère une preuve de résolution suite *)
+    let s = add c Cls.empty in
+    if debug then begin
+      print_string "Set de départ: ";
+      print_list (Cls.elements s);
+      print_newline() end;
+    aux (Proof.singleton c) s
+  (* Génère une preuve de résolution à partir d'une clause
+     insatisfaite c. *)
 
   let backtrack c =
     let p = proof (clause c) in
