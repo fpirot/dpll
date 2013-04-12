@@ -95,8 +95,8 @@ struct
     and s = ref "Nil"
     and p = ref "Test/ex0.cnf" in
     Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
-               ("-graph", Arg.Unit(fun () -> g := true), "Watched literals"); 
-	       ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
+               ("-graph", Arg.Unit(fun () -> g := true), "Génère le graphe de propagation"); 
+							 ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
                ("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
                ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
       (fun str -> p := str) "";
