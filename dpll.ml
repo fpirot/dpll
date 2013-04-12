@@ -32,8 +32,9 @@ let print_list l =
 
 let dpll env = 
   let rec aux i env =
+    let nb_cls = Core.nb_cls () in
     (* i est la profondeur actuelle des paris. *)
-    let (x, envtrue, envfalse) = try Oper.split env 
+    let x = try Oper.extract env
       with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
 	  if debug then begin
 	    List.iter (fun (x,y) -> print_int x; print_string ": ";
@@ -53,10 +54,10 @@ let dpll env =
       Core.write x;
       (* On assigne la valeur de x, et on rentre cette assignation
 	 dans une liste pour gérer le backtrack. *)
-      let env' = Oper.propagation x envtrue in
+      let env' = Oper.propagation x (Oper.update x nb_cls env) in
       aux (i+1) env')
     (* On va un niveau plus profond dans les paris. *)
-    with Oper.Backtrack (k, env') -> begin
+    with Oper.Backtrack k -> begin
       if i = k then begin
 	Core.restore i;
 	(* On annule les assignations effectuées à l'étape
@@ -68,10 +69,10 @@ let dpll env =
 	  print_newline();
 	end;
 	Core.write (-x);
-	let env' = Oper.propagation (-x) envfalse in
+	let env' = Oper.propagation (-x) (Oper.update (-x) nb_cls env) in
 	aux (i+1) env'
       end
-      else aux k env'
+      else raise (Oper.Backtrack k)
     end
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)

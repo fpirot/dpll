@@ -6,7 +6,7 @@ all :
 	ocamlc -a moms.ml -o moms.cma
 	ocamlc -a dlis.ml -o dlis.cma
 	ocamlc -a clause.ml -o clause.cma
-	ocamlc -a wlit.ml -o wlit.cma
+	ocamlc da.cma -a wlit.ml -o wlit.cma
 	ocamlc -a graph.ml -o graph.cma
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma

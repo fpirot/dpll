@@ -103,7 +103,11 @@ struct
     (!w, !g, !s, !p)
       
   let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
-    
+
+  let ncls = ref cls
+
+  let nb_cls () = !ncls
+
   let fold = List.fold_right
 
   (* ********************************************************* *)
@@ -206,23 +210,12 @@ struct
 
   let compt = ref (-1)
   (* L'indice en cours dans le tableau. *)
-(*
-  let add_clause c = incr compt; clauseArray.(!compt) <- c; !compt
-*)
 
-  let add_clause c = ClauseArray.add c clauseArray; ClauseArray.length clauseArray - 1
-(*
-  let fill l =
-    incr compt;
-    clauseArray.(!compt) <- fold (fun x s -> Cls.add x s) l Cls.empty;
-    !compt
-*)  
+  let add_clause c = ClauseArray.add c clauseArray; incr ncls
+
   let fill l = ClauseArray.add (fold (fun x c -> Cls.add x c) l Cls.empty) clauseArray;
     ClauseArray.length clauseArray - 1
-(* Renvoie dans la case du tableau en cours la clause représentée par sa liste d'entiers l. *)
-(*
-  let clause id = clauseArray.(id)
-*)
+
   let clause id = if id = -1 then Cls.empty else ClauseArray.read id clauseArray
 
   let cls_make id = id
@@ -264,15 +257,12 @@ struct
   (* ************************************************* *)
 
   module Proof = struct
-    type t = F of Cls.t | N of (Cls.t * int) * Cls.t * t
-    let singleton x = F(x)
+    type t = Nil | N of Cls.t * t * t
+    let singleton x = N(x, Nil, Nil)
     let hd = function
-      |F(x) -> x
-      |N(c, _, _) -> fst c
-    let size = function
-      |F(x) -> 1
-      |N(c, _, _) -> snd c
-    let built c1 c2 p = N((c1, (size p) + 2), c2, p)
+      |Nil -> raise Not_found
+      |N(c, _, _) -> c
+    let built c1 c2 p = N(c1, singleton c2, p)
   end
 
   type proof = Proof.t
@@ -286,6 +276,7 @@ struct
        été affectés pendant la propagation en cours, et écrit -1 sur
        leur père pour ne pas les reprendre en considération par la
        suite. *)
+
     let rec aux p s = 
       (* s est un ensemble de litéraux; on utilisera les opérations
 	 sur les clauses pour le manipuler. *)
@@ -318,9 +309,9 @@ struct
   let backtrack c =
     let p = proof (clause c) in
     let c1 = Proof.hd p in
-    let cls = add_clause c1
+    add_clause c1;
     (* On ajoute la clause ainsi créée. *)
-    and d = Cls.fold (fun x d -> if depth x < !dpth then max (depth x) d else d) c1 0 in
+    let d = Cls.fold (fun x d -> if depth x < !dpth then max (depth x) d else d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
     if debug then begin
@@ -330,7 +321,7 @@ struct
       print_int d;
       print_newline()
     end;
-    (cls, d)
+    d
 (* Donne le représentant de la nouvelle clause, ainsi que la
    profondeur à laquelle le backtrack doit remonter. *)
 end;;
@@ -343,7 +334,7 @@ sig
   type proof
   type clause
   val var : int
-  val cls : int
+  val nb_cls : unit -> int
   val lst : int list list
   val ord : (int * int) list
   val wlit : bool
@@ -363,7 +354,7 @@ sig
   val choose : cls -> int
   val is_singleton : cls -> int
   val proof : clause -> proof
-  val backtrack : cls -> (cls * int)
+  val backtrack : cls -> int
   val father : int -> cls
 end;;
 

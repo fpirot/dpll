@@ -2,7 +2,7 @@ module type Core =
 sig
   exception Satisfiable
   type cls = int
-  val cls : int
+  val nb_cls : unit -> int
   val ord : (int * int) list
   val heur : string
   val read : int -> int
@@ -39,10 +39,10 @@ struct
     | _ -> Default (Default.create ())
 
   let extract map = function
-    | Default (ord) -> let (x,order) = Default.extract ord in (x, Default (order))
-    | Rand (ord) -> let (x,order) = Rand.extract ord in (x, Rand (order))
-    | Moms (ord) -> let (x,order) = Moms.extract map ord in (x, Moms (order))
-    | Dlis (ord) -> let (x,order) = Dlis.extract map ord in (x, Dlis (order))
+    | Default (ord) -> Default.extract ord
+    | Rand (ord) -> Rand.extract ord
+    | Moms (ord) -> Moms.extract map ord
+    | Dlis (ord) -> Dlis.extract map ord 
 	
   let add x = function
     | Default (ord) -> Default (ord)
@@ -57,8 +57,8 @@ struct
     | Dlis (ord) -> Dlis.is_empty ord
 
   let update x map = function
-    | Default (ord) -> Default (ord)
-    | Rand (ord) -> Rand (ord)
+    | Default (ord) -> Default (Default.update x ord)
+    | Rand (ord) -> Rand (Rand.update x ord)
     | Moms (ord) -> Moms (Moms.update x map ord)
     | Dlis (ord) -> Dlis (Dlis.update x map ord)
 end;;
@@ -72,7 +72,7 @@ sig
   val is_empty : order -> bool
   val create : unit -> order
   val add : Cor.cls -> order -> order
-  val extract : map -> order -> int * order
+  val extract : map -> order -> int
   val update : int -> map -> order -> order
 end;;
 

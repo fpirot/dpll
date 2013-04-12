@@ -67,7 +67,7 @@ end;;
 module GraphCore = functor (Cor : CoreElt) ->
 struct
 
-	let debug = true
+	let debug = false
   let print_list l=
     let rec print = function
       |[] -> print_string "]"
@@ -100,15 +100,15 @@ struct
 
 	let create () = []
 
-	let add x l lst =
+	let add x cls lst =
 		if debug then begin
 			print_string "List: ";
-			print_intlist (x, l);
+			print_intlist (x, cls);
 			print_string " ";
-			List.iter (fun l -> print_intlist l) lst;
+			List.iter (fun x -> print_intlist x) lst;
 			print_newline();
 		end;
-		(x, l)::lst
+		(x, cls)::lst
 
 
 	let find s t lst =

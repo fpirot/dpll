@@ -3,7 +3,6 @@
 
 module type ClauseElt =
 sig
-  val cls : int
   type cls = int
   val fill : int list -> cls
   val literals : cls -> int list
@@ -40,7 +39,7 @@ struct
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
-      |[a] -> print_int a; print_string "] "
+      |[a] -> print_int a; print_string "]\n"
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
@@ -81,13 +80,8 @@ struct
     let s = try Mp.find x map with _ -> St.empty in
     let m = St.fold (fun cls m -> remove cls m) s map in
     if debug then begin
-      print_string "Extraction of "; print_int x; print_string ": \n";
-      List.iter (fun x -> print_list (Elt.literals x); print_newline()) (St.elements s);
-      print_string "\nNew map: \n";
-      List.iter (fun (x,s) -> print_int x; print_string ": ";
-	List.iter (fun c -> print_list (Elt.literals c)) (St.elements s);
-	print_newline()) (Mp.bindings (Mp.remove x m));
-      print_newline() end;
+      print_string "Extraction of "; print_int x; print_string ":\n";
+      List.iter (fun x -> print_list (Elt.literals x)) (St.elements s) end;
     Mp.remove x m
 
   let find x m = try St.elements (Mp.find x m) with _ -> []

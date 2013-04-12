@@ -4,7 +4,7 @@ sig
   exception Satisfiable
   exception Unsatisfiable of cls
   val var : int
-  val cls : int
+  val nb_cls : unit -> int
   val read : int -> int
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val literals : cls -> int list
@@ -30,9 +30,13 @@ struct
   type set = St.t
   type setc = Stc.t
 
-  type wlit = int * int
-  let zero = (0, 0)
-  let warray = Array.make Cor.cls zero
+module Warray = Da.Make (struct
+  type t = int * int
+  let empty = (0, 0)
+end)
+
+
+  let warray = Warray.empty
 
   let assoc = Array.make Cor.var []
   (* table d'association : à la variable i est associée l'ensemble
@@ -41,30 +45,20 @@ struct
 
   let print_warray () = 
     print_string "Watched literals :";
-    Array.iter (fun x -> print_char '('; print_int (fst x); print_char ' '; print_int (snd x); print_string ") ") warray;
+    Warray.iter (fun x -> print_char '('; print_int (fst x); print_char ' '; print_int (snd x); print_string ") ") warray;
     print_newline()
 
   let watched_to_clauses x = if x <> 0 then assoc.((abs x) - 1) else []
   (* Renvoie la liste des indices de clauses dans lesquelles la
      variable x est surveillé. *)
 
-  let read id = warray.(id)
+  let read id = Warray.read id warray
   (* Renvoie les litéraux surveillés pour la clause d'indice id. *)
 
   let get_sat x id = let (a, b) = read id in
 		     x = a || x = b
   (* Détermine si l'assignation du litéral x à vrai rend la clause
      d'indice id satisfiable, au vu des litéraux qu'elle surveille. *)
-
-  let fill_assoc () = 
-    let n = Cor.cls in
-    for i = 0 to n-1 do
-      let (a,b) = warray.(i) in
-      if a <> 0 then  assoc.((abs a) - 1) <- i :: assoc.((abs a) - 1);
-      if b <> 0 then assoc.((abs b) - 1) <- i :: assoc.((abs b) - 1)
-    done
-  (* Remplit la table d'association entre watched literals et
-     clauses. *)
 
   let watched_literals_of_clause id lbord lsat =
     let l = Cor.literals id in
@@ -90,25 +84,29 @@ struct
      potentiellement vrai dans c, et lsat avec c si elle est
      satisfiable. *)
 
+  let add_cls cls = 
+    let lbord = ref St.empty and lsat = ref Stc.empty in
+    let (w1,w2) = watched_literals_of_clause cls lbord lsat in
+    Warray.add (w1,w2) warray;
+    if w1 <> 0 then assoc.((abs w1) - 1) <- cls :: assoc.((abs w1) - 1);
+    if w2 <> 0 then assoc.((abs w2) - 1) <- cls :: assoc.((abs w2) - 1)
+  (* Ajoute la clause d'indice cls. *)
+
+  let update_cls n = 
+    let p = Cor.nb_cls () in
+    for i = n to p-1 do add_cls i done
+  (* Remplit la table d'association entre watched literals et
+     clauses, à partir de l'indice n. *)
+
   let new_assoc id lbord lsat =
     let (a, b) = watched_literals_of_clause id lbord lsat in
     if a <> 0 then assoc.((abs a) - 1 ) <- id :: assoc.((abs a) - 1);
     if b <> 0 then assoc.((abs b) - 1 ) <- id :: assoc.((abs b) - 1);
-    warray.(id) <- (a, b)
+    Warray.write (a, b) id warray
   (* Associe de nouveaux watched literals à la clause d'indice i, et
      modifie les tables convenablement. *)
 
-  let fill_warray () =
-    let n = Cor.cls in
-    let lbord = ref St.empty and lsat = ref Stc.empty in
-    for i = 0 to n-1 do
-      warray.(i) <- watched_literals_of_clause i lbord lsat
-    done
-  (* A partir d'un tableau de clauses remplit warray. *)
-
-  let init () =
-    let _ = fill_warray () in
-    fill_assoc ()
+  let init () = update_cls 0
 
   let update x =
     let l = watched_to_clauses x in
@@ -141,6 +139,7 @@ sig
   type cls = Cor.cls
   val update : int -> set * setc
   val init : unit -> unit
+  val update_cls : int -> unit
   val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
   val choose : set -> (int * cls)
   val singleton : int -> set

@@ -5,8 +5,8 @@ sig
   exception Satisfiable
   type cls = int
   exception Unsatisfiable of cls
+  val nb_cls : unit -> int
   val var : int
-  val cls : int
   val wlit : bool
   val lst : int list list
   val read : int -> int
@@ -21,7 +21,7 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val backtrack : cls -> (cls * int)
+  val backtrack : cls -> int
 end;;
 
 module type OpElt =
@@ -46,7 +46,7 @@ sig
   val is_empty : order -> bool
   val create : unit -> order
   val add : cls -> order -> order
-  val extract : map -> order -> int * order
+  val extract : map -> order -> int
   val update : int -> map -> order -> order
 end;;
 
@@ -57,6 +57,7 @@ sig
   type setc
   val update : int -> set * setc
   val init : unit -> unit
+  val update_cls : int -> unit
   val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
   val choose : set -> (int * cls)
   val singleton : int -> set
@@ -87,7 +88,7 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  exception Backtrack of (int * env)
+  exception Backtrack of int
 
   let debug = true
   let print_list l =
@@ -102,12 +103,16 @@ struct
 		  {clause = m; order = ord}
 
   (* Extrait une variable selon l'ordre *)
-  let split env =
-    let k, ord = Ord.extract env.clause env.order in
-    let mtrue = Elt.extract k env.clause
-    and mfalse = Elt.extract (-k) env.clause in
-    (k, {clause = mtrue; order = ord}, {clause = mfalse; order = Ord.update (-k) env.clause env.order})
-      
+  let extract env = Ord.extract env.clause env.order
+
+  let update x n env = 
+    let p = Cor.nb_cls () in
+    if Cor.wlit then Wlit.update_cls n;
+    let map = ref env.clause and ord = ref env.order in
+    for i = n to p-1 do
+      map := Elt.add i !map; ord := Ord.add i !ord done;
+{clause = Elt.extract x !map; order = Ord.update x !map !ord}
+   
   let is_empty env = Elt.is_empty env.clause
 
 
@@ -183,9 +188,8 @@ struct
       if Cor.wlit then wlit_propagation x env
       else simple_propagation x env
     with Cor.Unsatisfiable c ->
-      let (cls, i) = Cor.backtrack c in
-      let env' = {clause = Elt.add cls env.clause; order = Ord.add cls env.order} in
-      raise (Backtrack (i, env'))
+      let i = Cor.backtrack c in
+      raise (Backtrack i)
 
   let bindings env = Elt.bindings env.clause
 
@@ -202,10 +206,11 @@ sig
   type env
   type cls
   type set
-  exception Backtrack of (int * env)
+  exception Backtrack of int
   val create : unit -> env
   val is_empty : env -> bool
-  val split : env -> (int * env * env)
+  val extract : env -> int
+  val update : int -> int -> env -> env
   val entail : int -> env -> set
   val propagation : int -> env -> env
   val bindings : env -> (int * int list list) list
