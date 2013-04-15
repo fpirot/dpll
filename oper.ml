@@ -190,7 +190,9 @@ struct
      (fun x env channel ->
 				try prop x env g with Cor.Unsatisfiable c ->
 				  let i = Cor.backtrack c in
-				  Graph.find x c (!g) channel;
+				  print_string "Conflictual clause: ";
+				  print_int (Graph.find x c (!g) channel);
+				  print_newline();
 				  raise (Backtrack i))
 
   let bindings env = Elt.bindings env.clause

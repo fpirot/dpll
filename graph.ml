@@ -14,6 +14,10 @@ end;;
 module Print =
 struct
 	
+	let fresh =
+		let compt = ref 0 in
+			fun () -> incr compt; !compt
+	
 	let others channel lst f r =
 		Printf.fprintf channel "\nnode [style=solid,color=\034grey\034];";
 		List.iter (fun (x, l) ->
@@ -46,7 +50,7 @@ struct
 *)
 
 	let file v g l a f r =
-		let channel = open_out "graph.dot" in
+		let channel = open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
 		Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" v v;
 		Array.iteri (fun i x -> match x with
 			|None ->()
