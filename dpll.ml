@@ -6,7 +6,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
-let debug = true;;
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
@@ -30,7 +30,8 @@ let print_list l =
     |a::l -> print_int a; print_string "; "; print l in
   print_string "["; print l
 
-let dpll env = 
+let dpll env =
+	let channel = open_out "log" in
   let rec aux i env =
     let nb_cls = Core.nb_cls () in
     (* i est la profondeur actuelle des paris. *)
@@ -54,7 +55,7 @@ let dpll env =
       Core.write x;
       (* On assigne la valeur de x, et on rentre cette assignation
 	 dans une liste pour gérer le backtrack. *)
-      let env' = Oper.propagation x (Oper.update x nb_cls env) in
+      let env' = Oper.propagation x (Oper.update x nb_cls env) channel in
       aux (i+1) env')
     (* On va un niveau plus profond dans les paris. *)
     with Oper.Backtrack k -> begin
@@ -69,7 +70,7 @@ let dpll env =
 	  print_newline();
 	end;
 	Core.write (-x);
-	let env' = Oper.propagation (-x) (Oper.update (-x) nb_cls env) in
+	let env' = Oper.propagation (-x) (Oper.update (-x) nb_cls env) channel in
 	aux (i+1) env'
       end
       else raise (Oper.Backtrack k)
@@ -79,7 +80,7 @@ let dpll env =
   aux env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
-
+(*
 let t = Sys.time() in
 (try dpll 0 (Oper.create ()) with 
   |Core.Satisfiable -> 
@@ -87,6 +88,12 @@ let t = Sys.time() in
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
-  |Core.Unsatisfiable -1 ->
+  |_ ->
     print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;*)
+
+(try dpll 0 (Oper.create ()) with 
+  |Core.Satisfiable -> 
+    if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
+  |_ ->
+    print_string "s UNSATISFIABLE\n");;
