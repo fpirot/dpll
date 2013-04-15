@@ -189,11 +189,13 @@ struct
       else simple_propagation in
      (fun x env channel ->
 				try prop x env g with Cor.Unsatisfiable c ->
-				  let i = Cor.backtrack c in
-				  print_string "Conflictual clause: ";
-				  print_int (Graph.find x c (!g) channel);
-				  print_newline();
-				  raise (Backtrack i))
+				  begin
+				  	let i = Cor.backtrack c in
+						(*print_string "Conflictual clause: ";
+						print_int (Graph.find x c (!g) channel);
+						print_newline();*)
+						raise (Backtrack i)
+				  end)
 
   let bindings env = Elt.bindings env.clause
 
