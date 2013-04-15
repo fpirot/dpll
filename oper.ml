@@ -192,7 +192,7 @@ struct
 				  begin
 				  	let i = Cor.backtrack c in
 						(*print_string "Conflictual clause: ";
-						print_int (Graph.find x c (!g) channel);
+						print_int (Graph.find (Cor.father x) (Cor.father c) (!g) channel);
 						print_newline();*)
 						raise (Backtrack i)
 				  end)
