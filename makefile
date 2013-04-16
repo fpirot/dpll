@@ -15,7 +15,7 @@ all :
 
 test :
 	ocamlc -a da.ml -o da.cma
-	ocamlc -a core.ml -o core.cma
+	ocamlc da.cma -a core.ml -o core.cma
 	ocamlc -a rand.ml -o rand.cma
 	ocamlc -a default.ml -o default.cma
 	ocamlc -a moms.ml -o moms.cma
@@ -28,6 +28,9 @@ test :
 	ocamlc Test/test.ml -o Test/test
 	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma dpll_test.ml -o Test/dpll
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
+
+graph :
+	dot -Tpdf Graph/graph1.dot -o Graph/graph.pdf
 
 clean :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
