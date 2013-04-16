@@ -185,15 +185,7 @@ struct
     let setv = prop l in
     aux env setv
 
-  let print_conflict c = decr nxt_print;
-    let k = Cor.backtrack c (!nxt_print = 0) in
-    if !nxt_print = 0 then
-      print_string "Que voulez-vous faire maintenant ?\n
-  g : engendrer un graphe des conflits\n
-  r : afficher la preuve par resolution de l'engendrement de cette clause\n
-  c : continuer jusqu'au prochain conflit\n
-  s n : continuer jusqu'au n-ieme prochain conflit\n
-  t : terminer l'execution sans s'arreter\n";
+  let print_conflict c = 
     let rec aux () = match read_line() with
       |"g" -> Graph.draw c; aux()
       |"r" -> aux()
@@ -201,8 +193,17 @@ struct
       |"t" -> nxt_print := -1
       | s -> match String.sub s 0 2 with
 	  | "s " -> (try nxt_print := int_of_string (String.sub s 2 (String.length s - 2)) with _ -> aux())
-	  | _ -> aux()
-    in aux (); k
+	  | _ -> aux() in
+    decr nxt_print;
+    let k = Cor.backtrack c (!nxt_print = 0) in
+    if !nxt_print = 0 then begin
+      print_string "Que voulez-vous faire maintenant ?
+  g : engendrer un graphe des conflits
+  r : afficher la preuve par resolution de l'engendrement de cette clause
+  c : continuer jusqu'au prochain conflit
+  s n : continuer jusqu'au n-ieme prochain conflit
+  t : terminer l'execution sans s'arreter\n";
+      aux () end; k
 
   let propagation =
     let propag = if Cor.wlit then wlit_propagation

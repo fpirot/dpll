@@ -370,6 +370,7 @@ sig
   val restore : int -> unit
   val read : int -> int
   val write : ?father:int -> int -> unit
+  val depth : int -> int
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
   val iter : (int -> unit) -> cls -> unit
