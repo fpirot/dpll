@@ -8,6 +8,7 @@ sig
   val iter : (int -> unit) -> cls -> unit
   val literals : cls -> int list
   val father : int -> cls
+  val depth : int -> int
   (*val convert : int list -> cls*)
 end;;
 
@@ -18,54 +19,14 @@ struct
 		let compt = ref 0 in
 			fun () -> incr compt; !compt
 	
-	let others channel lst f r =
-		Printf.fprintf channel "\nnode [style=solid,color=\034grey\034];";
-		List.iter (fun (x, l) ->
-			f (fun y -> if abs x <> abs y then Printf.fprintf channel "\n%d -> %d;" (r y) (r x)) l) lst
-(*
-	let style channel v a r =
- 		Array.iteri (fun i x -> if i > 0 then match x with
-			|None ->()
-			|Some(a, b) -> let v = abs_float (2. *. float b) /. (float v) in
-				if abs b = i then 
-					Printf.fprintf channel "\n%d[shape=box,style=bold,color=\034%f %f %f\034];" (r i) v v v
-				else
-					Printf.fprintf channel "\n%d[shape=ellipse,style=filled,color=\034%f %f %f\034];" (r i) v v v) a
+	let others channel lst f_read = ()
 
-	let node channel g a f =
-		List.iter (fun (x, l) ->
-			f (fun y ->
-				match a.(abs y - 1) with
-					|None -> ()
-					|Some(a, b) -> Printf.fprintf channel "\n%d -> %d;" x y) l) g
+	let currents channel lst f_read = ()
 
-	let file v g l a f r =
-		let channel = open_out "graph.dot" in
-			Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" v v;
-			style channel v a r;
-			node channel g a f;
-			others channel l f r;
-			Printf.fprintf channel "}";
-			close_out channel
-*)
-
-	let file v g l a f r =
+	let file (l_int, l_ext) =
 		let channel = open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
-		Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" v v;
-		Array.iteri (fun i x -> match x with
-			|None ->()
-			|Some(a, b) -> if abs b = i then let v = abs_float (2. *. float b) /. (float v) in
-				Printf.fprintf channel "\n%d[shape=box,style=bold,color=\034%f %f %f\034];" b v v v) a;
-		Printf.fprintf channel "\nsubgraph{";
-		List.iter (fun (x, l) ->
-			f (fun y ->
-				match a.(abs y - 1) with
-					|None -> ()
-					|Some(a, b) -> let v = abs_float (2. *. float b) /. (float v) in
-						Printf.fprintf channel "\nnode [style=filled,color=\034%f %f %f\034];\n%d -> %d;" v v v (r x) (r y)) l) g;
-		others channel l f r;
-		Printf.fprintf channel "}\n}";
-		close_out channel
+			
+			close_out channel
 
 end;;
 
@@ -95,99 +56,35 @@ struct
 			print_string ")"
 
 
-	module St = Set.Make (struct
-			type t = int
-			let compare = compare
-		end)
-
-	type graph = (int * Cor.cls) list
 	type cls = Cor.cls
 
-	let create () = []
 
-	let add x cls lst =
-		if debug then begin
-			print_string "List: ";
-			print_intlist (x, cls);
-			print_string " ";
-			List.iter (fun x -> print_intlist x) lst;
-			print_newline();
-		end;
-		(x, cls)::lst
+	let find cls chan =
 
-	let find s t lst chan =
+	let arr = Array.make Cor.var false
+	and partition a l lst =
+		let c = Cor.father a
+		and max = ref min_int in
+			(Cor.cls_fold (fun x (l1, l2) -> if (Cor.depth x) = !max then ((x, a)::l1, l2) else (l1, (x, a)::l2)) c lst,
+				Cor.cls_fold (fun x l -> if (Cor.depth x) > !max then max := (Cor.depth x); x::l) c l) in
 
-		(* Initialisation *)
-		let adj = Array.make Cor.var St.empty
-		and cnx = Array.make Cor.var None
-		and next =
-			let compt = ref 0 in
-			fun () -> incr compt; !compt
-		and aux = List.map (fun (x, l) -> x, Cor.father x) lst in
+		let rec iterate lst = function
+			|[] -> lst
+			|a::l -> arr.(abs a - 1) <- true;
+			let (lst', l') = partition a l lst in
+				iterate lst' l'
 
-		(* Deux fonctions annexes, une pour le debug et une pour simplifier l'ecriture *)
-		let print () =
-			print_string "Adj: ";
-			Array.iteri (fun i s -> if i > 0 then print_string "; ";
-				print_list (St.elements s)) adj;
-			print_newline();
-			print_string "Cnx: ";
-			Array.iteri (fun i c -> if i > 0 then print_string "; ";
-				print_some c) cnx;
-			print_newline();
-			print_newline();
-		and receive x y = match cnx.(abs x - 1), cnx.(abs y - 1) with
-			|_, None -> ()
-			|None, Some(c, d) -> failwith "Graph: receive"
-			|Some(a, b), Some(c, d) -> cnx.(abs x - 1) <-
-				(if a < c then Some(a, b) else Some(c, d)) in
-
-			(* Remplissage des adj et cnx *)
-			List.iter (fun (x, l) -> adj.(abs x - 1) <- Cor.cls_fold
-					(fun y s -> if x <> y then adj.(abs y - 1) <- St.add (Cor.read x) adj.(abs y - 1); (*St.add y*) s)
-				l adj.(abs x - 1)) lst;
-			(*cnx.(s - 1) <- Some (0, Cor.read s);*)
-			if debug then print ();
-
-
-			(* Le coeur de la fonction *)
-			let rec calc x =
-				if St.is_empty adj.(abs x - 1) then ()
-				else begin
-					cnx.(abs x - 1) <- Some (next (), Cor.read x);
-					St.iter (fun y -> match cnx.(abs y - 1) with
-						|None ->
-							(*adj.(x - 1) <- St.remove y adj.(x - 1);
-							adj.(y - 1) <- St.remove x adj.(y - 1);*)
-							if debug then print ();
-							calc y;
-							if debug then print ();
-						|Some(a, b) -> if debug then print()
-					) adj.(abs x - 1);
-					St.iter (fun y -> receive x y) adj.(abs x - 1);
-				end
-			in
-
-	calc s;
-	if true then begin
-		Print.file Cor.var lst aux cnx Cor.iter Cor.read;
-		Marshal.to_channel chan (fun () -> Print.file Cor.var lst aux cnx Cor.iter Cor.read) [Marshal.Closures];
-		end;
-	match cnx.(abs t - 1) with
-		|None -> failwith "Graph: calc"
-		|Some(a, b) -> b
-	
-	(*let convert = Cor.convert*)
-
+	in
+		let lst = iterate ([],[]) (Cor.literals cls) in
+			Print.file lst
+		
+		
 end;;
 
 module type GraphAbstract = functor (Cor : CoreElt) ->
 sig
-	type graph
 	type cls = Cor.cls
-	val create : unit -> graph
-	val add : int -> cls -> graph -> graph
-	val find : int -> int -> graph -> out_channel -> int 
+	val find : cls -> out_channel -> unit 
 	(*val convert : int list -> cls*)
 end;;
 
