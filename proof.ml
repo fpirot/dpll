@@ -84,5 +84,5 @@ end;;
 module Make = functor (Cor : CorElt) ->
 struct
   type proof = Cor.proof
-  let file a = Print.file a Cor.get Cor.size (Hashtbl.hash) (fun x -> x)
+  let file a = Print.file a Cor.get Cor.size (let compt = ref 0 in fun x -> incr compt; !compt) (fun x -> x)
 end;;
