@@ -3,6 +3,7 @@
 module type CoreElt =
 sig
   type cls = int
+  type proof
   exception Satisfiable
   exception Unsatisfiable of cls
   val nb_cls : unit -> int
@@ -24,6 +25,7 @@ sig
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val backtrack : cls -> bool -> int
   val pari : unit -> int
+  val proof : cls -> proof
 end;;
 
 module type OpElt =
@@ -195,7 +197,7 @@ struct
   t : terminer l'execution sans s'arreter\n";
       match read_line() with
 	|"g" -> Graph.draw c; aux()
-	|"r" -> aux()
+	|"r" -> Latex.draw (Core.proof c); aux()
 	|"c" -> nxt_print := 1
 	|"t" -> nxt_print := -1
 	| s -> try (match String.sub s 0 2 with

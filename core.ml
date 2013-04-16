@@ -212,8 +212,6 @@ struct
      de la variable x, -x pour sa négation), avec la relation de
      comparaison sur les valeurs absolues (entre nom de variable). *)
 
-  type clause = Cls.t
-
   module ClauseArray = Da.Make (Cls)
 
   let clauseArray = ClauseArray.empty
@@ -278,7 +276,7 @@ struct
     let build c1 c2 p = N(c1, singleton c2, p)
     let get = function
       |Nil -> failwith "Error: Empty proof"
-      |N(x, t1, t2) -> (x, t1, t2)
+      |N(x, t1, t2) -> (Cls.elements x, t1, t2)
     let rec size = function
       |Nil -> 0
       |N(x, t1, t2) -> 1 + size t1 + size t2
@@ -358,7 +356,6 @@ sig
   type cls = int
   exception Unsatisfiable of cls
   type proof
-  type clause
   val var : int
   val nb_cls : unit -> int
   val lst : int list list
@@ -384,7 +381,7 @@ sig
   val father : int -> cls
   val pari : unit -> int
   val proof : cls -> proof
-  val get : proof -> (clause * proof * proof)
+  val get : proof -> (int list * proof * proof)
   val size : proof -> int
 end;;
 

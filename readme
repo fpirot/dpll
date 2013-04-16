@@ -1,7 +1,3 @@
-/!\ Dans cette version du code, le caractère 'c' doit impérativement
-être suivi d'un commentaire avant de retourner à la ligne !
-
-
 -------------------------
 Compilation et exécution :
 -------------------------
@@ -11,15 +7,15 @@ Pour compiler, utiliser le makefile :
 - make test pour compiler le générateur de test.
 - make clean pour nettoyer les fichiers temporaires.
 
-Pour exécuter les programmes : 
-- ./dpll (nom_du_fichier) (-wlit)
-(-rand) (-moms) (-dlis) -> lance le solveur sur le fichier indiqué en
-argument (ou le fichier ex0.cnf par défaut, dans le répertoire Test),
-avec les heuristiques correspondant aux arguments optionnels qui
-suivent.  
-- Dans le répertoire test : ./test (--help pour voir les
-différentes options proposées) : lance le générateur de tests
-aléatoires.
+Pour exécuter les programmes :
+
+- ./dpll (nom_du_fichier) (-wlit) (-rand) (-moms) (-dlis) (-graph) ->
+lance le solveur sur le fichier indiqué en argument (ou le fichier
+ex0.cnf par défaut, dans le répertoire Test), avec les heuristiques
+correspondant aux arguments optionnels qui suivent.
+
+- Dans le répertoire test : ./test (--help pour voir les différentes
+options proposées) : lance le générateur de tests aléatoires.
 
 --------------------------------
 Description rapide du programme :
@@ -32,6 +28,7 @@ Le programme se décompose en plusieurs modules.
     (nombres de variables, de clauses) ainsi que des fonctions
     générales utilisées par les autres modules.
     -> Benjamin
+    -> François pour les modifications apportées pour le rendu 3
 
 - Clause : Ce module implémente les clauses et la façon dont elles
     sont stockées. Nous avons fais le choix de représenter chaque
@@ -56,7 +53,7 @@ Le programme se décompose en plusieurs modules.
     les clauses, indépendamment de leur implémentation. Il gère la
     façon dont sont propagées les assignations, avec ou sans les
     WatchLiterals.
-    -> François pour split et propagation, Benjamin pour le reste
+    -> François
 
 - Test : Module externe appelant une version moins verbeuse de dpll
     sur des entrées générées aléatoirement. Cette génération est
@@ -103,6 +100,9 @@ Le programme se décompose en plusieurs modules.
   taille. L'implémentation ne se fait plus qu'avec un seul étage
   d'association.
   -> François
+
+- Graph : Génère le graph des conflits.
+  -> Benjamin
 
 ----------------------
 Quelques commentaires :
