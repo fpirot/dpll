@@ -2,8 +2,8 @@
 
 module type CoreElt =
 sig
-  exception Satisfiable
   type cls = int
+  exception Satisfiable
   exception Unsatisfiable of cls
   val nb_cls : unit -> int
   val var : int
@@ -21,7 +21,7 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val backtrack : cls -> int
+  val backtrack : cls -> (int * int)
 end;;
 
 module type OpElt =
@@ -75,7 +75,7 @@ sig
   type graph
   val create : unit -> graph
   val add : int -> cls -> graph -> graph
-  val find : int -> int -> graph -> int
+  val find : int -> int -> graph -> out_channel -> int
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
@@ -88,9 +88,9 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  exception Backtrack of int
+  exception Backtrack of (int * int)
 
-  let debug = true
+  let debug = false
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -137,11 +137,11 @@ struct
      ainsi un ensemble de nouvelles assignations contraintes par celle
      en cours. *)
 
-  let simple_propagation x env =
-    let rec aux env x setv g =
+  let simple_propagation x env g =
+    let rec aux env x setv =
       let sbord = entail x env in
-      let g' = Graph.add x (Cor.father x) g 
-      and setv' = Wlit.union sbord setv in
+      g := Graph.add x (Cor.father x) (!g);
+      let setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au
@@ -158,15 +158,15 @@ struct
 	let ord = Ord.update x env.clause env.order
 	and setv' = Wlit.remove x setv'
 	and m = Elt.extract x env.clause in
-	aux {clause = m; order = ord} x setv' g'
+	aux {clause = m; order = ord} x setv'
       end
-    in aux env x Wlit.empty (Graph.create ())
+    in aux env x Wlit.empty
 
-  let wlit_propagation x env =
-    let rec aux env x setv g = 
+  let wlit_propagation x env g =
+    let rec aux env x setv = 
       let (sbord, ssat) = Wlit.update x in
-      let g' = Graph.add x (Cor.father x) g
-      and setv' = Wlit.union sbord setv in
+      g := Graph.add x (Cor.father x) (!g);
+      let setv' = Wlit.union sbord setv in
       if Wlit.is_empty setv' then env
       else begin
 	let (x, c) = Wlit.choose setv' in
@@ -179,17 +179,16 @@ struct
 	let ord = Ord.update x env.clause env.order
 	and setv' = Wlit.remove x setv'
 	and m = Elt.extract x env.clause in
-	aux {clause = m ; order = ord} x setv' g'
+	aux {clause = m ; order = ord} x setv'
       end
-    in aux env x Wlit.empty (Graph.create ())
+    in aux env x Wlit.empty
 
-  let propagation x env =
-    try
-      if Cor.wlit then wlit_propagation x env
-      else simple_propagation x env
-    with Cor.Unsatisfiable c ->
-      let i = Cor.backtrack c in
-      raise (Backtrack i)
+  let propagation =
+    let g = ref (Graph.create ())
+    and prop = if Cor.wlit then wlit_propagation
+      else simple_propagation in
+    (fun x env channel ->
+      try prop x env g with Cor.Unsatisfiable c -> raise (Backtrack (Cor.backtrack c)))
 
   let bindings env = Elt.bindings env.clause
 
@@ -206,13 +205,13 @@ sig
   type env
   type cls
   type set
-  exception Backtrack of int
+  exception Backtrack of (int * int)
   val create : unit -> env
   val is_empty : env -> bool
   val extract : env -> int
   val update : int -> int -> env -> env
   val entail : int -> env -> set
-  val propagation : int -> env -> env
+  val propagation : int -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
   val init : unit -> unit
 end;;

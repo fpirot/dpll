@@ -6,7 +6,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
-let debug = true;;
+let debug = false;;
 
 let rec valuation n =
   let rec aux l = function
@@ -30,22 +30,14 @@ let print_list l =
     |a::l -> print_int a; print_string "; "; print l in
   print_string "["; print l
 
-let dpll env = 
-  let rec aux i env =
-    let nb_cls = Core.nb_cls () in
+let dpll env =
+  let rec aux i x env =
     (* i est la profondeur actuelle des paris. *)
-    let x = try Oper.extract env
-      with Not_found -> if Oper.is_empty env then raise Core.Satisfiable else 
-	  if debug then begin
-	    List.iter (fun (x,y) -> print_int x; print_string ": ";
-	      List.iter (fun x -> print_list x) y;
-	      print_newline()) (Oper.bindings env)
- 	  end;
-	raise (Core.Unsatisfiable (-1))
-    in
-    Core.restore i;
-    Core.fix_depth i;
+    let channel = open_out "log" in
+    let nb_cls = Core.nb_cls () in
     try (
+      Core.restore i;
+      Core.fix_depth i;
       if debug then begin
 	print_string "Gamble: ";
 	print_int x;
@@ -54,39 +46,36 @@ let dpll env =
       Core.write x;
       (* On assigne la valeur de x, et on rentre cette assignation
 	 dans une liste pour gérer le backtrack. *)
-      let env' = Oper.propagation x (Oper.update x nb_cls env) in
-      aux (i+1) env')
-    (* On va un niveau plus profond dans les paris. *)
-    with Oper.Backtrack k -> begin
-      if i = k then begin
-	Core.restore i;
-	(* On annule les assignations effectuées à l'étape
-	   précédente. *)
-	Core.fix_depth i;
-	if debug then begin
-	  print_string "Gamble: ";
-	  print_int (-x);
-	  print_newline();
-	end;
-	Core.write (-x);
-	let env' = Oper.propagation (-x) (Oper.update (-x) nb_cls env) in
-	aux (i+1) env'
-      end
-      else raise (Oper.Backtrack k)
-    end
+      let env' = Oper.propagation x (Oper.update x nb_cls env) channel in
+      if Oper.is_empty env' then raise Core.Satisfiable
+      else let x' = Oper.extract env' in
+	   aux (i+1) x' env')
+
+    with Oper.Backtrack (k,x') -> if k = i then
+	let y = if x' = 0 then (-x) else (-x') in aux i y env
+      else raise (Oper.Backtrack (k,x'))
+
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
-  aux env;;
+  if Oper.is_empty env then raise Core.Satisfiable
+  else aux 0 (Oper.extract env) env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
+(*
 let t = Sys.time() in
-(try dpll 0 (Oper.create ()) with 
-  |Core.Satisfiable -> 
+(try dpll (Oper.create ()) with 
+  |Core.Satisfiable ->
     print_string "s SATISFIABLE\nc Possible assignation: ";
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
-  |Core.Unsatisfiable -1 ->
+  |_ ->
     print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;*)
+
+(try dpll (Oper.create ()) with 
+  |Core.Satisfiable -> 
+    if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
+  |_ ->
+    print_string "s UNSATISFIABLE\n");;

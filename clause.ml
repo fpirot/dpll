@@ -35,11 +35,11 @@ struct
 
   let is_empty = Mp.is_empty
     
-  let debug = true
+  let debug = false
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
-      |[a] -> print_int a; print_string "]\n"
+      |[a] -> print_int a; print_string "]"
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
@@ -81,7 +81,12 @@ struct
     let m = St.fold (fun cls m -> remove cls m) s map in
     if debug then begin
       print_string "Extraction of "; print_int x; print_string ":\n";
-      List.iter (fun x -> print_list (Elt.literals x)) (St.elements s) end;
+      List.iter (fun x -> print_list (Elt.literals x); print_newline()) (St.elements s);
+      print_string "\nNew map: \n";
+      List.iter (fun (x,l) -> print_int x; print_string ": ";
+        St.iter (fun cls -> print_list (Elt.literals cls)) l;
+        print_newline()) (Mp.bindings (Mp.remove x m));
+	print_newline() end;
     Mp.remove x m
 
   let find x m = try St.elements (Mp.find x m) with _ -> []

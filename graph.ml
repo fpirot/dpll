@@ -111,7 +111,7 @@ struct
 		(x, cls)::lst
 
 
-	let find s t lst =
+	let find s t lst chan =
 
 		(* Initialisation *)
 		let adj = Array.make Cor.var St.empty
@@ -165,7 +165,10 @@ struct
 			in
 
 	calc s;
-	if Cor.graph then Print.file Cor.var lst aux cnx Cor.iter Cor.read;
+	if Cor.graph then begin
+		Print.file Cor.var lst aux cnx Cor.iter Cor.read;
+		Marshal.to_channel chan (fun () -> Print.file Cor.var lst aux cnx Cor.iter Cor.read) [Marshal.Closures];
+		end;
 	match cnx.(abs t - 1) with
 		|None -> failwith "Graph: calc"
 		|Some(a, b) -> b
@@ -180,7 +183,7 @@ sig
 	type cls = Cor.cls
 	val create : unit -> graph
 	val add : int -> cls -> graph -> graph
-	val find : int -> int -> graph -> int
+	val find : int -> int -> graph -> out_channel -> int 
 	(*val convert : int list -> cls*)
 end;;
 

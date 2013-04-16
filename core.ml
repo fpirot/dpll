@@ -68,7 +68,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable of cls
 
-  let debug = true
+  let debug = false
 
   let printint x =
     let e = if x < 0 then 1 else 0 in
@@ -170,6 +170,9 @@ struct
     assigArray.((abs x) - 1).father <- father;
     propag x;
     if debug then begin
+      print_string "Stack: ";
+      for k = 0 to !dpth do (fun l -> print_list l) stack.(k) done;
+      print_newline();
       print_string "Assignment:\n";
       Array.iter (fun x -> printint x.value; print_char ' ') assigArray;
       print_newline();
@@ -268,30 +271,71 @@ struct
   type proof = Proof.t
 
   let proof c =
-    let t = Array.init var (fun x -> depth (x+1) = !dpth && father (x+1) <> -1) in
-    (* t.(abs x - 1) vaudra true x sera un litéral affecté par la
-       propagation en cours, non encore considéré. *)
-    let add = Cls.fold (fun x s -> if t.((abs x) - 1) then (t.((abs x) - 1) <- false; Cls.add x s) else s) in
-    (* Rajoute à un ensemble tous les litéraux d'une clause qui ont
-       été affectés pendant la propagation en cours, et écrit -1 sur
-       leur père pour ne pas les reprendre en considération par la
-       suite. *)
-
-    let rec aux p s = 
+    let t = Array.make var true in
+    (* t.(abs x - 1) vaudra true jusqu'à ce que x ait été considéré. *)
+    let add cls c s = Cls.fold (fun x (c,s) -> if t.((abs x) - 1) then
+      begin
+	t.((abs x) - 1) <- false;
+	if depth x = !dpth then (c, Cls.add x s) else (Cls.add x c, s)
+      end
+      else (c,s)) cls (c,s) in
+    (* Actualise la clause engendrée et l'ensemble des litéraux propagés en cours, à partir d'une clause cls. *)
+    let rec aux c s = 
       (* s est un ensemble de litéraux; on utilisera les opérations
 	 sur les clauses pour le manipuler. *)
-      if Cls.is_empty s then p
+      if Cls.is_empty s then (c,0)
       else let x = Cls.choose s in
 	   let s1 = Cls.remove x s in
-	   if Cls.is_empty s1 then p
+	   if Cls.is_empty s1 then (c,x)
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
 	   else let c1 = clause (father x) in
-		let s2 = add c1 s1 in
+		let (c2,s2) = add c1 c s1 in
 		if debug then begin
 		  print_string "Clause père de "; 
 		  print_int x; 
 		  print_string ": ";
 		  print_list (Cls.elements c1);
+		  print_string "\nNouveau set: ";
+		  print_list (Cls.elements s2);
+		  print_newline() end;
+		aux c2 s2 in
+    (* Renvoie la clause engendrée par le backtrack. *)
+    let (c1,s) = add c Cls.empty Cls.empty in
+    if debug then begin
+      print_string "Set de départ: ";
+      print_list (Cls.elements s);
+      print_newline() end;
+    aux c1 s
+  (* Génère une preuve de résolution à partir d'une clause
+     insatisfaite c, et donne en plus la valeur du potentiel
+     point d'articulation. *)
+
+(*
+  let proof c =
+    let t = Array.make var true in
+    (* t.(abs x - 1) vaudra true jusqu'à ce que x ait été considéré. *)
+    let filter cls = Cls.fold (fun x c -> if t.((abs x) - 1) then Cls.add x c else c) cls Cls.empty in
+    let add = Cls.fold (fun x s -> let b = t.((abs x) - 1) && depth x = !dpth in
+	t.((abs x) - 1) <- false; if b then Cls.add x s else s) in
+    (* Rajoute à un ensemble tous les litéraux d'une clause qui ont
+       été affectés pendant la propagation en cours, et les marque
+       pour ne pas les reprendre par la suite. *)
+    let rec aux p s = 
+      (* s est un ensemble de litéraux; on utilisera les opérations
+	 sur les clauses pour le manipuler. *)
+      if Cls.is_empty s then (p,0)
+      else let x = Cls.choose s in
+	   let s1 = Cls.remove x s in
+	   if Cls.is_empty s1 then (p,x)
+	   (* On s'arrête quand on a trouvé un point d'articulation. *)
+	   else let c = clause (father x) in
+		let c1 = filter c in
+		let s2 = add c1 s1 in
+		if debug then begin
+		  print_string "Clause père de "; 
+		  print_int x; 
+		  print_string ": ";
+		  print_list (Cls.elements c);
 		  print_string "\nNouveau set: ";
 		  print_list (Cls.elements s2);
 		  print_newline() end;
@@ -304,26 +348,26 @@ struct
       print_newline() end;
     aux (Proof.singleton c) s
   (* Génère une preuve de résolution à partir d'une clause
-     insatisfaite c. *)
+     insatisfaite c, et donne en plus la valeur du potentiel
+     point d'articulation. *)
+*)
 
   let backtrack c =
-    let p = proof (clause c) in
-    let c1 = Proof.hd p in
-    add_clause c1;
-    (* On ajoute la clause ainsi créée. *)
-    let d = Cls.fold (fun x d -> if depth x < !dpth then max (depth x) d else d) c1 0 in
+    let (c1,x) = proof (clause c) in
+    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
+    add_clause (Cls.add x c1);
+    (* On ajoute la clause ainsi créée. *)
     if debug then begin
       print_string "Clause engendrée pendant le backtrack: ";
-      print_list (literals cls);
+      print_list (Cls.elements (Cls.add x c1));
       print_string "\nNouvelle profondeur de backtrack: ";
       print_int d;
       print_newline()
     end;
-    d
-(* Donne le représentant de la nouvelle clause, ainsi que la
-   profondeur à laquelle le backtrack doit remonter. *)
+    (d,x)
+(* Donne la profondeur de bactrack à laquelle remonter, et la valeur du point d'articulation. *)
 end;;
 
 module type Abstract =
@@ -353,8 +397,7 @@ sig
   val length : cls -> int
   val choose : cls -> int
   val is_singleton : cls -> int
-  val proof : clause -> proof
-  val backtrack : cls -> int
+  val backtrack : cls -> (int * int)
   val father : int -> cls
 end;;
 
