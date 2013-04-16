@@ -7,6 +7,11 @@ module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
 let debug = true;;
+let nxt_print = ref 1;;
+
+let print_graph () = ();;
+
+let rec new_cls n = if n = Core.nb_cls() then [] else n :: (new_cls (n+1));;
 
 let rec valuation n =
   let rec aux l = function
@@ -31,38 +36,38 @@ let print_list l =
   print_string "["; print l
 
 let dpll env =
-  let channel = open_out "log" in
-  let rec aux i x env =
+  let channel = open_out "log" in  
+  let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
-    let nb_cls = Core.nb_cls () in
-    Core.restore i;
-    Core.fix_depth i;
-    let rec propag x e nb_cls =
-      try (
-	Core.restore (i+1);
-	(* On supprime les assignations des niveaux plus hauts que celui
-	   actuel. *)
-	Core.fix_depth i;
-	if debug then begin
-	  print_string "Gamble: ";
-	  print_int x;
-	  print_newline();
-	end;
-	Core.write x;
-	(* On assigne la valeur de x, et on rentre cette assignation
-	   dans une liste pour gérer le backtrack. *)
-	let e' = Oper.propagation x (Oper.update x nb_cls env) channel in
-	if Oper.is_empty e' then raise Core.Satisfiable
-	else let x' = Oper.extract e' in
-	     aux (i+1) x' e')
-      with Oper.Backtrack (k,x') -> if k = i then
-	  let y = if x' = 0 then (-x) else (-x') in propag y e (Core.nb_cls())
-	else raise (Oper.Backtrack (k,x'))
-    in propag x env nb_cls
+    if Oper.is_empty env then raise Core.Satisfiable
+    else let x = Oper.extract env in
+	 let nb_cls = Core.nb_cls () in
+	 Core.restore i;
+	 Core.fix_depth i;
+	 if debug then begin
+	   print_string "Gamble: ";
+	   print_int x;
+	   print_newline();
+	 end;
+	 Core.write x;
+	 (* On assigne la valeur de x, et on rentre cette assignation
+	    dans une liste pour gérer le backtrack. *)
+	 propag (Oper.find x env) (Oper.remove x env) nb_cls i
+  and propag l e nb_cls i =
+    try (
+      Core.restore (i+1);
+      (* On supprime les assignations des niveaux plus hauts
+	 que celui actuel. *)
+      Core.fix_depth i;
+      let e' = Oper.propagation l (Oper.update nb_cls e) channel in
+      aux (i+1) e')
+    with Oper.Backtrack k -> if k = i then
+	let l' = new_cls nb_cls in propag l' e (Core.nb_cls()) i
+      else raise (Oper.Backtrack k)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
-  else aux 0 (Oper.extract env) env;;
+  else aux 0 env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
@@ -79,9 +84,9 @@ let t = Sys.time() in
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
 
 (*
-(try dpll (Oper.create ()) with
+  (try dpll (Oper.create ()) with
   |Core.Satisfiable -> 
-    if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
+  if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
   |_ ->
-    print_string "s UNSATISFIABLE\n");;
+  print_string "s UNSATISFIABLE\n");;
 *)

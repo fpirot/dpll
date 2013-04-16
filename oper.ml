@@ -21,7 +21,8 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val backtrack : cls -> (int * int)
+  val backtrack : cls -> int
+  val pari : unit -> int
 end;;
 
 module type OpElt =
@@ -73,9 +74,7 @@ module type Graph =
 sig
   type cls
   type graph
-  val create : unit -> graph
-  val add : int -> cls -> graph -> graph
-  val find : int -> int -> graph -> out_channel -> int
+  val create : cls -> graph
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
@@ -88,7 +87,7 @@ struct
   type cls = Cor.cls
   type set = Wlit.set
 
-  exception Backtrack of (int * int)
+  exception Backtrack of int
 
   let debug = true
   let print_list l =
@@ -105,13 +104,15 @@ struct
   (* Extrait une variable selon l'ordre *)
   let extract env = Ord.extract env.clause env.order
 
-  let update x n env = 
+  let update n env = 
     let p = Cor.nb_cls () in
     if Cor.wlit then Wlit.update_cls n;
     let map = ref env.clause and ord = ref env.order in
     for i = n to p-1 do
       map := Elt.add i !map; ord := Ord.add i !ord done;
-{clause = Elt.extract x !map; order = Ord.update x !map !ord}
+{clause = !map; order = !ord}
+
+  let remove x env = {clause = Elt.extract x env.clause; order = Ord.update x env.clause env.order}
    
   let is_empty env = Elt.is_empty env.clause
 
@@ -120,8 +121,7 @@ struct
   (*       Gestion de la propagation des contraintes       *)
   (* ***************************************************** *)
 
-  let entail x env =
-    List.fold_right (fun c s -> let x = Cor.is_singleton c in
+  let prop l = List.fold_right (fun c s -> let x = Cor.is_singleton c in
 				if x <> 0 then (
 				  if debug then begin
 				    print_string "Select: ";
@@ -131,67 +131,65 @@ struct
 				    print_newline()
 				  end;	  
 				  Wlit.add (x, c) s)
-				else s) (Elt.find (-x) env.clause) Wlit.empty
+				else s) l Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
      ainsi un ensemble de nouvelles assignations contraintes par celle
      en cours. *)
 
-  let simple_propagation x env g =
-    let rec aux env x setv =
-      let sbord = entail x env in
-      g := Graph.add x (Cor.father x) (!g);
-      let setv' = Wlit.union sbord setv in
-      if Wlit.is_empty setv' then env
+  let find x env = Elt.find (-x) env.clause
+
+  let entail x env = prop (find x env)
+
+  let simple_propagation l env =
+    let rec aux env setv =
+      if Wlit.is_empty setv then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
-	 s'arrête. On rentre la liste des assignations effectuée au
-	 cours de cette propagation dans une liste, et on passe au
-	 prochain pari. *)
+	 s'arrête. On rentre la liste des assignations effectuée au cours de
+	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x, c) = Wlit.choose setv' in
+	let (x,c) = Wlit.choose setv in
 	if debug then begin
 	  print_string "Choice: ";
 	  print_int x;
 	  print_newline()
 	end;
-	Cor.write ~father:c x; 
-	let ord = Ord.update x env.clause env.order
-	and setv' = Wlit.remove x setv'
-	and m = Elt.extract x env.clause in
-	aux {clause = m; order = ord} x setv'
-      end
-    in aux env x Wlit.empty
+	Cor.write ~father:c x;
+	let sbord = entail x env in
+	let setv' = Wlit.union sbord setv in
+	aux (remove x env) (Wlit.remove x setv')
+      end in
+    let setv = prop l in
+    aux env setv
 
-  let wlit_propagation x env g =
-    let rec aux env x setv = 
-      let (sbord, ssat) = Wlit.update x in
-      g := Graph.add x (Cor.father x) (!g);
-      let setv' = Wlit.union sbord setv in
-      if Wlit.is_empty setv' then env
+  let wlit_propagation l env =
+    let rec aux env setv = 
+      if Wlit.is_empty setv then env
+      (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
+	 s'arrête. On rentre la liste des assignations effectuée au cours de
+	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x, c) = Wlit.choose setv' in
+	let (x, c) = Wlit.choose setv in
 	if debug then begin
           print_string "WLit choose: ";
           print_int x;
           print_newline()
         end;
 	Cor.write ~father:c x;
-	let ord = Ord.update x env.clause env.order
-	and setv' = Wlit.remove x setv'
-	and m = Elt.extract x env.clause in
-	aux {clause = m ; order = ord} x setv'
-      end
-    in aux env x Wlit.empty
+	let (sbord, ssat) = Wlit.update x in
+	let setv' = Wlit.union sbord setv in
+	aux (remove x env) (Wlit.remove x setv')
+      end in
+    let setv = prop l in
+    aux env setv
 
   let propagation =
-    let g = ref (Graph.create ())
-    and prop = if Cor.wlit then wlit_propagation
+    let propag = if Cor.wlit then wlit_propagation
       else simple_propagation in
-    (fun x env channel ->
-      try prop x env g with Cor.Unsatisfiable c -> 
-      	(let _ = Graph.find x x (!g) channel in ();
-      	raise (Backtrack (Cor.backtrack c))))
-
+    (fun l env channel ->
+      try propag l env with Cor.Unsatisfiable c ->
+	Graph.create c;
+      	raise (Backtrack (Cor.backtrack c)))
 
   let bindings env = Elt.bindings env.clause
 
@@ -206,17 +204,19 @@ module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with ty
 	    -> functor (Graph: Graph with type cls = Cor.cls) ->
 sig
   type env
-  type cls
+  type cls = int
   type set
-  exception Backtrack of (int * int)
+  exception Backtrack of int
   val create : unit -> env
   val is_empty : env -> bool
   val extract : env -> int
-  val update : int -> int -> env -> env
+  val remove : int -> env -> env
+  val update : int -> env -> env
   val entail : int -> env -> set
-  val propagation : int -> env -> out_channel -> env
+  val propagation : cls list -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
   val init : unit -> unit
+  val find : int -> env -> cls list
 end;;
 
 module Make = (OpCore : OpAbstract);;

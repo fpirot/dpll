@@ -122,6 +122,14 @@ struct
   let dpth = ref 0
   (* La profondeur de paris en cours. *)
 
+  let pari () = 
+    let rec last = function
+      |[] -> raise Not_found
+      |[x] -> x
+      |_::r -> last r
+    in last stack.(!dpth)
+(* Renvoie la valeur du pari à la profondeur dpth. *)
+
   let fix_depth i = dpth := i;
     if debug then begin
       print_string "Stack: ";
@@ -368,7 +376,7 @@ struct
       print_int d;
       print_newline()
     end;
-    (d,x)
+    d
 (* Donne la profondeur de bactrack à laquelle remonter, et la valeur du point d'articulation. *)
 end;;
 
@@ -399,8 +407,9 @@ sig
   val length : cls -> int
   val choose : cls -> int
   val is_singleton : cls -> int
-  val backtrack : cls -> (int * int)
+  val backtrack : cls -> int
   val father : int -> cls
+  val pari : unit -> int
 end;;
 
 module Make = (Core : Abstract);;
