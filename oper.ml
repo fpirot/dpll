@@ -197,7 +197,7 @@ struct
   t : terminer l'execution sans s'arreter\n";
       match read_line() with
 	|"g" -> Graph.draw c; aux()
-	|"r" -> Latex.draw (Core.proof c); aux()
+	|"r" -> (*Latex.file (Core.proof c);*) aux()
 	|"c" -> nxt_print := 1
 	|"t" -> nxt_print := -1
 	| s -> try (match String.sub s 0 2 with
