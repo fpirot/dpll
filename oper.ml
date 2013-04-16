@@ -74,7 +74,6 @@ module type Graph =
 sig
   type cls
   type graph
-  val create : cls -> graph
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
@@ -188,7 +187,7 @@ struct
       else simple_propagation in
     (fun l env channel ->
       try propag l env with Cor.Unsatisfiable c ->
-	Graph.create c;
+(*	Graph.create c;*)
       	raise (Backtrack (Cor.backtrack c)))
 
   let bindings env = Elt.bindings env.clause

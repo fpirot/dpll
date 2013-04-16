@@ -39,25 +39,30 @@ let dpll env =
   let channel = open_out "log" in  
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
-    if Oper.is_empty env then raise Core.Satisfiable
-    else let x = Oper.extract env in
-	 let nb_cls = Core.nb_cls () in
-	 Core.restore i;
-	 Core.fix_depth i;
-	 if debug then begin
-	   print_string "Gamble: ";
-	   print_int x;
-	   print_newline();
-	 end;
-	 Core.write x;
-	 (* On assigne la valeur de x, et on rentre cette assignation
-	    dans une liste pour gérer le backtrack. *)
-	 propag (Oper.find x env) (Oper.remove x env) nb_cls i
+    if i = -1 then
+      let env' = Oper.propagation (new_cls 0) env channel in
+      aux 0 env'
+    else begin
+      if Oper.is_empty env then raise Core.Satisfiable
+      else let x = Oper.extract env in
+	   let nb_cls = Core.nb_cls () in
+	   Core.restore i;
+	   Core.fix_depth i;
+	   if debug then begin
+	     print_string "Gamble: ";
+	     print_int x;
+	     print_newline();
+	   end;
+	   Core.write x;
+	   (* On assigne la valeur de x, et on rentre cette assignation
+	      dans une liste pour gérer le backtrack. *)
+	   propag (Oper.find x env) (Oper.remove x env) nb_cls i
+    end
   and propag l e nb_cls i =
     try (
       Core.restore (i+1);
-      (* On supprime les assignations des niveaux plus hauts
-	 que celui actuel. *)
+	  (* On supprime les assignations des niveaux plus hauts
+	     que celui actuel. *)
       Core.fix_depth i;
       let e' = Oper.propagation l (Oper.update nb_cls e) channel in
       aux (i+1) e')
@@ -67,7 +72,7 @@ let dpll env =
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
-  else aux 0 env;;
+  else aux (-1) env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
