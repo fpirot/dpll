@@ -74,6 +74,18 @@ struct
       
 end;;
 
+module type CorElt =
+sig
+	type proof
+	val get : proof -> int list * proof * proof
+	val size : proof -> int
+end;;
+
+module Make = functor (Cor : CorElt) ->
+struct
+	let proof a = Print.file a Cor.get Cor.size (Hashtbl.hash) (fun x -> x)
+end;;
+
 (* Test *)
 
 (*
