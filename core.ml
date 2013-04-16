@@ -320,51 +320,9 @@ struct
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
 
-(*
-  let proof c =
-    let t = Array.make var true in
-    (* t.(abs x - 1) vaudra true jusqu'à ce que x ait été considéré. *)
-    let filter cls = Cls.fold (fun x c -> if t.((abs x) - 1) then Cls.add x c else c) cls Cls.empty in
-    let add = Cls.fold (fun x s -> let b = t.((abs x) - 1) && depth x = !dpth in
-	t.((abs x) - 1) <- false; if b then Cls.add x s else s) in
-    (* Rajoute à un ensemble tous les litéraux d'une clause qui ont
-       été affectés pendant la propagation en cours, et les marque
-       pour ne pas les reprendre par la suite. *)
-    let rec aux p s = 
-      (* s est un ensemble de litéraux; on utilisera les opérations
-	 sur les clauses pour le manipuler. *)
-      if Cls.is_empty s then (p,0)
-      else let x = Cls.choose s in
-	   let s1 = Cls.remove x s in
-	   if Cls.is_empty s1 then (p,x)
-	   (* On s'arrête quand on a trouvé un point d'articulation. *)
-	   else let c = clause (father x) in
-		let c1 = filter c in
-		let s2 = add c1 s1 in
-		if debug then begin
-		  print_string "Clause père de "; 
-		  print_int x; 
-		  print_string ": ";
-		  print_list (Cls.elements c);
-		  print_string "\nNouveau set: ";
-		  print_list (Cls.elements s2);
-		  print_newline() end;
-		aux (Proof.built (Cls.remove x (Cls.union c1 (Proof.hd p))) c1 p) s2 in
-    (* Renvoie la clause engendrée par le backtrack. *)
-    let s = add c Cls.empty in
-    if debug then begin
-      print_string "Set de départ: ";
-      print_list (Cls.elements s);
-      print_newline() end;
-    aux (Proof.singleton c) s
-  (* Génère une preuve de résolution à partir d'une clause
-     insatisfaite c, et donne en plus la valeur du potentiel
-     point d'articulation. *)
-*)
-
   let backtrack c =
     let (c1,x) = proof (clause c) in
-    let d = Cls.fold (fun x d -> max (depth x) d) c1 (-1) in
+    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
     add_clause (Cls.add x c1);

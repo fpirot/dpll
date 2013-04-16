@@ -35,7 +35,7 @@ struct
 
   let is_empty = Mp.is_empty
     
-  let debug = false
+  let debug = true
   let print_list l =
     let rec print = function
       |[] -> print_string "]"

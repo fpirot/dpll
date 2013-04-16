@@ -7,7 +7,6 @@ module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
 let debug = true;;
-let nxt_print = ref 1;;
 
 let print_graph () = ();;
 
@@ -39,10 +38,15 @@ let dpll env =
   let channel = open_out "log" in  
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
-    if i = -1 then
-      let env' = Oper.propagation (new_cls 0) env channel in
-      aux 0 env'
-    else begin
+    if i = 0 then begin
+      let nb_cls = Core.nb_cls () in
+      Core.restore 0;
+      Core.fix_depth 0;
+      let env' = try Oper.propagation (new_cls 0) (Oper.update nb_cls env) channel
+	with _ -> raise (Core.Unsatisfiable (-1)) in
+      try aux 1 env'
+      with Oper.Backtrack 0 -> aux 0 env'
+    end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
 	   let nb_cls = Core.nb_cls () in
@@ -59,20 +63,19 @@ let dpll env =
 	   propag (Oper.find x env) (Oper.remove x env) nb_cls i
     end
   and propag l e nb_cls i =
-    try (
-      Core.restore (i+1);
-	  (* On supprime les assignations des niveaux plus hauts
-	     que celui actuel. *)
-      Core.fix_depth i;
-      let e' = Oper.propagation l (Oper.update nb_cls e) channel in
-      aux (i+1) e')
+    Core.restore (i+1);
+    (* On supprime les assignations des niveaux plus hauts
+       que celui actuel. *)
+    Core.fix_depth i;
+    let e' = Oper.propagation l (Oper.update nb_cls e) channel in
+    try aux (i+1) e'
     with Oper.Backtrack k -> if k = i then
-	let l' = new_cls nb_cls in propag l' e (Core.nb_cls()) i
+	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
       else raise (Oper.Backtrack k)
   in Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
-  else aux (-1) env;;
+  else aux 0 env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
@@ -84,7 +87,7 @@ let t = Sys.time() in
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
-  |_ ->
+  |Core.Unsatisfiable (-1) ->
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
 
