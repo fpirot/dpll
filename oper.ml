@@ -93,7 +93,7 @@ struct
 
   let nxt_print = ref (if Cor.graph then 1 else -1)
 
-  let debug = true
+  let debug = false
   let print_list l =
     let rec print = function
       |[] -> print_string "]"

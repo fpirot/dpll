@@ -14,6 +14,7 @@ all :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
 
 test :
+	ocamlc -a da.ml -o da.cma
 	ocamlc -a core.ml -o core.cma
 	ocamlc -a rand.ml -o rand.cma
 	ocamlc -a default.ml -o default.cma
