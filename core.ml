@@ -273,13 +273,17 @@ struct
     let hd = function
       |Nil -> raise Not_found
       |N(c, _, _) -> c
-    let build c1 c2 p = N(c1, singleton c2, p)
+    let build c1 c2 p = N(c1, p, singleton c2)
     let get = function
-      |Nil -> failwith "Error: Empty proof"
-      |N(x, t1, t2) -> (Cls.elements x, t1, t2)
+      |Nil -> failwith "Non"
+      |N(x, t1, t2) -> let l = Cls.elements x in 
+		       (l, t1, t2)
     let rec size = function
       |Nil -> 0
       |N(x, t1, t2) -> 1 + size t1 + size t2
+    let fils = function
+      |Nil -> failwith "Non"
+      |N(x, t1, t2) -> t1
   end
 
   type proof = Proof.t
@@ -302,7 +306,7 @@ struct
       if Cls.is_empty s then failwith "Ca ne devrait pas arriver"
       else let x = Cls.choose s in
 	   let s1 = Cls.remove x s in
-	   if Cls.is_empty s1 then (c, x, p)
+	   if Cls.is_empty s1 then (c, x, Proof.fils p)
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
 	   else let c1 = clause (father x) in
 		let (c2,s2) = add c1 c s1 in
@@ -321,7 +325,7 @@ struct
       print_string "Set de départ: ";
       print_list (Cls.elements s);
       print_newline() end;
-    aux c1 s (Proof.singleton c1)
+    aux c1 s (Proof.singleton c)
   (* Génère une preuve de résolution à partir d'une clause
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
@@ -379,7 +383,6 @@ sig
   val is_singleton : cls -> int
   val backtrack : cls -> bool -> int
   val father : int -> cls
-  val pari : unit -> int
   val proof : cls -> proof
   val get : proof -> (int list * proof * proof)
   val size : proof -> int

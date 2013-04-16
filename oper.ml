@@ -24,7 +24,6 @@ sig
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val backtrack : cls -> bool -> int
-  val pari : unit -> int
   val proof : cls -> proof
 end;;
 
