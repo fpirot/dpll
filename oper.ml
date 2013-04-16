@@ -190,6 +190,7 @@ struct
     (fun x env channel ->
       try prop x env g with Cor.Unsatisfiable c -> raise (Backtrack (Cor.backtrack c)))
 
+
   let bindings env = Elt.bindings env.clause
 
   let init () = if Cor.wlit then Wlit.init () else ()

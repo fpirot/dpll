@@ -31,9 +31,9 @@ let print_list l =
   print_string "["; print l
 
 let dpll env =
+  let channel = open_out "log" in
   let rec aux i x env =
     (* i est la profondeur actuelle des paris. *)
-    let channel = open_out "log" in
     let nb_cls = Core.nb_cls () in
     try (
       Core.restore i;
@@ -47,9 +47,9 @@ let dpll env =
       (* On assigne la valeur de x, et on rentre cette assignation
 	 dans une liste pour gérer le backtrack. *)
       let env' = Oper.propagation x (Oper.update x nb_cls env) channel in
-      if Oper.is_empty env' then raise Core.Satisfiable
-      else let x' = Oper.extract env' in
-	   aux (i+1) x' env')
+	if Oper.is_empty env' then raise Core.Satisfiable
+	else let x' = Oper.extract env' in
+	     aux (i+1) x' env')
 
     with Oper.Backtrack (k,x') -> if k = i then
 	let y = if x' = 0 then (-x) else (-x') in aux i y env
@@ -74,7 +74,8 @@ let t = Sys.time() in
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;*)
 
-(try dpll (Oper.create ()) with 
+
+(try dpll (Oper.create ()) with
   |Core.Satisfiable -> 
     if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
   |_ ->
