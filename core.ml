@@ -275,12 +275,20 @@ struct
     let hd = function
       |Nil -> raise Not_found
       |N(c, _, _) -> c
-    let built c1 c2 p = N(c1, singleton c2, p)
+    let build c1 c2 p = N(c1, singleton c2, p)
+    let get = function
+      |Nil -> failwith "Error: Empty proof"
+      |N(x, t1, t2) -> (x, t1, t2)
+    let rec size = function
+      |Nil -> 0
+      |N(x, t1, t2) -> 1 + size t1 + size t2
   end
 
   type proof = Proof.t
+  let size = Proof.size
+  let get = Proof.get
 
-  let proof c =
+  let calcul c =
     let t = Array.make var true in
     (* t.(abs x - 1) vaudra true jusqu'à ce que x ait été considéré. *)
     let add cls c s = Cls.fold (fun x (c,s) -> if t.((abs x) - 1) then
@@ -290,13 +298,13 @@ struct
       end
       else (c,s)) cls (c,s) in
     (* Actualise la clause engendrée et l'ensemble des litéraux propagés en cours, à partir d'une clause cls. *)
-    let rec aux c s = 
+    let rec aux c s p = 
       (* s est un ensemble de litéraux; on utilisera les opérations
 	 sur les clauses pour le manipuler. *)
-      if Cls.is_empty s then (c,0)
+      if Cls.is_empty s then failwith "Ca ne devrait pas arriver"
       else let x = Cls.choose s in
 	   let s1 = Cls.remove x s in
-	   if Cls.is_empty s1 then (c,x)
+	   if Cls.is_empty s1 then (c, x, p)
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
 	   else let c1 = clause (father x) in
 		let (c2,s2) = add c1 c s1 in
@@ -308,20 +316,22 @@ struct
 		  print_string "\nNouveau set: ";
 		  print_list (Cls.elements s2);
 		  print_newline() end;
-		aux c2 s2 in
+		aux c2 s2 (Proof.build (Cls.union c2 s2) c1 p) in
     (* Renvoie la clause engendrée par le backtrack. *)
     let (c1,s) = add c Cls.empty Cls.empty in
     if debug then begin
       print_string "Set de départ: ";
       print_list (Cls.elements s);
       print_newline() end;
-    aux c1 s
+    aux c1 s (Proof.singleton c1)
   (* Génère une preuve de résolution à partir d'une clause
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
 
-  let backtrack c =
-    let (c1,x) = proof (clause c) in
+  let proof c = let (_,_,p) = calcul (clause c) in p
+
+  let backtrack c b =
+    let (c1,x,p) = calcul (clause c) in
     let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
@@ -334,6 +344,10 @@ struct
       print_int d;
       print_newline()
     end;
+    if b then begin
+      print_string "Clause engendrée pendant le backtrack: ";
+      print_list (Cls.elements (Cls.add x c1));
+      print_newline() end;
     d
 (* Donne la profondeur de bactrack à laquelle remonter, et la valeur du point d'articulation. *)
 end;;
@@ -365,9 +379,12 @@ sig
   val length : cls -> int
   val choose : cls -> int
   val is_singleton : cls -> int
-  val backtrack : cls -> int
+  val backtrack : cls -> bool -> int
   val father : int -> cls
   val pari : unit -> int
+  val proof : cls -> proof
+  val get : proof -> (clause * proof * proof)
+  val size : proof -> int
 end;;
 
 module Make = (Core : Abstract);;

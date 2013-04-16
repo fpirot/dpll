@@ -8,6 +8,7 @@ sig
   val nb_cls : unit -> int
   val var : int
   val wlit : bool
+  val graph : bool
   val lst : int list list
   val read : int -> int
   val write : ?father: cls -> int -> unit
@@ -21,7 +22,7 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
-  val backtrack : cls -> int
+  val backtrack : cls -> bool -> int
   val pari : unit -> int
 end;;
 
@@ -73,7 +74,7 @@ end;;
 module type Graph =
 sig
   type cls
-  type graph
+  val draw : cls -> unit
 end;;
 
 module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
@@ -87,6 +88,8 @@ struct
   type set = Wlit.set
 
   exception Backtrack of int
+
+  let nxt_print = ref (if Cor.graph then 1 else -1)
 
   let debug = true
   let print_list l =
@@ -182,13 +185,32 @@ struct
     let setv = prop l in
     aux env setv
 
+  let print_conflict c = decr nxt_print;
+    let k = Cor.backtrack c (!nxt_print = 0) in
+    if !nxt_print = 0 then
+      print_string "Que voulez-vous faire maintenant ?\n
+  g : engendrer un graphe des conflits\n
+  r : afficher la preuve par resolution de l'engendrement de cette clause\n
+  c : continuer jusqu'au prochain conflit\n
+  s n : continuer jusqu'au n-ieme prochain conflit\n
+  t : terminer l'execution sans s'arreter\n";
+    let rec aux () = match read_line() with
+      |"g" -> Graph.draw c; aux()
+      |"r" -> aux()
+      |"c" -> nxt_print := 1
+      |"t" -> nxt_print := -1
+      | s -> match String.sub s 0 2 with
+	  | "s " -> (try nxt_print := int_of_string (String.sub s 2 (String.length s - 2)) with _ -> aux())
+	  | _ -> aux()
+    in aux (); k
+
   let propagation =
     let propag = if Cor.wlit then wlit_propagation
       else simple_propagation in
     (fun l env channel ->
       try propag l env with Cor.Unsatisfiable c ->
-(*	Graph.create c;*)
-      	raise (Backtrack (Cor.backtrack c)))
+	let k = print_conflict c in
+      	raise (Backtrack k))
 
   let bindings env = Elt.bindings env.clause
 
