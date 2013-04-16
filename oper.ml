@@ -79,10 +79,17 @@ sig
   val draw : cls -> unit
 end;;
 
-module OpCore = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
+module type Proof =
+sig
+  type proof
+  val file : proof -> unit
+end;;
+
+module OpCore = functor (Cor: CoreElt) -> functor (Elt: OpElt with type cls = Cor.cls) 
     -> functor (Wlit: WlitElt with type cls = Cor.cls)
         -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls)
-	    -> functor (Graph : Graph with type cls = Cor.cls) ->
+	    -> functor (Graph: Graph with type cls = Cor.cls)
+		-> functor (Proof: Proof with type proof = Cor.proof) ->
 struct
 
   type env = {clause: Elt.map; order: Ord.order}
@@ -197,7 +204,7 @@ struct
   t : terminer l'execution sans s'arreter\n";
       match read_line() with
 	|"g" -> Graph.draw c; aux()
-	|"r" -> (*Latex.file (Core.proof c);*) aux()
+	|"r" -> Proof.file (Cor.proof c); aux()
 	|"c" -> nxt_print := 1
 	|"t" -> nxt_print := -1
 	| s -> try (match String.sub s 0 2 with
@@ -226,7 +233,8 @@ end;;
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
     -> functor (Wlit: WlitElt with type cls = Cor.cls) 
         -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls) 
-	    -> functor (Graph: Graph with type cls = Cor.cls) ->
+	    -> functor (Graph: Graph with type cls = Cor.cls)
+		-> functor (Proof: Proof with type proof = Cor.proof) ->
 sig
   type env
   type cls = int

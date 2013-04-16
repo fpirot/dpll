@@ -8,9 +8,10 @@ all :
 	ocamlc -a clause.ml -o clause.cma
 	ocamlc da.cma -a wlit.ml -o wlit.cma
 	ocamlc -a graph.ml -o graph.cma
+	ocamlc -a proof.ml -o proof.cma
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
-	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma dpll.ml -o dpll
+	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll.ml -o dpll
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
 
 test :

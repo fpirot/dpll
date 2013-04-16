@@ -1,3 +1,8 @@
+À notre plus grand regret, faute de temps, nous n'avons pas pu
+implémenter la création du fichier log permettant d'accéder à
+l'information voulue sur les backtrack après l'exécution de notre
+programme. Nous souhaitons nous en excuser honteusement.
+
 -------------------------
 Compilation et exécution :
 -------------------------
@@ -12,7 +17,8 @@ Pour exécuter les programmes :
 - ./dpll (nom_du_fichier) (-wlit) (-rand) (-moms) (-dlis) (-graph) ->
 lance le solveur sur le fichier indiqué en argument (ou le fichier
 ex0.cnf par défaut, dans le répertoire Test), avec les heuristiques
-correspondant aux arguments optionnels qui suivent.
+correspondant aux arguments optionnels qui suivent. L'argument -graph
+permet d'activer l'interactivité du programme.
 
 - Dans le répertoire test : ./test (--help pour voir les différentes
 options proposées) : lance le générateur de tests aléatoires.
