@@ -4,6 +4,7 @@ sig
 	val graph : bool
 	val var : int
 	val read : int -> int
+  val iter : (int -> unit) -> cls -> unit
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val literals : cls -> int list
   val father : int -> cls
@@ -79,8 +80,9 @@ struct
 	and partition a l lst =
 		let c = Cor.father a
 		and max = ref min_int in
-			(Cor.cls_fold (fun x (l1, l2) -> if (Cor.depth x) = !max then ((x, a)::l1, l2) else (l1, (x, a)::l2)) c lst,
-				Cor.cls_fold (fun x l -> if (Cor.depth x) > !max then max := (Cor.depth x); x::l) c l) in
+			Cor.iter (fun x -> if (Cor.depth x) > !max then max := (Cor.depth x)) c;
+			(Cor.cls_fold (fun x ((l1, l2), l3) -> if (Cor.depth x) = !max then
+				(((x, a)::l1, l2), x::l3) else ((l1, (x, a)::l2), l3)) c (lst, l)) in
 
 		let rec iterate lst = function
 			|[] -> lst
