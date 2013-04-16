@@ -80,7 +80,7 @@ struct
 		let c = Cor.father a
 		and max = ref min_int in
 			(Cor.cls_fold (fun x (l1, l2) -> if (Cor.depth x) = !max then ((x, a)::l1, l2) else (l1, (x, a)::l2)) c lst,
-				Cor.cls_fold (fun x l -> if (Cor.depth x) > !max then max := (Cor.depth x); x::l) c l) in
+				Cor.cls_fold (fun x l -> if (Cor.depth x) > !max then max := (Cor.depth x); if x <> a then x::l) c l) in
 
 		let rec iterate lst = function
 			|[] -> lst
