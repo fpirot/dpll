@@ -73,7 +73,7 @@ struct
 	type cls = Cor.cls
 
 
-	let find cls chan =
+	let draw cls chan =
 
 	let arr = Array.make Cor.var false
 	and partition a l lst =
@@ -98,7 +98,7 @@ end;;
 module type GraphAbstract = functor (Cor : CoreElt) ->
 sig
 	type cls = Cor.cls
-	val find : cls -> out_channel -> unit 
+	val draw : cls -> out_channel -> unit 
 	(*val convert : int list -> cls*)
 end;;
 

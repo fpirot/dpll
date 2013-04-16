@@ -74,7 +74,9 @@ struct
       
 end;;
 
+(* Test *)
 
+(*
 type arb = F | N of int list * arb * arb;;
 
 let f_get = function
@@ -88,3 +90,4 @@ let rec f_size = function
 Print.file
   (N([1; -2; 3], N([2; -3; 4], N([4; -5; 6], N([6; -7; 8], F, F), N([7; -8; 9], F, F)), N([5; -6; 7], F, F)), N([3; -4; 5], F, F)))
   f_get f_size (List.hd) (fun x -> x);;
+*)
