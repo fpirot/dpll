@@ -2,8 +2,9 @@ module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Core);;
 module Graph = Graph.Make (Core);;
+module Proof = Proof.Make (Core);;
 module Order = Order.Make (Core) (Clause);;
-module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
+module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
 
 let debug = false;;
