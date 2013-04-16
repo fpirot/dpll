@@ -10,6 +10,7 @@ Compilation et exécution :
 Pour compiler, utiliser le makefile :
 - make pour compiler le solveur.
 - make test pour compiler le générateur de test.
+- make graph pour générer le graphe en .pdf après avoir généré le .dot
 - make clean pour nettoyer les fichiers temporaires.
 
 Pour exécuter les programmes :
