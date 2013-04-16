@@ -6,7 +6,7 @@ module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
 
 
-let debug = false;;
+let debug = true;;
 
 let rec valuation n =
   let rec aux l = function
@@ -66,7 +66,7 @@ let dpll env =
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
-(*
+
 let t = Sys.time() in
 (try dpll (Oper.create ()) with 
   |Core.Satisfiable ->
@@ -76,11 +76,12 @@ let t = Sys.time() in
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
   |_ ->
     print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;*)
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
 
-
+(*
 (try dpll (Oper.create ()) with
   |Core.Satisfiable -> 
     if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
   |_ ->
     print_string "s UNSATISFIABLE\n");;
+*)

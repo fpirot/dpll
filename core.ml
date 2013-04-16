@@ -68,7 +68,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable of cls
 
-  let debug = false
+  let debug = true
 
   let printint x =
     let e = if x < 0 then 1 else 0 in
@@ -165,10 +165,12 @@ struct
 
   let read x = assigArray.((abs x) - 1).value
 
-  let write ?(father = -1) x = assigArray.((abs x) - 1).value <- x;
+  let write ?(father = -1) x = 
+    if read x = x then () else begin
+    assigArray.((abs x) - 1).value <- x;
     assigArray.((abs x) - 1).depth <- !dpth;
     assigArray.((abs x) - 1).father <- father;
-    propag x;
+    propag x end;
     if debug then begin
       print_string "Stack: ";
       for k = 0 to !dpth do (fun l -> print_list l) stack.(k) done;

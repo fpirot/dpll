@@ -15,16 +15,20 @@ module DefaultCore = functor (Cor : CoreElt) ->
     
     let create () = Cor.ord
 
-    let extract l = try (
-	if debug then begin
-	  print_string "Order: ";
-	  print_int (snd (List.hd l));
-	  print_string ", ";
-	  print_string "[";
-	  List.iter (fun y -> print_int (snd y); print_string " ") (List.tl l);
-	  print_string "]\n" end;
-	  snd (List.hd l))
-	with _ -> raise Not_found
+    let rec extract l =
+      try (
+	let x = snd (List.hd l) in
+	if Cor.read x = 0 then begin
+	  if debug then begin
+	    print_string "Order: ";
+	    print_int x;
+	    print_string ", ";
+	    print_string "[";
+	    List.iter (fun y -> print_int (snd y); print_string " ") (List.tl l);
+	    print_string "]\n" end;
+	  x end
+	else extract (List.tl l))
+      with _ -> raise Not_found
 
     let rec update x = function
       | [] -> []

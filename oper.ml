@@ -90,7 +90,7 @@ struct
 
   exception Backtrack of (int * int)
 
-  let debug = false
+  let debug = true
   let print_list l =
     let rec print = function
       |[] -> print_string "]"
@@ -188,8 +188,8 @@ struct
     and prop = if Cor.wlit then wlit_propagation
       else simple_propagation in
     (fun x env channel ->
-      try prop x env g with Cor.Unsatisfiable c ->
-      	(print_int (Graph.find x x (!g) channel);
+      try prop x env g with Cor.Unsatisfiable c -> 
+      	(let _ = Graph.find x x (!g) channel in ();
       	raise (Backtrack (Cor.backtrack c))))
 
 
