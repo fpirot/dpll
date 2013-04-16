@@ -188,7 +188,9 @@ struct
     and prop = if Cor.wlit then wlit_propagation
       else simple_propagation in
     (fun x env channel ->
-      try prop x env g with Cor.Unsatisfiable c -> raise (Backtrack (Cor.backtrack c)))
+      try prop x env g with Cor.Unsatisfiable c ->
+      	(print_int (Graph.find x x (!g) channel);
+      	raise (Backtrack (Cor.backtrack c))))
 
 
   let bindings env = Elt.bindings env.clause

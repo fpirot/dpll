@@ -169,7 +169,7 @@ struct
 			in
 
 	calc s;
-	if Cor.graph then begin
+	if true then begin
 		Print.file Cor.var lst aux cnx Cor.iter Cor.read;
 		Marshal.to_channel chan (fun () -> Print.file Cor.var lst aux cnx Cor.iter Cor.read) [Marshal.Closures];
 		end;
