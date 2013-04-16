@@ -22,22 +22,29 @@ struct
 		Array.iteri (fun i x -> if x then let v = abs_float (4. *. float (Cor.depth (i+1))) /. (float Cor.var) in
 			Printf.fprintf channel "\n%d[style=filled,color=\034%f %f %f\034];" (Cor.read (i+1)) v v v) arr 
 	
-	let rec others channel = function
+	let rec others channel test = function
 		|[] -> ()
-		|(x, y):: l -> Printf.fprintf channel "\n%d -> %d" x y; others channel l
+		|(x, y):: l -> if test x y then
+			Printf.fprintf channel "\n%d -> %d" (Cor.read x) (Cor.read y); others channel test l
 
-	let rec currents channel = function
+	let rec currents channel test = function
 		|[] -> ()
-		|(x, y):: l -> Printf.fprintf channel "\n%d -> %d" x y; currents channel l
+		|(x, y):: l -> if test x y then
+			Printf.fprintf channel "\n%d -> %d" (Cor.read x) (Cor.read y); currents channel test l
 
 	let file arr (lcur, loth) =
+		
+		let test =
+			let mat = Array.create_matrix Cor.var Cor.var true in
+				fun x y -> let b = abs x <> abs y && mat.(abs x - 1).(abs y - 1) in mat.(abs x - 1).(abs y - 1) <- false; b in
+
 		let channel = open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
 			Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" Cor.var Cor.var;
 			colors channel arr;
 			Printf.fprintf channel "\nsubgraph{";
-			currents channel lcur;
+			currents channel test lcur;
 			Printf.fprintf channel "\n}";
-			others channel loth;
+			others channel test loth;
 			Printf.fprintf channel "\n}";
 			close_out channel
 
