@@ -40,7 +40,6 @@ let dpll env =
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
     if i = 0 then begin
-      let nb_cls = Core.nb_cls () in
       Core.restore 0;
       Core.fix_depth 0;
       propag (new_cls 0) env nb_cls 0
