@@ -84,7 +84,7 @@ let t = Sys.time() in
     List.iter (fun x -> print_int x; print_char ' ') (valuation Core.var);
     print_newline();
     if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
-  |Core.Unsatisfiable (-1) ->
+  |Oper.Backtrack (-1) ->
     print_string "s UNSATISFIABLE\n");
 print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
 

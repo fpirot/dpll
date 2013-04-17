@@ -334,7 +334,7 @@ struct
 
   let backtrack c b =
     let (c1,x,p) = calcul (clause c) in
-    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
+    let d = Cls.fold (fun x d -> max (depth x) d) c1 (-1) in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
     add_clause (Cls.add x c1);
