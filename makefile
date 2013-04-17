@@ -12,7 +12,7 @@ all :
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
 	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll.ml -o dpll
-	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
+	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
 
 test :
 	ocamlc -a da.ml -o da.cma
@@ -31,7 +31,13 @@ test :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 graph :
-	dot -Tpdf Graph/graph1.dot -o Graph/graph.pdf
+	for file in `ls Graph` ; do \
+	dot -Tpdf Graph/$$file -o Graph/$$file.pdf ; \
+	done
+
+proof :
+	pdflatex proof.tex -outpout-directory Latex
+	rm -rf *.log *.aux *.tex
 
 clean :
-	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe
+	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux

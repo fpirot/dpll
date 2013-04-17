@@ -3,6 +3,10 @@ implémenter la création du fichier log permettant d'accéder à
 l'information voulue sur les backtrack après l'exécution de notre
 programme. Nous souhaitons nous en excuser honteusement.
 
+De plus, les couleurs dans les graphes générés ne sont pas forcément
+exactement ce qu'elles devraient être : elles sont basées sur la
+profondeur à laquelle les litéraux ont été assignés.
+
 -------------------------
 Compilation et exécution :
 -------------------------
@@ -11,6 +15,7 @@ Pour compiler, utiliser le makefile :
 - make pour compiler le solveur.
 - make test pour compiler le générateur de test.
 - make graph pour générer le graphe en .pdf après avoir généré le .dot
+- make proof pour générer la preuve en .pdf après avoir généré le .tex
 - make clean pour nettoyer les fichiers temporaires.
 
 Pour exécuter les programmes :
