@@ -14,8 +14,7 @@ end;;
 module Print = functor (Cor : CoreElt) ->
 struct
 
-  print_int (Sys.command "rm -R Graph/*");
-  print_int (Sys.command "mkdir Graph/")
+  let _ = try if Sys.file_exists "Graph/*" then Sys.command "rm -R Graph/*" else 0 with _ -> Sys.command "mkdir Graph/"
 
   let fresh =
     let compt = ref 0 in
