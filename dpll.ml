@@ -39,6 +39,7 @@ let dpll env =
   let channel = open_out "log" in  
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
+    let nb_cls = Core.nb_cls () in
     if i = 0 then begin
       Core.restore 0;
       Core.fix_depth 0;
@@ -46,7 +47,6 @@ let dpll env =
     end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
-	   let nb_cls = Core.nb_cls () in
 	   Core.restore i;
 	   Core.fix_depth i;
 	   if debug then begin
