@@ -40,10 +40,9 @@ let dpll env =
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
     if i = 0 then begin
-      let nb_cls = Core.nb_cls () in
       Core.restore 0;
       Core.fix_depth 0;
-      let env' = try Oper.propagation (new_cls 0) (Oper.update nb_cls env) channel
+      let env' = try Oper.propagation (new_cls 0) (Oper.update 0 env) channel
 	with _ -> raise (Core.Unsatisfiable (-1)) in
       try aux 1 env'
       with Oper.Backtrack 0 -> aux 0 env'
