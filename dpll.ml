@@ -43,10 +43,7 @@ let dpll env =
       let nb_cls = Core.nb_cls () in
       Core.restore 0;
       Core.fix_depth 0;
-      let env' = try Oper.propagation (new_cls 0) (Oper.update nb_cls env) channel
-	with _ -> raise (Core.Unsatisfiable (-1)) in
-      try aux 1 env'
-      with Oper.Backtrack 0 -> aux 0 env'
+      propag (new_cls 0) env nb_cls 0
     end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
