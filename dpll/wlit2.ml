@@ -49,15 +49,21 @@ struct
   let get_sat x c w = let (a,b) = watched c w in
 		      x = a || x = b
 
+  exception Finished of int * int
   let make_watched c sbord ssat =
-    let a = ref 0 and b = ref 0 in
     try (
-      List.iter (fun x -> if Cor.read x = 0 then
-	  if !a = 0 then a := x else (b := x; failwith "ok")) (Cor.elements c);
-      if !a = 0 then raise Cor.unsatisfiable
-      else St.add a !sbord;
-      (!a, 0))
-    with "ok" -> (!a, !b)
+      match List.fold (fun x -> 
+	match Cor.read x with
+	  | x -> raise Core.Satisfiable
+	  | 0 -> a = 0 then (a,0) else raise (Finished (a,x))
+	  | _ -> (a,b)) (Cor.elements c)
+      with
+	| (0,0) -> raise Core.Unsatisfiable c
+	| (a,0) -> ((a,0), St.add x sbord, ssat)
+	| _ -> failwith "Match error: wlit"
+    with
+      | Satisfiable -> ((0,0), sbord, St.add c ssat)
+      | Finished x -> (x, sbord, ssat)
 
   let add_cls c wlit = 
     let sbord = ref St.empty and ssat = ref St.empty in
@@ -70,3 +76,9 @@ struct
   let update_cls n wlit =
     let p = Cor.nb_cls () in
     for i = n to p-1 do add_cls i done
+
+  let update x w =
+    let s = assoc x w in
+    List.fold_right (fun c (w, sbord, ssat) -> if get_sat x c w then (w, sbord, St.add c lsat) else (new_assoc c sbord ssat
+    let sbord = ref St.empty and lsat = ref St.empty in
+    
