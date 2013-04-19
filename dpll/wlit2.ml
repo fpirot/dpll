@@ -75,10 +75,42 @@ struct
 
   let update_cls n wlit =
     let p = Cor.nb_cls () in
-    for i = n to p-1 do add_cls i done
+    let rec aux = function
+      | p -> wlit
+      | n -> add_cls n (update_cls (n+1) wlit)
+    in aux n
 
   let update x w =
     let s = assoc x w in
-    List.fold_right (fun c (w, sbord, ssat) -> if get_sat x c w then (w, sbord, St.add c lsat) else (new_assoc c sbord ssat
-    let sbord = ref St.empty and lsat = ref St.empty in
+    St.fold (fun c (w, sbord, ssat) -> if get_sat x c w then (w, sbord, St.add c lsat) else (new_assoc c sbord ssat)) (assoc x) (w, St.empty, St.empty)
     
+  let fold = Stc.fold
+  let choose = St.choose
+  let singleton = St.singleton
+  let empty = St.empty
+  let is_empty = St.is_empty
+  let union = St.union
+  let add = St.add
+  let remove = St.remove
+  let elements = St.elements
+end;;
+
+module type WlitAbstract = functor (Cor: Core) -> 
+sig
+  type set
+  type wlit
+  type cls = Cor.cls
+  val update : int -> wlit * set * set
+  val update_cls : int -> wlit
+  val fold : (cls -> 'a -> 'a) -> set -> 'a -> 'a
+  val choose : set -> int
+  val singleton : int -> set
+  val empty : set
+  val is_empty : set -> bool
+  val union : set -> set -> set
+  val add : (int * cls) -> set -> set
+  val remove : int -> set -> set
+  val elements : set -> int list
+end;;
+
+module Make = (WlitCore: WlitAbstract);;
