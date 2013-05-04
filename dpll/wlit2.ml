@@ -42,9 +42,9 @@ struct
 
   type wlit = watched * assoc
 
-  let assoc x w = Assoc.find x (fst w)
+  let watched c w = Watched.find c (fst w)
 
-  let watched c w = Watched.find c (snd w)
+  let assoc x w = Assoc.find x (snd w)
 
   let get_sat x c w = let (a,b) = watched c w in
 		      x = a || x = b
@@ -52,39 +52,37 @@ struct
   exception Finished of int * int
   let make_watched c sbord ssat =
     try (
-      match List.fold (fun x -> 
-	match Cor.read x with
-	  | x -> raise Core.Satisfiable
-	  | 0 -> a = 0 then (a,0) else raise (Finished (a,x))
-	  | _ -> (a,b)) (Cor.elements c)
+      match List.fold_right (fun x (a,b) -> 
+	match (Cor.read x) with
+	  | y when y = x -> raise Cor.Satisfiable
+	  | 0 -> if a = 0 then (a,0) else raise (Finished (a,x))
+	  | _ -> (a,b)) (Cor.literals c) (0,0)
       with
-	| (0,0) -> raise Core.Unsatisfiable c
-	| (a,0) -> ((a,0), St.add x sbord, ssat)
-	| _ -> failwith "Match error: wlit"
+	| (0,0) -> raise (Cor.Unsatisfiable c)
+	| (a,0) -> ((a,0), St.add a sbord, ssat)
+	| _ -> failwith "Match error: wlit")
     with
-      | Satisfiable -> ((0,0), sbord, St.add c ssat)
-      | Finished x -> (x, sbord, ssat)
+      | Cor.Satisfiable -> ((0,0), sbord, St.add c ssat)
+      | Finished (a,b) -> ((a,b), sbord, ssat)
 
-  let add_cls c wlit = 
-    let sbord = ref St.empty and ssat = ref St.empty in
-    let (a,b) = make_watched c sbord ssat in
-    let watched = Watched.add c (a,b) (fst wlit)
-    and assoc1 =
-      if a <> 0 then Assoc.add a (St.add c (Assoc.find a (snd wlit))) (Assoc.add b (St.add c (Assoc.find b (snd wlit))) snd wlit)
-    in (watched, assoc)
+  let add_cls c wlit sbord ssat = 
+    let ((a,b), sbord', ssat') = make_watched c sbord ssat in
+    let watched = Watched.add c (a,b) (fst wlit) in
+    let assoc1 = if a <> 0 then Assoc.add a (St.add c (try Assoc.find a (snd wlit) with Not_found -> St.empty)) (snd wlit) else snd wlit in
+    let assoc2 = if b <> 0 then Assoc.add b (St.add c (try Assoc.find b assoc1 with Not_found -> St.empty)) assoc1 else assoc1 in
+    ((watched, assoc2), sbord', ssat')
 
-  let update_cls n wlit =
+  let rec update_cls n wlit =
     let p = Cor.nb_cls () in
-    let rec aux = function
-      | p -> wlit
-      | n -> add_cls n (update_cls (n+1) wlit)
+    let rec aux n =
+      if n = p then (wlit, St.empty, St.empty)
+      else let (w, sbord, ssat) = update_cls (n+1) wlit in (add_cls n w sbord ssat)
     in aux n
 
   let update x w =
-    let s = assoc x w in
-    St.fold (fun c (w, sbord, ssat) -> if get_sat x c w then (w, sbord, St.add c lsat) else (new_assoc c sbord ssat)) (assoc x) (w, St.empty, St.empty)
+    St.fold (fun c (w, sbord, ssat) -> if get_sat x c w then (w, sbord, St.add c ssat) else add_cls c w sbord ssat) (assoc x w) (w, St.empty, St.empty)
     
-  let fold = Stc.fold
+  let fold = St.fold
   let choose = St.choose
   let singleton = St.singleton
   let empty = St.empty
@@ -100,15 +98,15 @@ sig
   type set
   type wlit
   type cls = Cor.cls
-  val update : int -> wlit * set * set
-  val update_cls : int -> wlit
+  val update : int -> wlit -> wlit * set * set
+  val update_cls : cls -> wlit ->  wlit * set * set
   val fold : (cls -> 'a -> 'a) -> set -> 'a -> 'a
   val choose : set -> int
   val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
-  val add : (int * cls) -> set -> set
+  val add : int -> set -> set
   val remove : int -> set -> set
   val elements : set -> int list
 end;;
