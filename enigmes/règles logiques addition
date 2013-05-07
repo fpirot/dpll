@@ -8,5 +8,5 @@ a b r  s r
 0 0 1  1 0
 0 0 0  0 0
 
-s_{i+1} = 
-r_{i+1} = 
+s_{i+1} <=> a xor b xor s_i
+r_{i+1} <=> (a v b) et (a v r) et (b v r)
