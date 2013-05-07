@@ -46,11 +46,15 @@ for i = 1 to p do
   output_string file s; c := List.tl !c
 done;;
 
+let print_solution t = Assoc.mapi (fun var k -> print_string (var^" = "); print_int t.(k); print_newline()) !table;;
+
 let main () =
 let file = open_out "../Test/tseitin.cnf" in
 let channel = open_in (try Sys.argv.(1) with _ -> "../Test/form0.cnf") in
 let lexbuf = Lexing.from_channel channel in
 let form = Parser.form Lexer.lexer lexbuf in
-output_sat file (tseitin form);;
+output_sat file (tseitin form);
+flush file;
+Sys.command "./../dpll ../Test/tseitin.cnf";;
 
 main ()
