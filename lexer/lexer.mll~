@@ -9,9 +9,9 @@ rule lexer = parse
   { LPAR }
 | ")"	    
   { RPAR }
-| "\\/"
+| "\092/"
   { OR }
-| "/\\"
+| "/\092"
   { AND }
 | "=>"
   { IMPLY }

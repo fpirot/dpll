@@ -1,0 +1,183 @@
+   0  $accept : %entry% $end
+
+   1  form : LPAR form RPAR
+   2       | form OR form
+   3       | form AND form
+   4       | form IMPLY form
+   5       | NOT form
+   6       | VAR
+
+   7  %entry% : '\001' form
+
+state 0
+	$accept : . %entry% $end  (0)
+
+	'\001'  shift 1
+	.  error
+
+	%entry%  goto 2
+
+
+state 1
+	%entry% : '\001' . form  (7)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 6
+
+
+state 2
+	$accept : %entry% . $end  (0)
+
+	$end  accept
+
+
+state 3
+	form : LPAR . form RPAR  (1)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 7
+
+
+state 4
+	form : NOT . form  (5)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 8
+
+
+state 5
+	form : VAR .  (6)
+
+	.  reduce 6
+
+
+state 6
+	form : form . OR form  (2)
+	form : form . AND form  (3)
+	form : form . IMPLY form  (4)
+	%entry% : '\001' form .  (7)
+
+	OR  shift 9
+	AND  shift 10
+	IMPLY  shift 11
+	$end  reduce 7
+
+
+state 7
+	form : LPAR form . RPAR  (1)
+	form : form . OR form  (2)
+	form : form . AND form  (3)
+	form : form . IMPLY form  (4)
+
+	RPAR  shift 12
+	OR  shift 9
+	AND  shift 10
+	IMPLY  shift 11
+	.  error
+
+
+state 8
+	form : form . OR form  (2)
+	form : form . AND form  (3)
+	form : form . IMPLY form  (4)
+	form : NOT form .  (5)
+
+	OR  shift 9
+	AND  shift 10
+	IMPLY  shift 11
+	$end  reduce 5
+	RPAR  reduce 5
+
+
+state 9
+	form : form OR . form  (2)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 13
+
+
+state 10
+	form : form AND . form  (3)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 14
+
+
+state 11
+	form : form IMPLY . form  (4)
+
+	LPAR  shift 3
+	NOT  shift 4
+	VAR  shift 5
+	.  error
+
+	form  goto 15
+
+
+state 12
+	form : LPAR form RPAR .  (1)
+
+	.  reduce 1
+
+
+state 13
+	form : form . OR form  (2)
+	form : form OR form .  (2)
+	form : form . AND form  (3)
+	form : form . IMPLY form  (4)
+
+	IMPLY  shift 11
+	$end  reduce 2
+	RPAR  reduce 2
+	OR  reduce 2
+	AND  reduce 2
+
+
+state 14
+	form : form . OR form  (2)
+	form : form . AND form  (3)
+	form : form AND form .  (3)
+	form : form . IMPLY form  (4)
+
+	IMPLY  shift 11
+	$end  reduce 3
+	RPAR  reduce 3
+	OR  reduce 3
+	AND  reduce 3
+
+
+state 15
+	form : form . OR form  (2)
+	form : form . AND form  (3)
+	form : form . IMPLY form  (4)
+	form : form IMPLY form .  (4)
+
+	IMPLY  shift 11
+	$end  reduce 4
+	RPAR  reduce 4
+	OR  reduce 4
+	AND  reduce 4
+
+
+11 terminals, 3 nonterminals
+8 grammar rules, 16 states

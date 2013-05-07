@@ -30,5 +30,7 @@ form :
     Not ($2) }
   | VAR {
     Var ($1) }
+  | form EOF {
+    $1 }
 
 %%  
