@@ -1,5 +1,32 @@
 type graph = {n : int; node : int array; edge : int list array};;
 
+
+module Print =
+struct
+
+  let _ = try if Sys.file_exists "Graph/*" then Sys.command "rm -R Graph/*" else 0 with _ -> Sys.command "mkdir Graph/"
+
+  let fresh =
+    let compt = ref 0 in
+    fun () -> incr compt; !compt
+
+  let node channel graph =
+    Array.iteri (fun i x ->	Printf.fprintf channel "\n%d[style=filled,color=%d];" i x) graph.node 
+      
+  let edge channel graph =
+    Array.iteri (fun i l -> List.iter (fun j -> Printf.fprintf channel "\n%d -> %d" i j))
+
+    let draw graph =
+      let channel = open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
+        Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" graph.n graph.n;
+        node channe graph;
+        edge channel
+        Printf.fprintf channel "\n}";
+        close_out channel
+
+end;;
+
+
 (* ************************************************************************** *)
 (*                      Fonction de lecture de graphe                         *)
 (* ************************************************************************** *)
