@@ -13,6 +13,7 @@ sig
   val lst : int list list
   val read : int -> int
   val write : ?father: cls -> int -> unit
+  val write_father : cls -> int -> unit
   val father : int -> cls
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val heur : string
@@ -57,19 +58,19 @@ module type WlitElt =
 sig
   type cls
   type set
-  type setc
-  val update : int -> set * setc
-  val init : unit -> unit
-  val update_cls : int -> unit
-  val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
-  val choose : set -> (int * cls)
+  type wlit
+  val wempty : wlit
+  val update : int -> wlit -> wlit * set * set
+  val update_cls : cls -> wlit ->  wlit
+  val fold : (cls -> 'a -> 'a) -> set -> 'a -> 'a
+  val choose : set -> int
   val singleton : int -> set
   val empty : set
   val is_empty : set -> bool
   val union : set -> set -> set
-  val add : (int * cls) -> set -> set
+  val add : int -> set -> set
   val remove : int -> set -> set
-  val elements : set -> (int * cls) list
+  val elements : set -> int list
 end;;
 
 module type Graph =
@@ -91,7 +92,7 @@ module OpCore = functor (Cor: CoreElt) -> functor (Elt: OpElt with type cls = Co
 		-> functor (Proof: Proof with type proof = Cor.proof) ->
 struct
 
-  type env = {clause: Elt.map; order: Ord.order}
+  type env = {clause: Elt.map; order: Ord.order; wlit: Wlit.wlit}
   type cls = Cor.cls
   type set = Wlit.set
 
@@ -109,20 +110,21 @@ struct
 
   let create () = let m = Elt.create Cor.lst in
 		  let ord = Ord.create() in
-		  {clause = m; order = ord}
+		  let w = if Cor.wlit then Wlit.update_cls 0 Wlit.wempty else Wlit.wempty in
+		  {clause = m; order = ord; wlit = w}
 
   (* Extrait une variable selon l'ordre *)
   let extract env = Ord.extract env.clause env.order
 
   let update n env = 
     let p = Cor.nb_cls () in
-    if Cor.wlit then Wlit.update_cls n;
-    let map = ref env.clause and ord = ref env.order in
+    let w = if Cor.wlit then Wlit.update_cls n env.wlit else Wlit.wempty
+    and map = ref env.clause and ord = ref env.order in
     for i = n to p-1 do
       map := Elt.add i !map; ord := Ord.add i !ord done;
-{clause = !map; order = !ord}
+{clause = !map; order = !ord; wlit = w}
 
-  let remove x env = {clause = Elt.extract x env.clause; order = Ord.update x env.clause env.order}
+  let remove x env = {clause = Elt.extract x env.clause; order = Ord.update x env.clause env.order; wlit = env.wlit}
    
   let is_empty env = Elt.is_empty env.clause
 
@@ -132,16 +134,17 @@ struct
   (* ***************************************************** *)
 
   let prop l = List.fold_right (fun c s -> let x = Cor.is_singleton c in
-				if x <> 0 then (
-				  if debug then begin
-				    print_string "Select: ";
-				    print_int x;
-				    print_string ", because of ";
-				    print_list (Cor.literals c);
-				    print_newline()
-				  end;	  
-				  Wlit.add (x, c) s)
-				else s) l Wlit.empty
+					   if x <> 0 then (
+					     if debug then begin
+					       print_string "Select: ";
+					       print_int x;
+					       print_string ", because of ";
+					       print_list (Cor.literals c);
+					       print_newline()
+					     end;
+					     Cor.write_father x c;
+					     Wlit.add x s)
+					   else s) l Wlit.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
      ainsi un ensemble de nouvelles assignations contraintes par celle
@@ -158,13 +161,13 @@ struct
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
 	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x,c) = Wlit.choose setv in
+	let x = Wlit.choose setv in
 	if debug then begin
 	  print_string "Choice: ";
 	  print_int x;
 	  print_newline()
 	end;
-	Cor.write ~father:c x;
+	Cor.write x;
 	let sbord = entail x env in
 	let setv' = Wlit.union sbord setv in
 	aux (remove x env) (Wlit.remove x setv')
@@ -179,14 +182,14 @@ struct
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
 	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x, c) = Wlit.choose setv in
+	let x = Wlit.choose setv in
 	if debug then begin
           print_string "WLit choose: ";
           print_int x;
           print_newline()
         end;
-	Cor.write ~father:c x;
-	let (sbord, ssat) = Wlit.update x in
+	Cor.write x;
+	let (w, sbord, ssat) = Wlit.update x env.wlit in
 	let setv' = Wlit.union sbord setv in
 	aux (remove x env) (Wlit.remove x setv')
       end in
@@ -224,8 +227,6 @@ struct
 
   let bindings env = Elt.bindings env.clause
 
-  let init () = if Cor.wlit then Wlit.init () else ()
-
 end;;
 
 
@@ -247,7 +248,6 @@ sig
   val entail : int -> env -> set
   val propagation : cls list -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
-  val init : unit -> unit
   val find : int -> env -> cls list
 end;;
 

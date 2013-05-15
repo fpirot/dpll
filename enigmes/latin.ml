@@ -1,52 +1,24 @@
-type sat = {var : int; mutable p : int; mutable clauses : int list list}
-(* n = nb de variables, p = nb de clauses *)
+module Solution = Solution.Make;;
 
 let reduction n =
   let exists_number i j = 
-    let rec aux p k = if k = 0 then []
-      else p*n + k - 1 :: (aux p (k - 1)) in
-    aux (i+n*j) n in
-  let sat = {var = n*n*n; p = 0; clauses = []} in
+    let rec aux p k = if k = 0 then [p]
+      else (p + n*n*k) :: (aux p (k - 1)) in
+    aux (i + n*j + 1) (n-1) in
+  Solution.fix (n*n*n);
   for i = 0 to n-1 do
     for j = 0 to n-1 do
       for k = 0 to n-1 do
-	(* variable x_ijk = i + n*j + n^2*k pour "la case i j contient la valeur k+1" *)
-	for x = i+1 to n-1 do sat.p <- sat.p + 1; sat.clauses <- [-(i + n*j + n*n*k); -(x + n*j + n*n*k)] :: sat.clauses done;
+	(* variable x_ijk = i + n*j + n^2*k + 1 pour "la case i j contient la valeur k+1" *)
+	for x = i+1 to n-1 do Solution.add_clause [-(i + n*j + n*n*k + 1); -(x + n*j + n*n*k + 1)] done;
 	(* Nombres différents sur une même colonne. *)
-	for x = j+1 to n-1 do sat.p <- sat.p + 1; sat.clauses <- [-(i + n*j + n*n*k); -(i + n*x + n*n*k)] :: sat.clauses done;
+	for x = j+1 to n-1 do Solution.add_clause [-(i + n*j + n*n*k + 1); -(i + n*x + n*n*k + 1)] done;
       (* Nombres différents sur une même ligne. *)
       done;
-      sat.p <- sat.p + 1; sat.clauses <- exists_number i j :: sat.clauses
+     Solution.add_clause (exists_number i j)
     done;
-  done;
-sat;;
-(* Renvoie une instance de sat qui traduit les contraintes d'un carré latin de côté n *)
-
-let rec string_of_clause = function
-  | [] -> "0\n"
-  | x :: r -> (string_of_int x)^" "^(string_of_clause r);;
-
-let output_sat file sat = 
-  let n = sat.var
-  and p = List.length sat.clauses in
-  output_string file ("p cnf "^(string_of_int n)^" "^(string_of_int p)^"\n");
-  let c = ref sat.clauses in
-  for i = 1 to p do
-    let s = string_of_clause (List.hd !c) in
-    output_string file s; c := List.tl !c
   done;;
-
-let read_solution file = 
-  let b = ref true in
-  let s = Scanf.bscanf file "%s\n" (fun x -> x) in
-  (match s with 
-    | "SATISFIABLE" -> b := true
-    | "UNSATISFIABLE" -> b := false
-    | _ -> failwith "Parsing error while reading result.txt");
-  let n = if !b then Scanf.bscanf file "var %d\n" (fun x -> x) else 0 in
-  let t = Array.make n 0 in
-  for i = 0 to n-1 do t.(i) <- Scanf.bscanf file "%d " (fun x -> x) done;
-  (!b,t);;
+(* Remplit une instance de sat qui traduit les contraintes d'un carré latin de côté n *)
 
 let solution t n =
   let m = Array.make_matrix n n 0 in
@@ -80,13 +52,11 @@ let print_solution (b,t) n =
 
 let main () =
   let n = try int_of_string Sys.argv.(1) with _ -> 10 in
-  let sat = reduction n in
+  reduction n;
   let file = open_out "../Test/latin.cnf" in
-  output_sat file sat;
-  flush file;
-  let _ = Sys.command "./../dpll ../Test/latin.cnf" in
-  flush_all();
-  let (b,t) = read_solution (Scanf.Scanning.open_in "../Test/result.txt") in
+  Solution.write file;
+  let _ = Sys.command "./../dpll -dlis ../Test/latin.cnf" in
+  let (b,t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt") in
   print_solution (b,t) n;;
 
 main();;

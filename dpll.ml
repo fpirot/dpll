@@ -69,7 +69,7 @@ let dpll env =
     with Oper.Backtrack k -> if k = i then
 	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
       else raise (Oper.Backtrack k)
-  in Oper.init();
+  in
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
   else aux 0 env;;
@@ -94,12 +94,5 @@ let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt
        tombe sur une incohérence. *)
     output_string file "UNSATISFIABLE";
     print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";;
-
-(*
-  (try dpll (Oper.create ()) with
-  |Core.Satisfiable -> 
-  if verify Core.lst then print_string "s SATISFIABLE\n" else print_string "s ERROR.\n"
-  |_ ->
-  print_string "s UNSATISFIABLE\n");;
-*)
+print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";
+flush file;;

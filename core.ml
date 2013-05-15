@@ -193,6 +193,8 @@ struct
   (* Ecrit la valuation x pour la variable |x|, avec en argument
      optionnel la clause à l'origine de cette valuation. *)
 
+  let write_father x c = assigArray.((abs x) - 1).father <- c
+
   let father x = assigArray.((abs x) - 1).father
   (* Renvoie la clause qui a engendré la valuation x. *)
 
@@ -371,6 +373,7 @@ sig
   val restore : int -> unit
   val read : int -> int
   val write : ?father:int -> int -> unit
+  val write_father : int -> cls -> unit
   val depth : int -> int
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val fill : int list -> cls
