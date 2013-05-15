@@ -95,7 +95,7 @@ let main () =
   reduction k g;
   let file = open_out "../Test/color.cnf" in
   Solution.write file;
-  let _ = Sys.command "./../dpll ../Test/color.cnf" in
+  let _ = Sys.command "./../dpll -naff ../Test/color.cnf" in
   print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;;
 
 main ();;

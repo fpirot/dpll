@@ -56,7 +56,7 @@ let form = Parser.form Lexer.lexer lexbuf in
 tseitin form;
 Solution.fix !compt;
 Solution.write file;
-let _ = Sys.command "./../dpll ../Test/tseitin.cnf" in
+let _ = Sys.command "./../dpll -naff ../Test/tseitin.cnf" in
 print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt"));;
 
 main ()

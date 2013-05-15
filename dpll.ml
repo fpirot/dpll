@@ -70,6 +70,7 @@ let dpll env =
 	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
       else raise (Oper.Backtrack k)
   in
+  Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
   else aux 0 env;;
@@ -79,20 +80,21 @@ let dpll env =
 
 let t = Sys.time() in
 let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt" in
-(try dpll (Oper.create ()) with 
+try dpll (Oper.create ()) with 
   |Core.Satisfiable ->
     output_string file "SATISFIABLE\n";
-    print_string "s SATISFIABLE\nc Possible assignation: ";
     output_string file "var "; output_string file (string_of_int Core.var); output_string file "\n";
     let l = valuation Core.var in
     List.iter (fun x -> output_string file (string_of_int x); output_string file " ") l;
-    List.iter (fun x -> print_int x; print_char ' ') l;
-    print_newline();
-    if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n"
+    if Core.aff then (
+      print_string "s SATISFIABLE\nc Possible assignation: ";
+      List.iter (fun x -> print_int x; print_char ' ') l;
+      print_newline();
+      if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n")
   |Oper.Backtrack (-1) ->
     (* On tombe sur cette exception lorsque la propagation au niveau 0
        tombe sur une incohérence. *)
     output_string file "UNSATISFIABLE";
-    print_string "s UNSATISFIABLE\n");
-print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n";
-flush file;;
+    if Core.aff then (print_string "s UNSATISFIABLE\n";
+		      print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");
+    flush file;;

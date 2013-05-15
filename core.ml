@@ -89,18 +89,20 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  let (wlit, graph, heur, path) =
+  let (wlit, graph, aff, heur, path) =
     let w = ref false
     and g = ref false
+    and aff = ref true
     and s = ref "Nil"
     and p = ref "Test/ex0.cnf" in
     Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
                ("-graph", Arg.Unit(fun () -> g := true), "Génère le graphe de propagation"); 
 							 ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
                ("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
-               ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum")]
+               ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum");
+	       ("-naff", Arg.Unit(fun () -> aff := false), "Désative l'affichage en console de la solution")]
       (fun str -> p := str) "";
-    (!w, !g, !s, !p)
+    (!w, !g, !aff, !s, !p)
       
   let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
 
@@ -368,6 +370,7 @@ sig
   val ord : (int * int) list
   val wlit : bool
   val graph : bool
+  val aff : bool
   val heur : string
   val fix_depth : int -> unit
   val restore : int -> unit
