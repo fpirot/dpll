@@ -46,7 +46,24 @@ for i = 1 to p do
   output_string file s; c := List.tl !c
 done;;
 
-let print_solution t = Assoc.mapi (fun var k -> print_string (var^" = "); print_int t.(k); print_newline()) !table;;
+let read_solution file = 
+  let b = ref true in
+  let s = Scanf.bscanf file "%s\n" (fun x -> x) in
+  (match s with 
+    | "SATISFIABLE" -> b := true
+    | "UNSATISFIABLE" -> b := false
+    | _ -> failwith "Parsing error while reading result.txt");
+  let n = if !b then Scanf.bscanf file "var %d\n" (fun x -> x) else 0 in
+  let t = Array.make n 0 in
+  for i = 0 to n-1 do t.(i) <- Scanf.bscanf file "%d " (fun x -> x) done;
+  (!b,t);;
+
+let print_solution (b,t) =
+  if b then begin
+    print_string "SATISFIABLE\n";
+    Assoc.iter (fun var k -> print_string (var^" : "); if t.(k) > 0 then print_string "true\n" else print_string "false\n") (!table)
+  end
+  else print_string "UNSATISFIABLE";;
 
 let main () =
 let file = open_out "../Test/tseitin.cnf" in
@@ -55,6 +72,8 @@ let lexbuf = Lexing.from_channel channel in
 let form = Parser.form Lexer.lexer lexbuf in
 output_sat file (tseitin form);
 flush file;
-Sys.command "./../dpll ../Test/tseitin.cnf";;
+let _ = Sys.command "./../dpll ../Test/tseitin.cnf" in
+flush_all();
+print_solution (read_solution (Scanf.Scanning.open_in "../Test/result.txt"));;
 
 main ()
