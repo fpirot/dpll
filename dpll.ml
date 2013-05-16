@@ -94,7 +94,7 @@ try dpll (Oper.create ()) with
   |Oper.Backtrack (-1) ->
     (* On tombe sur cette exception lorsque la propagation au niveau 0
        tombe sur une incohérence. *)
-    output_string file "UNSATISFIABLE";
+    output_string file "UNSATISFIABLE\n";
     if Core.aff then (print_string "s UNSATISFIABLE\n";
 		      print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");
     flush file;;

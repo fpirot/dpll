@@ -32,7 +32,7 @@ struct
       | "SATISFIABLE" -> b := true
       | "UNSATISFIABLE" -> b := false
       | _ -> failwith "Parsing error while reading result.txt");
-    let n = if !b then (try Scanf.bscanf file "var %d\n" (fun x -> x) with _ -> failwith "Parsing error while reading result.txt") else 0 in
+    let n = try Scanf.bscanf file "var %d\n" (fun x -> x) with _ -> 0 in
     let t = Array.make n 0 in
     for i = 0 to n-1 do t.(i) <- Scanf.bscanf file "%d " (fun x -> x) done;
     (!b,t)
