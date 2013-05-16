@@ -91,6 +91,8 @@ let main () =
   Solution.write file;
   let _ = Sys.command "./../dpll -naff ../Test/color.cnf" in
   print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;
-  let _ = Sys.command "dot -Tps color.dot -o color.ps" in ();;
+  let _ = Sys.command "dot -Tps color.dot -o color.ps"
+  and _ = Sys.command "rm -f *.log *.dot"
+  and _ = Sys.command "evince color.ps &" in ();;
 
 main ();;
