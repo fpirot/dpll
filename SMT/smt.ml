@@ -35,7 +35,7 @@ let create n =
 
 exception Inconsistent;;
 
-type terms = Fun of terms list | Var of string;;
+type terms = Fun of string * terms list | Var of string;;
 type predicat = Equal of terms * terms | Diff of terms * terms;;
 
 
@@ -43,7 +43,7 @@ let check pred eq df =
 
   let rec equal = function
     |(Var a , Var b) -> eq.union (Var a) (Var b)
-    |(Fun l1, Fun l2) -> eq.union (Fun l1) (Fun l2); iter_equal (l1, l2)
+    |(Fun (a, l1), Fun (b, l2)) -> eq.union (Fun (a, l1)) (Fun (b, l2)); iter_equal (l1, l2)
     |_ -> raise Inconsistent
   and iter_equal = function
     |([], []) -> ()
@@ -52,7 +52,7 @@ let check pred eq df =
 
   let rec diff = function
     |(Var a , Var b) -> df.union (Var a) (Var b)
-    |(Fun l1, Fun l2) -> df.union (Fun l1) (Fun l2); iter_diff (l1, l2)
+    |(Fun (a, l1), Fun (b, l2)) -> df.union (Fun (a, l1)) (Fun (b, l2)); iter_diff (l1, l2)
     |(t1, t2) -> df.union t1 t2
   and iter_diff = function
     |([], []) -> ()
@@ -67,9 +67,9 @@ let check pred eq df =
 
 let eq = create 10
 and df = create 10;;
-check (Equal(Fun([Var"a"]), Fun([Var"b"]))) eq df;;
-check (Diff(Fun([Var"c"]), Fun([Var"b"]))) eq df;;
-check (Equal(Fun([Var"a"]), Fun([Var"c"]))) eq df;;
+check (Equal(Fun("f", [Var"a"]), Fun("g", [Var"b"]))) eq df;;
+check (Diff(Fun("g", [Var"c"]), Fun("h", [Var"b"]))) eq df;;
+check (Equal(Fun("h", [Var"a"]), Fun("f", [Var"c"]))) eq df;;
 
 (*
 type unionFind = {union : int -> int -> unit; find : int -> int; print : unit -> unit};;
