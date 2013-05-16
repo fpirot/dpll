@@ -2,7 +2,7 @@
 (* Structure union-find a la 'objet' utilisant les tables de hachage *)
 (* ***************************************************************** *)
 
-type ('a, 'b) unionFind = {union : 'a -> 'b -> unit; find : int -> int(*; iter : ('a -> 'b -> unit) -> unit*)};;
+type ('a, 'b) unionFind = {union : 'a -> 'b -> unit; find : 'a -> 'b; (*update : unit -> unit; iter : ('a -> 'b -> unit) -> unit*)};;
 
 let create n =
 
@@ -22,7 +22,10 @@ let create n =
     else
       Hashtbl.replace table (search (find i)) (search j) in
 
-  {union = union; find = find(*; iter = fun f -> Hashtbl.iter f table*)};;
+  (*let update () =
+    Hashtbl.iter (fun x y -> let _ = find y in ()) table in*)
+
+  {union = union; find = find; (*update = update ; iter = fun f -> Hashtbl.iter f table*)};;
 
 
 
@@ -32,33 +35,41 @@ let create n =
 
 exception Inconsistent;;
 
-type terms = Fun of terms list | Var of string
-type predicat = Equal of terms * terms | Diff of terms * terms
+type terms = Fun of terms list | Var of string;;
+type predicat = Equal of terms * terms | Diff of terms * terms;;
 
-let rec equal = function
-  |(Var a , Var b) -> a = b
-  |(Fun l1, Fun l2) -> iter_equal (l1, l2)
-  |_ -> false
-and iter_equal = function
-  |([], []) -> true
-  |(a::l1, b::l2) -> equal (a, b) && iter_equal (l1, l2)
-  |_ -> false;;
 
-let rec diff = function
-  |(Var a , Var b) -> not (a = b)
-  |(Fun l1, Fun l2) -> iter_diff (l1, l2)
-  |_ -> true
-and iter_diff = function
-  |([], []) -> true
-  |(a::l1, b::l2) -> diff (a, b) && iter_diff (l1, l2)
-  |_ -> true;;
+let check pred eq df = 
 
-let check pred = match pred with
-  |Equal(t1, t2) -> equal (t1, t2)
-  |Diff(t1, t2) -> diff (t1, t2);;
+  let rec equal = function
+    |(Var a , Var b) -> eq.union (Var a) (Var b)
+    |(Fun l1, Fun l2) -> eq.union (Fun l1) (Fun l2); iter_equal (l1, l2)
+    |_ -> raise Inconsistent
+  and iter_equal = function
+    |([], []) -> ()
+    |(a::l1, b::l2) -> equal (a, b) ; iter_equal (l1, l2)
+    |_ -> raise Inconsistent in
 
-let p = Equal(Fun([Var"a"]), Fun([]));;
-check p;;
+  let rec diff = function
+    |(Var a , Var b) -> df.union (Var a) (Var b)
+    |(Fun l1, Fun l2) -> df.union (Fun l1) (Fun l2); iter_diff (l1, l2)
+    |(t1, t2) -> df.union t1 t2
+  and iter_diff = function
+    |([], []) -> ()
+    |(a::l1, b::l2) -> diff (a, b) ; iter_diff (l1, l2)
+    |_ -> () in
+
+  match pred with
+    |Equal(t1, t2) -> if t1 <> t2 && eq.find (df.find t1) = eq.find (df.find t2)
+      then raise Inconsistent else equal (t1, t2); eq.union t1 t2
+    |Diff(t1, t2) -> if t1 = t2 || df.find (eq.find t1) = df.find (eq.find t2)
+      then raise Inconsistent else diff (t1, t2); df.union t1 t2;;
+
+let eq = create 10
+and df = create 10;;
+check (Equal(Fun([Var"a"]), Fun([Var"b"]))) eq df;;
+check (Diff(Fun([Var"c"]), Fun([Var"b"]))) eq df;;
+check (Equal(Fun([Var"a"]), Fun([Var"c"]))) eq df;;
 
 (*
 type unionFind = {union : int -> int -> unit; find : int -> int; print : unit -> unit};;
