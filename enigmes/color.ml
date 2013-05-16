@@ -5,21 +5,17 @@ module Solution = Solution.Make;;
 module Print =
 struct
 
-  let _ = try if Sys.file_exists "Graph/*" then Sys.command "rm -R Graph/*" else 0 with _ -> Sys.command "mkdir Graph/"
-
-  let fresh =
-    let compt = ref 0 in
-    fun () -> incr compt; !compt
+  let t = [|"red"; "blue"; "green"; "gold"; "orange"; "rose"; "purple"; "brown"; "white"; "green4"; "grey"|]
 
   let node channel graph =
-    Array.iteri (fun i x -> Printf.fprintf channel "\n%d[style=filled,color=%d];" i x) graph.node 
+    Array.iteri (fun i x -> Printf.fprintf channel "\n%d[style=filled,color=%s];" i t.(x mod 11)) graph.node 
       
   let edge channel graph =
-    Array.iteri (fun i -> List.iter (fun j -> Printf.fprintf channel "\n%d -> %d" i j)) graph.edge
+    Array.iteri (fun i -> List.iter (fun j -> if i < j then Printf.fprintf channel "\n%d -- %d" i j)) graph.edge
 
     let draw graph =
-      let channel = open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
-        Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" graph.n graph.n;
+      let channel = open_out "color.dot" in
+        Printf.fprintf channel "graph G {\nsize =\034%d, %d\034;" graph.n graph.n;
         node channel graph;
         edge channel graph;
         Printf.fprintf channel "\n}";
@@ -32,10 +28,8 @@ end;;
 (*                      Fonction de lecture de graphe                         *)
 (* ************************************************************************** *)
 
-exception Useless
-
-let edge channel graph = Scanf.bscanf channel " %d %d"
-  (fun u v -> graph.(u-1) <- v :: (graph.(u-1)); graph.(v-1) <- u :: (graph.(v-1)))
+let edge channel graph = Scanf.bscanf channel " %d %d\n"
+  (fun u v -> graph.(u-1) <- (v-1) :: (graph.(u-1)); graph.(v-1) <- (u-1) :: (graph.(v-1)))
 
 let rec read channel graph = function
   |0 -> graph
@@ -96,6 +90,7 @@ let main () =
   let file = open_out "../Test/color.cnf" in
   Solution.write file;
   let _ = Sys.command "./../dpll -naff ../Test/color.cnf" in
-  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;;
+  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;
+  let _ = Sys.command "dot -Tps color.dot -o color.ps" in ();;
 
 main ();;

@@ -80,7 +80,7 @@ let dpll env =
 
 let t = Sys.time() in
 let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt" in
-try dpll (Oper.create ()) with 
+(try dpll (Oper.create ()) with 
   |Core.Satisfiable ->
     output_string file "SATISFIABLE\n";
     output_string file "var "; output_string file (string_of_int Core.var); output_string file "\n";
@@ -94,7 +94,7 @@ try dpll (Oper.create ()) with
   |Oper.Backtrack (-1) ->
     (* On tombe sur cette exception lorsque la propagation au niveau 0
        tombe sur une incohérence. *)
-    output_string file "UNSATISFIABLE\n";
+    output_string file "UNSATISFIABLE\n");
     if Core.aff then (print_string "s UNSATISFIABLE\n";
 		      print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");
     flush file;;
