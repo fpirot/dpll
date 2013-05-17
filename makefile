@@ -24,10 +24,11 @@ test :
 	ocamlc -a clause.ml -o clause.cma
 	ocamlc -a oper.ml -o oper.cma
 	ocamlc -a graph.ml -o graph.cma
+	ocamlc -a proof.ml -o proof.cma
 	ocamlc -a wlit.ml -o wlit.cma
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
 	ocamlc Test/test.ml -o Test/test
-	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma dpll_test.ml -o Test/dpll
+	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll_test.ml -o Test/dpll
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 graph :

@@ -2,8 +2,9 @@ module Core = Core.Make;;
 module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Core);;
 module Graph = Graph.Make (Core);;
+module Proof = Proof.Make (Core);;
 module Order = Order.Make (Core) (Clause);;
-module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph);;
+module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
 exception TimeOut;;
 let debug = false;;
@@ -40,21 +41,19 @@ let print_list l =
   print_string "["; print l
 
 let dpll env =
+  set_time();
   let channel = open_out "log" in  
   let rec aux i env =
-    get_time (); 
+    (* i est la profondeur actuelle des paris. *)
+    get_time();
+    let nb_cls = Core.nb_cls () in
     if i = 0 then begin
-      let nb_cls = Core.nb_cls () in
       Core.restore 0;
       Core.fix_depth 0;
-      let env' = try Oper.propagation (new_cls 0) (Oper.update nb_cls env) channel
-	with _ -> raise (Core.Unsatisfiable (-1)) in
-      try aux 1 env'
-      with Oper.Backtrack 0 -> aux 0 env'
+      propag (new_cls 0) env nb_cls 0
     end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
-	   let nb_cls = Core.nb_cls () in
 	   Core.restore i;
 	   Core.fix_depth i;
 	   if debug then begin
@@ -77,18 +76,14 @@ let dpll env =
     with Oper.Backtrack k -> if k = i then
 	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
       else raise (Oper.Backtrack k)
-  in Oper.init();
+  in
+  Oper.init();
   (* Gère l'initialisation des structures référentes. *)
   if Oper.is_empty env then raise Core.Satisfiable
   else aux 0 env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 
-
 try dpll (Oper.create ()) with 
-  |Core.Satisfiable -> 
-    if verify Core.lst then print_string "c SATISFIABLE\n" else print_string "c ERROR\n"
-  |Core.Unsatisfiable -1 ->
-    print_string "s UNSATISFIABLE\n"
-  |TimeOut ->
-    print_string "s TIME OUT\n";;
+  |Core.Satisfiable -> if verify Core.lst then print_string "SATISFIABLE\n" else print_string "ERROR\n"
+  |Oper.Backtrack (-1) -> print_string "UNSATISFIABLE\n";;
