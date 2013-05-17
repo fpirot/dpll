@@ -73,7 +73,7 @@ struct
   let printint x =
     let e = if x < 0 then 1 else 0 in
     let s = int_of_float (log (float (abs x)) /. log 10.) in
-    let n = 3 - s - e in
+    let n = 1 - s - e in
     let rec space = function
       |n when n < 0 -> ()
       |0 -> print_char ' '
@@ -298,38 +298,45 @@ struct
     let t = Array.make var true in
     (* t.(abs x - 1) vaudra true jusqu'à ce que x ait été considéré. *)
     let add cls c s = Cls.fold (fun x (c,s) -> if t.((abs x) - 1) then
-      begin
-	t.((abs x) - 1) <- false;
-	if depth x = !dpth then (c, Cls.add x s) else (Cls.add x c, s)
-      end
+	begin
+	  t.((abs x) - 1) <- false;
+	  if depth x = !dpth then (c, Cls.add x s) else (Cls.add x c, s)
+	end
       else (c,s)) cls (c,s) in
     (* Actualise la clause engendrée et l'ensemble des litéraux propagés en cours, à partir d'une clause cls. *)
-    let rec aux c s p = 
-      (* s est un ensemble de litéraux; on utilisera les opérations
-	 sur les clauses pour le manipuler. *)
-      if Cls.is_empty s then failwith "Ca ne devrait pas arriver"
-      else let x = Cls.choose s in
-	   let s1 = Cls.remove x s in
-	   if Cls.is_empty s1 then (c, x, Proof.fils p)
+    let rec aux c s p x0 = 
+      (* s est un ensemble de litéraux; on utilisera les
+	 opérations sur les clauses pour le manipuler. c est la
+	 clause engendrée en cours p est la preuve en cours. x0
+	 est le pari s'il a été rencontré dans la clause
+	 engendrée en cours, 0 sinon. *)
+      let x = try Cls.choose s with Not_found -> 0 in
+      if x = 0 then 
+	if x0 <> 0 then (c, x0, Proof.fils p)
+	else failwith "Problème lors de l'apprentissage de clause"
+      else let s1 = Cls.remove x s in
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
-	   else let c1 = clause (father x) in
-		let (c2,s2) = add c1 c s1 in
-		if debug then begin
-		  print_string "Clause père de "; 
-		  print_int x; 
-		  print_string ": ";
-		  print_list (Cls.elements c1);
-		  print_string "\nNouveau set: ";
-		  print_list (Cls.elements s2);
-		  print_newline() end;
-		aux c2 s2 (Proof.build (Cls.union c2 s2) c1 p) in
-    (* Renvoie la clause engendrée par le backtrack. *)
-    let (c1,s) = add c Cls.empty Cls.empty in
-    if debug then begin
-      print_string "Set de départ: ";
-      print_list (Cls.elements s);
-      print_newline() end;
-    aux c1 s (Proof.singleton c)
+	   if Cls.is_empty s1 && x0 = 0 then (c, x, Proof.fils p)
+	   else let f = father x in
+		if f = -1 then aux c s1 p x
+		else let c1 = clause f in
+		     let (c2,s2) = add c1 c s1 in
+		     if debug then begin
+		       print_string "Clause père de "; 
+		       print_int x; 
+		       print_string ": ";
+		       print_list (Cls.elements c1);
+		       print_string "\nNouveau set: ";
+		       print_list (Cls.elements s2);
+		       print_newline() end;
+		     aux c2 s2 (Proof.build (Cls.union c2 s2) c1 p) x0 in
+  (* Renvoie la clause engendrée par le backtrack. *)
+  let (c1,s) = add c Cls.empty Cls.empty in
+  if debug then begin
+    print_string "Set de départ: ";
+    print_list (Cls.elements s);
+    print_newline() end;
+  aux c1 s (Proof.singleton c) 0
   (* Génère une preuve de résolution à partir d'une clause
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
@@ -338,7 +345,7 @@ struct
 
   let backtrack c b =
     let (c1,x,p) = calcul (clause c) in
-    let d = Cls.fold (fun x d -> max (depth x) d) c1 (-1) in
+    let d = Cls.fold (fun x d -> max (depth x) d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
     add_clause (Cls.add x c1);

@@ -6,6 +6,7 @@ module Proof = Proof.Make (Core);;
 module Order = Order.Make (Core) (Clause);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
+exception Unsatisfiable;;
 
 let debug = false;;
 
@@ -43,7 +44,7 @@ let dpll env =
     if i = 0 then begin
       Core.restore 0;
       Core.fix_depth 0;
-      propag (new_cls 0) env nb_cls 0
+      try propag (new_cls 0) env nb_cls 0 with Oper.Backtrack(0) -> raise Unsatisfiable
     end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
@@ -80,21 +81,22 @@ let dpll env =
 
 let t = Sys.time() in
 let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt" in
-(try dpll (Oper.create ()) with 
-  |Core.Satisfiable ->
-    output_string file "SATISFIABLE\n";
-    output_string file "var "; output_string file (string_of_int Core.var); output_string file "\n";
-    let l = valuation Core.var in
-    List.iter (fun x -> output_string file (string_of_int x); output_string file " ") l;
-    if Core.aff then (
-      print_string "s SATISFIABLE\nc Possible assignation: ";
-      List.iter (fun x -> print_int x; print_char ' ') l;
-      print_newline();
-      if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n")
-  |Oper.Backtrack (-1) ->
+(try dpll (Oper.create ())
+ with 
+   |Core.Satisfiable ->
+     output_string file "SATISFIABLE\n";
+     output_string file "var "; output_string file (string_of_int Core.var); output_string file "\n";
+     let l = valuation Core.var in
+     List.iter (fun x -> output_string file (string_of_int x); output_string file " ") l;
+     if Core.aff then (
+       print_string "s SATISFIABLE\nc Possible assignation: ";
+       List.iter (fun x -> print_int x; print_char ' ') l;
+       print_newline();
+       if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n")
+   |Unsatisfiable ->
     (* On tombe sur cette exception lorsque la propagation au niveau 0
        tombe sur une incohérence. *)
-    output_string file "UNSATISFIABLE\n");
-    if Core.aff then (print_string "s UNSATISFIABLE\n";
-		      print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");
+     output_string file "UNSATISFIABLE\n";
+     if Core.aff then print_string "s UNSATISFIABLE\n");
+if Core.aff then (print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");
     flush file;;
