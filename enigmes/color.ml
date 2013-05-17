@@ -42,8 +42,8 @@ let init channel n e =
   let graph = Array.make n [] in
   read channel graph e
 
-let load channel =
-  Scanf.bscanf channel "p edge %d %d\n" (fun n e -> n, init channel n e)
+let rec load channel = Scanf.bscanf channel "%c" (fun x -> if x = 'p' then Scanf.bscanf channel " edge %d %d\n" (fun n e -> n, init channel n e)
+  else Scanf.bscanf channel "%[^\n]\n" (fun x -> load channel))
 
 
 (* ************************************************************************** *)
