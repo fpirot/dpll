@@ -44,7 +44,7 @@ let init channel n e =
 
 let rec load channel = Scanf.bscanf channel "%c" (fun x -> if x = 'p' then Scanf.bscanf channel " edge %d %d\n" (fun n e -> n, init channel n e)
   else if x = '\n' then load channel
-  else Scanf.bscanf channel "%[^\n]\n" (fun x -> load channel))
+  else Scanf.bscanf channel "%[^\n]\n" (fun _ -> load channel))
 
 
 (* ************************************************************************** *)
