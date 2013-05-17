@@ -51,7 +51,7 @@ let reduction () =
 
 let solution t =
   let (m, m') = (Array.make_matrix n n 0, Array.make_matrix n n 0) in
-  if Array.length t <> n then failwith "Too hard instance!";
+(*  if Array.length t <> n then failwith "Too hard instance!"; *)
   for i = 0 to n-1 do
     for j = 0 to n-1 do
       let k = ref 0 in

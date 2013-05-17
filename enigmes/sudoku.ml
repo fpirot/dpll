@@ -23,10 +23,12 @@ let reduction m lst =
     for j = 0 to n-1 do
       for k = 0 to n-1 do
 	(* variable x_ijk = i + n*j + n^2*k + 1 pour "la case i j contient la valeur k+1" *)
-	for x = i+1 to n-1 do Solution.add_clause [-(i + n*j + n*n*k + 1); -(x + n*j + n*n*k + 1)] done;
-	(* Nombres différents sur une même colonne. *)
-	for x = j+1 to n-1 do Solution.add_clause [-(i + n*j + n*n*k + 1); -(i + n*x + n*n*k + 1)] done;
-      (* Nombres différents sur une même ligne. *)
+	for x = i+1 to n-1 do
+	  (* Nombres différents sur une même colonne. *)
+	  Solution.add_clause [-(i + n*j + n*n*k + 1); -(x + n*j + n*n*k + 1)] done;
+	for x = j+1 to n-1 do
+	  (* Nombres différents sur une même ligne. *)
+	  Solution.add_clause [-(i + n*j + n*n*k + 1); -(i + n*x + n*n*k + 1)] done;
       done;
       Solution.add_clause (exists_number i j)
     done;
@@ -38,8 +40,8 @@ let reduction m lst =
 	  for y = 0 to m-1 do
 	    for z = 0 to m-1 do
 	      for t = 0 to m-1 do
+		(* Pour tout sous-carré de la grille, on veut des nombres distincts. *)
 		if x <> z && y <> t then Solution.add_clause [- (m*i + x + n*(m*j + y) + n*n*k + 1); - (m*i + z + n*(m*j + t) + n*n*k + 1)]
-	      (* Pour tout sous-carré de la grille, on veut des nombres distincts. *)
 	      done
 	    done
 	  done
@@ -47,7 +49,7 @@ let reduction m lst =
       done
     done
   done;
-List.iter (fun x -> Solution.add_clause [x]) lst;;
+  List.iter (fun x -> Solution.add_clause [x]) lst;;
 (* Remplit une instance de sat qui traduit les contraintes d'un sudoku de côté m *)
 
 let solution t n =
