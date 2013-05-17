@@ -1,7 +1,7 @@
 open Formule
 module Solution = Solution.Make
 
-let compt = ref 0;;
+let compt = ref 1;;
 (* compt donne une variable non-utilisée, après incrémentation. *)
 
 module Assoc = Map.Make (struct
@@ -17,26 +17,26 @@ let var x = try Assoc.find x !table
     !compt);;
 
 let tseitin form = 
-  let rec aux = function
-    | Or (f1, f2) -> let x0, x1, x2 = !compt + 1, !compt + 2, !compt + 3 in compt := !compt + 3;
+  let rec aux x0 = function
+    | Or (f1, f2) -> let x1, x2 = !compt + 1, !compt + 2 in compt := !compt + 2;
 		     Solution.add_clause [-x0; x1; x2];
 		     Solution.add_clause [x0; -x1];
 		     Solution.add_clause [x0; -x2];
-		     aux f1; aux f2 
-    | And (f1, f2) -> let x0, x1, x2 = !compt + 1, !compt + 2, !compt + 3 in compt := !compt + 3;
+		     aux x1 f1; aux x2 f2 
+    | And (f1, f2) -> let x1, x2 = !compt + 1, !compt + 2 in compt := !compt + 2;
 		      Solution.add_clause [x0; -x1; -x2];
 		      Solution.add_clause [-x0; x1];
 		      Solution.add_clause [-x0; x2]; 
-		      aux f1; aux f2
-    | Not (f1) -> let x0, x1 = !compt + 1, !compt + 2 in compt := !compt + 2;
+		      aux x1 f1; aux x2 f2
+    | Not (f1) -> incr compt; let x1 = !compt in
 		  Solution.add_clause [-x0; -x1];
 		  Solution.add_clause [x0; x1];
-		  aux f1
-    | Imply (f1, f2) -> aux (Or (Not (f1), f2))
-    | Var (x) -> let x0, x1 = var x, !compt + 1 in incr compt;
+		  aux x1 f1
+    | Imply (f1, f2) -> aux x0 (Or (Not (f1), f2))
+    | Var (x) -> let x1 = var x in
 		 Solution.add_clause [-x0; x1]; 
 		 Solution.add_clause [x0; -x1]
-  in  Solution.add_clause [1]; aux form;;
+  in Solution.add_clause [!compt]; aux !compt form;;
 (* Prend en entrée un arbre représentant une formule, et applique la transformation de tseitin
    pour remplir une formule sous forme normale conjonctive équivalente. *)
 
@@ -44,7 +44,7 @@ let tseitin form =
 let print_solution (b,t) =
   if b then begin
     print_string "SATISFIABLE\n";
-    Assoc.iter (fun var k -> print_string (var^" : "); if t.(k) > 0 then print_string "true\n" else print_string "false\n") (!table)
+    Assoc.iter (fun var k -> print_string (var^" : "); if t.(k-1) > 0 then print_string "true\n" else print_string "false\n") (!table)
   end
   else print_string "UNSATISFIABLE\n";;
 

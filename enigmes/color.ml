@@ -8,10 +8,10 @@ struct
   let t = [|"red"; "blue"; "green"; "gold"; "orange"; "rose"; "purple"; "brown"; "white"; "green4"; "grey"|]
 
   let node channel graph =
-    Array.iteri (fun i x -> Printf.fprintf channel "\n%d[style=filled,color=%s];" i t.(x mod 11)) graph.node 
+    Array.iteri (fun i x -> Printf.fprintf channel "\n%d[style=filled,color=%s];" (i+1) t.(x mod 11)) graph.node 
       
   let edge channel graph =
-    Array.iteri (fun i -> List.iter (fun j -> if i < j then Printf.fprintf channel "\n%d -- %d" i j)) graph.edge
+    Array.iteri (fun i -> List.iter (fun j -> Printf.fprintf channel "\n%d -- %d" (i+1) (j+1))) graph.edge
 
     let draw graph =
       let channel = open_out "color.dot" in
@@ -29,7 +29,7 @@ end;;
 (* ************************************************************************** *)
 
 let edge channel graph = Scanf.bscanf channel " %d %d\n"
-  (fun u v -> graph.(u-1) <- (v-1) :: (graph.(u-1)); graph.(v-1) <- (u-1) :: (graph.(v-1)))
+  (fun u v -> graph.(u-1) <- (v-1) :: (graph.(u-1)))
 
 let rec read channel graph = function
   |0 -> graph
@@ -77,9 +77,12 @@ let color g t k =
 let print_solution (b,t) g k = if b then begin
   print_string "SATISFIABLE\n";
   color g t k;
-  Print.draw g
+  Print.draw g;
+  let _ = Sys.command "dot -Tpdf color.dot -o color.pdf"
+  and _ = Sys.command "rm -f *.log *.dot"
+  and _ = Sys.command "acroread color.pdf &" in ()
 end
-  else print_string "UNSATISFIABLE";;
+  else print_string "UNSATISFIABLE\n";;
 
 let main () =
   let channel = Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "../Test/graph0.cnf") in
@@ -90,9 +93,6 @@ let main () =
   let file = open_out "../Test/color.cnf" in
   Solution.write file;
   let _ = Sys.command "./../dpll -naff ../Test/color.cnf" in
-  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;
-  let _ = Sys.command "dot -Tps color.dot -o color.ps"
-  and _ = Sys.command "rm -f *.log *.dot"
-  and _ = Sys.command "evince color.ps &" in ();;
+  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;;
 
 main ();;

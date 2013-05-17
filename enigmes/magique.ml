@@ -38,14 +38,14 @@ let reduction () =
       Solution.add_clause (exists_numberx i j); 
       Solution.add_clause (exists_numbery i j)
     done;
-(*  for j = i+1 to n-1 do
+    for j = i+1 to n-1 do
       for k = 0 to n-1 do
 	Solution.add_clause [- x i i k; - x j j k];
 	Solution.add_clause [- y i i k; - y j j k];
 	Solution.add_clause [- x i (n-1-i) k; - x j (n-1-j) k];
 	Solution.add_clause [- y i (n-1-i) k; - y j (n-1-j) k]
       done
-    done *)
+    done 
   done;;
 (* Remplit une instance de sat qui traduit les contraintes d'un carré latin de côté n *)
 
