@@ -1,6 +1,5 @@
 module type Core =
 sig
-  exception Satisfiable
   type cls = int
   val nb_cls : unit -> int
   val read : int -> int
@@ -9,14 +8,8 @@ sig
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module type Clause =
-sig
-  type cls
-  type map
-  val find : int -> map -> cls list
-end;;
 
-module MomsCore = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) -> 
+module MomsCore = functor (Cor: Core) ->
 struct
   module Map = Map.Make (struct
     type t = int
@@ -56,17 +49,15 @@ struct
 					  Map.add x (Map.add n ((try Map.find n mx with Not_found -> 0) + 1) mx) m) c mp)
   (* Ajoute une liste de clauses à prendre en considération dans la map. *)
 
-  let extract map ord =
+  let extract ord =
     let length_min = Map.fold (fun x mx n -> let (p,_) = Map.min_binding mx in min p n) ord max_int in
     let xmoms = fst (Map.fold (fun x mx (xm, max) ->
       let p = try Map.find length_min mx with Not_found -> 0 in
       if (Cor.read x = 0 && p > max) then (x, p) else (xm, max)) ord (0,0)) in
-    if xmoms = 0 then raise Cor.Satisfiable else xmoms
+    if xmoms = 0 then raise Not_found else xmoms
   (* Renvoie le choix xmoms selon l'ordre. *)
 
-  let update x map ord = 
-    let l1 = Elt.find x map 
-    and l2 = Elt.find (-x) map in
+  let update x (l1, l2) ord =
     decr_size l2 (remove l1 (Map.remove (-x) (Map.remove x ord)))
   (* Met l'ordre à jour lorsque l'on affecte le litéral x à vrai. *)
 
@@ -81,13 +72,13 @@ struct
     
 end;;
 
-module type MomsAbstract = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) -> 
+module type MomsAbstract = functor (Cor: Core) ->
 sig
   type order
   val is_empty : order -> bool
   val create : unit -> order
-  val extract : Elt.map -> order -> int
-  val update : int -> Elt.map -> order -> order
+  val extract : order -> int
+  val update : int -> (Cor.cls list * Cor.cls list) -> order -> order
   val add : Cor.cls list -> order -> order
 end;;
 

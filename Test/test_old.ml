@@ -55,7 +55,7 @@ let main () =
   let n = try int_of_string (Sys.argv).(1) with _ -> 20 in
   let k = try n * int_of_string (Sys.argv).(2) with _ -> int_of_float (4.3 *. float n) in
   let t = try int_of_string (Sys.argv).(3) with _ -> 3 in
-  let file = open_out "Test/ex0.cnf" in
+  let file = open_out "ex0.cnf" in
   let s = random_sat n k t in
   output_sat file s;;
 

@@ -3,7 +3,7 @@ module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Core);;
 module Graph = Graph.Make (Core);;
 module Proof = Proof.Make (Core);;
-module Order = Order.Make (Core) (Clause);;
+module Order = Order.Make (Core);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
 exception Unsatisfiable;;
@@ -35,6 +35,7 @@ let print_list l =
     |[a] -> print_int a; print_string "]"
     |a::l -> print_int a; print_string "; "; print l in
   print_string "["; print l
+
 
 let dpll env =
   let channel = open_out "log" in  

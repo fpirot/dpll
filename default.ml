@@ -1,6 +1,5 @@
 module type CoreElt =
   sig
-    exception Satisfiable
     val read : int -> int
     val heur : string
     val ord : (int * int) list

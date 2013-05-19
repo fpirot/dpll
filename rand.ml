@@ -1,6 +1,5 @@
 module type CoreElt =
   sig
-    exception Satisfiable
     val heur : string
     val ord : (int * int) list
     val read : int -> int
@@ -19,7 +18,7 @@ module RandCore = functor (Cor : CoreElt) ->
       let rec modif n = function
         |[] -> failwith "Heur.random"
         |a :: l -> if n = 0 then a else modif (n - 1) l in
-      if lst = [] then raise Cor.Satisfiable
+      if lst = [] then raise Not_found
       else modif (Random.int (List.length lst)) lst
 
     let rec update x = function

@@ -44,32 +44,23 @@ end;;
 module type Order =
 sig
   type order
-  type map
   type cls
   val is_empty : order -> bool
   val create : unit -> order
   val add : cls -> order -> order
-  val extract : map -> order -> int
-  val update : int -> map -> order -> order
+  val extract : order -> int
+  val update : int -> (cls list * cls list) -> order -> order
 end;;
 
 module type WlitElt =
 sig
   type cls
   type set
-  type setc
-  val update : int -> set * setc
-  val init : unit -> unit
-  val update_cls : int -> unit
-  val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
-  val choose : set -> (int * cls)
-  val singleton : int -> set
-  val empty : set
-  val is_empty : set -> bool
-  val union : set -> set -> set
-  val add : (int * cls) -> set -> set
-  val remove : int -> set -> set
-  val elements : set -> (int * cls) list
+  type wlit
+  val wempty : wlit
+  val update_cls : cls -> wlit ->  wlit
+  val extract : int -> (cls list * cls list) -> wlit -> wlit
+  val entail : wlit -> set
 end;;
 
 module type Graph =
@@ -84,16 +75,18 @@ sig
   val file : proof -> unit
 end;;
 
+module St = Wlit.St
+
 module OpCore = functor (Cor: CoreElt) -> functor (Elt: OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls)
-        -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls)
+    -> functor (Wlit: WlitElt with type cls = Cor.cls and type set = St.t)
+        -> functor (Ord: Order with type cls = Cor.cls)
 	    -> functor (Graph: Graph with type cls = Cor.cls)
 		-> functor (Proof: Proof with type proof = Cor.proof) ->
 struct
 
-  type env = {clause: Elt.map; order: Ord.order}
   type cls = Cor.cls
-  type set = Wlit.set
+  type set = St.t
+  type env = {clause: Elt.map; order: Ord.order; wlit: Wlit.wlit}
 
   exception Backtrack of int
 
@@ -109,20 +102,23 @@ struct
 
   let create () = let m = Elt.create Cor.lst in
 		  let ord = Ord.create() in
-		  {clause = m; order = ord}
+		  let w = if Cor.wlit then Wlit.update_cls 0 Wlit.wempty else Wlit.wempty in
+		  {clause = m; order = ord; wlit = w}
 
   (* Extrait une variable selon l'ordre *)
-  let extract env = Ord.extract env.clause env.order
+  let extract env = Ord.extract env.order
 
-  let update n env = 
+  let update n env =
     let p = Cor.nb_cls () in
-    if Cor.wlit then Wlit.update_cls n;
-    let map = ref env.clause and ord = ref env.order in
-    for i = n to p-1 do
-      map := Elt.add i !map; ord := Ord.add i !ord done;
-{clause = !map; order = !ord}
+    let w = if Cor.wlit then Wlit.update_cls n env.wlit else env.wlit
+    and map = ref env.clause and ord = ref env.order in
+    for i = n to p-1 do map := Elt.add i !map; ord := Ord.add i !ord done;
+    {clause = !map; order = !ord; wlit = w}
 
-  let remove x env = {clause = Elt.extract x env.clause; order = Ord.update x env.clause env.order}
+  let remove x env = let lst = (Elt.find x env.clause, Elt.find (-x) env.clause) in
+	{clause = Elt.extract x env.clause;
+	order = Ord.update x lst env.order;
+	wlit = if Cor.wlit then Wlit.extract x lst env.wlit else env.wlit}
    
   let is_empty env = Elt.is_empty env.clause
 
@@ -131,17 +127,18 @@ struct
   (*       Gestion de la propagation des contraintes       *)
   (* ***************************************************** *)
 
-  let prop l = List.fold_right (fun c s -> let x = Cor.is_singleton c in
-				if x <> 0 then (
-				  if debug then begin
-				    print_string "Select: ";
-				    print_int x;
-				    print_string ", because of ";
-				    print_list (Cor.literals c);
-				    print_newline()
-				  end;	  
-				  Wlit.add (x, c) s)
-				else s) l Wlit.empty
+  let prop l = List.fold_right (fun c s ->
+    let x = Cor.is_singleton c in
+    if x <> 0 then (
+      if debug then begin
+	print_string "Select: ";
+	print_int x;
+	print_string ", because of ";
+	print_list (Cor.literals c);
+	print_newline()
+      end;
+      St.add (x,c) s)
+    else s) l St.empty
   (* Sélectionne dans une liste de clauses celles qui sont des
      singletons, et renvoie l'union de leurs éléments. On renvoie
      ainsi un ensemble de nouvelles assignations contraintes par celle
@@ -153,12 +150,12 @@ struct
 
   let simple_propagation l env =
     let rec aux env setv =
-      if Wlit.is_empty setv then env
+      if St.is_empty setv then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
 	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x,c) = Wlit.choose setv in
+	let (x, c) = St.choose setv in
 	if debug then begin
 	  print_string "Choice: ";
 	  print_int x;
@@ -166,29 +163,29 @@ struct
 	end;
 	Cor.write ~father:c x;
 	let sbord = entail x env in
-	let setv' = Wlit.union sbord setv in
-	aux (remove x env) (Wlit.remove x setv')
+	let setv' = St.union sbord setv in
+	aux (remove x env) (St.remove (x,0) setv')
       end in
     let setv = prop l in
     aux env setv
 
   let wlit_propagation l env =
     let rec aux env setv = 
-      if Wlit.is_empty setv then env
+      if St.is_empty setv then env
       (* Lorsqu'on n'a plus d'assignations contraintes, la propagation
 	 s'arrête. On rentre la liste des assignations effectuée au cours de
 	 cette propagation dans une liste, et on passe au prochain pari. *)
       else begin
-	let (x, c) = Wlit.choose setv in
+	let (x, c) = St.choose setv in
 	if debug then begin
           print_string "WLit choose: ";
           print_int x;
           print_newline()
         end;
 	Cor.write ~father:c x;
-	let (sbord, ssat) = Wlit.update x in
-	let setv' = Wlit.union sbord setv in
-	aux (remove x env) (Wlit.remove x setv')
+	let env' = remove x env in
+	let setv' = St.union (Wlit.entail env'.wlit) setv in
+	aux env' (St.remove (x,0) setv')
       end in
     let setv = prop l in
     aux env setv
@@ -214,7 +211,7 @@ struct
     let k = Cor.backtrack c (!nxt_print = 0) in
     if !nxt_print = 0 then aux (); k
 
-  let propagation =
+  let propagation = 
     let propag = if Cor.wlit then wlit_propagation
       else simple_propagation in
     (fun l env channel ->
@@ -222,16 +219,17 @@ struct
 	let k = print_conflict c in
       	raise (Backtrack k))
 
+
   let bindings env = Elt.bindings env.clause
 
-  let init () = if Cor.wlit then Wlit.init () else ()
+  let init () = ()
 
 end;;
 
 
 module type OpAbstract = functor (Cor : CoreElt) -> functor (Elt : OpElt with type cls = Cor.cls) 
-    -> functor (Wlit: WlitElt with type cls = Cor.cls) 
-        -> functor (Ord: Order with type map = Elt.map and type cls = Cor.cls) 
+    -> functor (Wlit: WlitElt with type cls = Cor.cls and type set = St.t) 
+        -> functor (Ord: Order with type cls = Cor.cls) 
 	    -> functor (Graph: Graph with type cls = Cor.cls)
 		-> functor (Proof: Proof with type proof = Cor.proof) ->
 sig
@@ -247,8 +245,8 @@ sig
   val entail : int -> env -> set
   val propagation : cls list -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
-  val init : unit -> unit
   val find : int -> env -> cls list
+  val init : unit -> unit
 end;;
 
 module Make = (OpCore : OpAbstract);;

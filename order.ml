@@ -1,6 +1,5 @@
 module type Core =
 sig
-  exception Satisfiable
   type cls = int
   val nb_cls : unit -> int
   val ord : (int * int) list
@@ -11,24 +10,16 @@ sig
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
 end;;
 
-module type Clause =
-sig
-  type cls
-  type map
-  val find : int -> map -> cls list
-end;;
 
-
-module OrderCore = functor (Cor: Core) -> functor (Elt: Clause with type cls = Cor.cls) ->
+module OrderCore = functor (Cor: Core) ->
 struct
 
-  type map = Elt.map
   type cls = Cor.cls
 
   module Rand = Rand.Make (Cor)
   module Default = Default.Make (Cor)
-  module Moms = Moms.Make (Cor) (Elt)
-  module Dlis = Dlis.Make (Cor) (Elt)
+  module Moms = Moms.Make (Cor)
+  module Dlis = Dlis.Make (Cor)
     
   type order = Default of Default.order | Rand of Rand.order | Moms of Moms.order | Dlis of Dlis.order
       
@@ -38,11 +29,11 @@ struct
     | "Dlis" -> Dlis (Dlis.create ())
     | _ -> Default (Default.create ())
 
-  let extract map = function
+  let extract = function
     | Default (ord) -> Default.extract ord
     | Rand (ord) -> Rand.extract ord
-    | Moms (ord) -> Moms.extract map ord
-    | Dlis (ord) -> Dlis.extract map ord 
+    | Moms (ord) -> Moms.extract ord
+    | Dlis (ord) -> Dlis.extract ord 
 	
   let add x = function
     | Default (ord) -> Default (ord)
@@ -56,24 +47,23 @@ struct
     | Moms (ord) -> Moms.is_empty ord
     | Dlis (ord) -> Dlis.is_empty ord
 
-  let update x map = function
+  let update x lst = function
     | Default (ord) -> Default (Default.update x ord)
     | Rand (ord) -> Rand (Rand.update x ord)
-    | Moms (ord) -> Moms (Moms.update x map ord)
-    | Dlis (ord) -> Dlis (Dlis.update x map ord)
+    | Moms (ord) -> Moms (Moms.update x lst ord)
+    | Dlis (ord) -> Dlis (Dlis.update x lst ord)
 end;;
 
 
-module type OrderAbstract = functor (Cor : Core) -> functor (Elt: Clause with type cls = Cor.cls) ->
+module type OrderAbstract = functor (Cor : Core) ->
 sig 
   type order
-  type map = Elt.map
   type cls = Cor.cls
   val is_empty : order -> bool
   val create : unit -> order
-  val add : Cor.cls -> order -> order
-  val extract : map -> order -> int
-  val update : int -> map -> order -> order
+  val add : cls -> order -> order
+  val extract : order -> int
+  val update : int -> (cls list * cls list) -> order -> order
 end;;
 
 module Make = (OrderCore : OrderAbstract);;

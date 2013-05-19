@@ -6,20 +6,21 @@ sig
   val var : int
   val nb_cls : unit -> int
   val read : int -> int
+  val write_father : int -> cls -> unit
   val fold : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
   val literals : cls -> int list
 end;;
+
+module St = Set.Make (
+    struct
+      type t = int * int
+      let compare x y = compare (fst x) (fst y)
+    end);;
 
 module WlitCore =  functor (Cor: Core) -> 
 struct
 
   type cls = Cor.cls
-
-  module St = Set.Make (
-    struct
-      type t = int * cls
-      let compare x y = compare (fst x) (fst y)
-    end)
 
   module Stc = Set.Make (
     struct
@@ -30,96 +31,70 @@ struct
   type set = St.t
   type setc = Stc.t
 
-module Warray = Da.Make (struct
-  type t = int * int
-  let empty = (0, 0)
-end)
+  module Watched = Map.Make (struct
+    type t = cls
+    let compare = compare
+  end)
 
+  type watched = (int * int) Watched.t
+  (* Associe à chaque clause son couple de variables surveillées. *)
 
-  let warray = Warray.empty
+  module Assoc = Map.Make (struct
+    type t = int
+    let compare = compare
+  end)
 
-  let assoc = Array.make Cor.var []
-  (* table d'association : à la variable i est associée l'ensemble
-     des clauses (représentées par leur indice dans un tableau les
-     listant toutes) dans lesquelle elle est surveillée. *)
+  type assoc = Stc.t Assoc.t
+  (* Associe à chaque littéral l'ensemble des clauses dans lesquelles il
+     est surveillé. *)
 
-  let print_warray () = 
-    print_string "Watched literals :";
-    Warray.iter (fun x -> print_char '('; print_int (fst x); print_char ' '; print_int (snd x); print_string ") ") warray;
-    print_newline()
+  type wlit = watched * assoc
 
-  let watched_to_clauses x = if x <> 0 then assoc.((abs x) - 1) else []
-  (* Renvoie la liste des indices de clauses dans lesquelles la
-     variable x est surveillé. *)
+  let wempty = (Watched.empty, Assoc.empty)
 
-  let read id = Warray.read id warray
-  (* Renvoie les litéraux surveillés pour la clause d'indice id. *)
+  let watched c w = try Watched.find c (fst w) with Not_found -> failwith "plouf"
 
-  let get_sat x id = let (a, b) = read id in
-		     x = a || x = b
-  (* Détermine si l'assignation du litéral x à vrai rend la clause
-     d'indice id satisfiable, au vu des litéraux qu'elle surveille. *)
+  let assoc x w = try Assoc.find x (snd w) with Not_found -> Stc.empty
 
-  let watched_literals_of_clause id lbord lsat =
-    let l = Cor.literals id in
-    let rec aux w1 w2 = function
-      |[] -> if w1 = 0 then raise (Cor.Unsatisfiable id)
-	(* Si on n'a trouvé aucun litéral à surveiller, la clause
-	   n'est pas satisfiable avec la valuation actuelle. *)
-	else (lbord := St.add (w1, id) !lbord; (w1,0))
-      (* Si on n'a pu trouver qu'un seul litéral à surveiller, alors
-	 pour que la clause soit satisfaite, il doit forcément être à
-	 vrai. On effectue l'assignation nécessaire. *)
-      |x :: r -> let v = Cor.read x in
-		 if v = 0 then 
-		   if w1 = 0 then aux x 0 r
-		   else (w1,x)
-		 else if v = x then (lsat := Stc.add id !lsat; (0,0))
-		 (* c est satisfiable, on la répertorie dans lsat. *)
-		 else aux w1 w2 r
-    in aux 0 0 l
-  (* watched_literals_of_clause renvoie un couple de litéraux à
-     surveiller possibles pour la clause c, et remplit la liste lbord
-     avec x si x est le seul litéral pouvant encore être
-     potentiellement vrai dans c, et lsat avec c si elle est
-     satisfiable. *)
+  let get_sat x c w = let (a,b) = watched c w in
+		      x = a || x = b
 
-  let add_cls cls = 
-    let lbord = ref St.empty and lsat = ref Stc.empty in
-    let (w1,w2) = watched_literals_of_clause cls lbord lsat in
-    Warray.add (w1,w2) warray;
-    if w1 <> 0 then assoc.((abs w1) - 1) <- cls :: assoc.((abs w1) - 1);
-    if w2 <> 0 then assoc.((abs w2) - 1) <- cls :: assoc.((abs w2) - 1)
-  (* Ajoute la clause d'indice cls. *)
+  let make_watched c =
+    let rec aux a b = function
+      | [] -> (match (a,b) with
+	  | (0,0) -> raise (Cor.Unsatisfiable c)
+	  | (a,0) -> (a,0)
+	  | _ -> failwith "Match error: wlit")
+      | x :: l -> (match Cor.read x with
+	  | 0 -> if a = 0 then aux x 0 l else (a, x)
+	  | _ -> aux a b l)
+    in aux 0 0 (Cor.literals c);;
 
-  let update_cls n = 
+  let add_cls c wlit = 
+    let (a,b) = make_watched c in
+    (Watched.add c (a,b) (fst wlit), Assoc.add b (Stc.add c (assoc b wlit)) (Assoc.add a (Stc.add c (assoc a wlit)) (snd wlit)))
+
+  let extract x (ltrue, lfalse) w =
+    (* On retire toutes les clauses qui deviennent satisfaites *)
+    let w1 = (fst w, (List.fold_right (fun c map -> 
+      let (a,b) = watched c w in
+      (* On considère le literal surveillé qui n'est pas x *)
+      let y = if a = x then b else a in
+      let s = Stc.remove c (assoc y w) in
+      if s <> Stc.empty then Assoc.add y s map else map) ltrue (Assoc.remove x (snd w)))) in
+    (* On attribue de nouveaux watched literals dans les clauses qui surveillaient -x *)
+    List.fold_right add_cls lfalse w1 
+
+  let update_cls n wlit =
     let p = Cor.nb_cls () in
-    for i = n to p-1 do add_cls i done
-  (* Remplit la table d'association entre watched literals et
-     clauses, à partir de l'indice n. *)
+    let rec aux n =
+      if n = p then wlit
+      else add_cls n (aux (n+1))
+    in aux n
 
-  let new_assoc id lbord lsat =
-    let (a, b) = watched_literals_of_clause id lbord lsat in
-    if a <> 0 then assoc.((abs a) - 1 ) <- id :: assoc.((abs a) - 1);
-    if b <> 0 then assoc.((abs b) - 1 ) <- id :: assoc.((abs b) - 1);
-    Warray.write (a, b) id warray
-  (* Associe de nouveaux watched literals à la clause d'indice i, et
-     modifie les tables convenablement. *)
-
-  let init () = update_cls 0
-
-  let update x =
-    let l = watched_to_clauses x in
-    let lbord = ref St.empty and lsat = ref Stc.empty in
-    let rec aux = function
-      |[] -> (!lbord, !lsat)
-      |i :: r -> if get_sat x i then (lsat := Stc.add i !lsat; aux r)
-	else (new_assoc i lbord lsat; aux r)
-    in aux l
-(* Change les litéraux à surveiller dans warray, lorsqu'une nouvelle
-   variable voit sa valeur fixée. Renvoie la liste des litéraux à
-   assigner à vrai par effet de bord, et la liste des clauses
-   nouvellement satisfiables. *)
+  (* Donne l'ensemble des litéraux qui apparaissent dans des clauses n'ayant qu'un seul wlit. *)
+  let entail w = Stc.fold (fun c s -> let x = fst (watched c w) in
+    if Cor.read x = 0 then St.add (x, c) s else s) (assoc 0 w) St.empty
 
   let fold = Stc.fold
   let choose = St.choose
@@ -134,21 +109,15 @@ end;;
 
 module type WlitAbstract = functor (Cor: Core) -> 
 sig
-  type set
-  type setc
+  type set = St.t
+  type wlit
   type cls = Cor.cls
-  val update : int -> set * setc
-  val init : unit -> unit
-  val update_cls : int -> unit
-  val fold : (cls -> 'a -> 'a) -> setc -> 'a -> 'a
-  val choose : set -> (int * cls)
-  val singleton : int -> set
-  val empty : set
-  val is_empty : set -> bool
-  val union : set -> set -> set
-  val add : (int * cls) -> set -> set
-  val remove : int -> set -> set
-  val elements : set -> (int * cls) list
+  val wempty : wlit
+  val extract : int -> (cls list * cls list) -> wlit -> wlit
+  val entail : wlit -> set
+  val update_cls : cls -> wlit ->  wlit
+
 end;;
 
 module Make = (WlitCore: WlitAbstract);;
+
