@@ -13,6 +13,7 @@ all :
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
 	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll.ml -o dpll
 	ocamlc -a solution.ml -o solution.cma
+	ocamlc solution.cma test.ml -o test
 	cd tseitin/; make; cd ..
 	cd enigmes/; make; cd ..
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
