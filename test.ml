@@ -20,8 +20,8 @@ for i = 1 to p do Solution.add_clause (random_clause n k) done;;
 let main() = 
   let n, p, k, s = ref 20, ref 100, ref 3, ref "" in
   Arg.parse [("-setv", Arg.Tuple [Arg.Set_int n; Arg.Unit (fun () -> p := truncate (4.13 *. float !n))], "Number of variables");
-	     ("-setc", Arg.Tuple [Arg.Set_int p], "Number of clauses");
-	     ("-sets", Arg.Tuple [Arg.Set_int k], "Size of the clauses");
+	     ("-setc", Arg.Set_int p, "Number of clauses");
+	     ("-sets", Arg.Set_int k, "Size of the clauses");
 	     ("-wlit", Arg.Unit (fun () -> s := (!s)^" -wlit"), "Watched Literals");
 	     ("-rand", Arg.Unit (fun () -> s := (!s)^" -rand"), "Random choice");
 	     ("-moms", Arg.Unit (fun () -> s := (!s)^" -moms"), "Most Occurences in clauses of Minimum Size");
