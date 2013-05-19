@@ -13,6 +13,8 @@ all :
 	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
 	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll.ml -o dpll
 	ocamlc -a solution.ml -o solution.cma
+	cd tseitin/; make; cd ..
+	cd enigmes/; make; cd ..
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
 
 test :
@@ -33,9 +35,7 @@ test :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 graph :
-	for file in `ls Graph` ; do \
-	dot -Tpdf Graph/$$file -o Graph/$$file.pdf ; \
-	done
+	for file in `ls Graph`; do dot -Tpdf Graph/$$file -o Graph/$$file.pdf; done
 
 proof :
 	pdflatex proof.tex -outpout-directory Latex

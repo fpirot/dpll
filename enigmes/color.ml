@@ -76,12 +76,13 @@ let color g t k =
   done;;
 
 let print_solution (b,t) g k = if b then begin
-  print_string "SATISFIABLE\n";
+  print_string "SATISFIABLE\n"; flush stdout;
   color g t k;
   Print.draw g;
   let _ = Sys.command "dot -Tpdf color.dot -o color.pdf"
   and _ = Sys.command "rm -f *.log *.dot"
-  and _ = Sys.command "acroread color.pdf &" in ()
+  and _ = Sys.command "evince color.pdf" 
+  and _ = Sys.command "rm color.pdf" in ()
 end
   else print_string "UNSATISFIABLE\n";;
 
