@@ -11,7 +11,7 @@ end);;
 
 let table = ref Assoc.empty;;
 
-let channel = open_out "../Test/assoc.txt" in
+let channel = open_out "../Test/assoc.txt";;
 
 let var x = try Assoc.find x !table
   with Not_found -> (incr compt; 
