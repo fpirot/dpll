@@ -17,7 +17,10 @@ let rec convert_formule = function
   | PAnd(a, b) -> And(convert_formule a, convert_formule b)
   | PImply(a, b) -> Imply(convert_formule a, convert_formule b)
   | PNot(a) -> Not(convert_formule a)
-  | PPred(p) -> Var (table.add p)
+  | PPred(p) -> Var (table.add (convert_predicat p))
+and convert_predicat = function
+  | PEqual(a, b) -> Equal(convert_terms a, convert_terms b)
+  | PDiff(a, b) -> Diff(convert_terms a, convert_terms b)
 and convert_terms = function
   | PFun(a, b) -> begin match b with
       | PList(c, d) -> Fun(a, convert_list b)
