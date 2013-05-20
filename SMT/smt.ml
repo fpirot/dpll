@@ -111,8 +111,8 @@ let (valu, assoc) =
     with End_of_file -> () in
   (table, autre);;
 
+module Make = struct
 let validity () =
-
   let (eq, df) = create () in
   try Hashtbl.iter (fun x b-> match Main.table.find x, b with
       |Equal(a, b), true -> check (Equal(a, b)) eq df
@@ -120,7 +120,7 @@ let validity () =
       |Diff(a, b), true -> check (Diff(a, b)) eq df   
       |Diff(a, b), false -> check (Equal(a, b)) eq df) valu with
   Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Main.table.add x)) lst;;
-  
+end;;
 
 
 (* Tests *)

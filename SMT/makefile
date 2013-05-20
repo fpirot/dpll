@@ -1,5 +1,5 @@
 all:
-	ocamlbuild -yaccflag -v -lib unix main.native; ln -fs main.native smt
+	ocamlbuild -yaccflag -v -lib unix smt.native; ln -fs smt.native smt
 
 byte: 
 	ocamlbuild -yaccflag -v main.byte
