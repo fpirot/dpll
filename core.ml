@@ -81,10 +81,11 @@ struct
       |a::l -> print_int a; print_string "; "; print l in
     print_string "["; print l
 
-  let (wlit, graph, aff, heur, path) =
+  let (wlit, graph, aff, smt, heur, path) =
     let w = ref false
     and g = ref false
     and aff = ref true
+    and smt = ref false
     and s = ref "Nil"
     and p = ref "Test/ex0.cnf" in
     Arg.parse [("-wlit", Arg.Unit(fun () -> w := true), "Watched literals");
@@ -92,9 +93,10 @@ struct
 							 ("-rand", Arg.Unit(fun () -> s := "Rand"), "Random selection");
                ("-moms", Arg.Unit(fun () -> s := "Moms"), "Maximum Occurrences in clauses of Minimum Size");
                ("-dlis", Arg.Unit(fun () -> s := "Dlis"), "Dynamic Largest Individual Sum");
-	       ("-naff", Arg.Unit(fun () -> aff := false), "Désative l'affichage en console de la solution")]
+	       ("-naff", Arg.Unit(fun () -> aff := false), "Désative l'affichage en console de la solution");
+	       ("-smt", Arg.Unit(fun () -> smt := true), "Travaille modulo une théorie")]
       (fun str -> p := str) "";
-    (!w, !g, !aff, !s, !p)
+    (!w, !g, !aff, !smt, !s, !p)
       
   let (var, (cls, lst, ord, comment)) = Load.load (Scanf.Scanning.open_in (path))
 
@@ -219,6 +221,8 @@ struct
   (* L'indice en cours dans le tableau. *)
 
   let add_clause c = ClauseArray.add c clauseArray; incr ncls
+
+  let add_cls l = add_clause (List.fold_right (fun x c -> Cls.add x c) l Cls.empty); !ncls
 
   let fill l = ClauseArray.add (fold (fun x c -> Cls.add x c) l Cls.empty) clauseArray;
     ClauseArray.length clauseArray - 1
@@ -375,6 +379,7 @@ sig
   val wlit : bool
   val graph : bool
   val aff : bool
+  val smt : bool
   val heur : string
   val fix_depth : int -> unit
   val restore : int -> unit
@@ -387,6 +392,7 @@ sig
   val iter : (int -> unit) -> cls -> unit
   val cls_make : int -> cls
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val add_cls : int list -> int
   val literals : cls -> int list
   val length : cls -> int
   val choose : cls -> int
