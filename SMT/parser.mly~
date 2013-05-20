@@ -6,7 +6,7 @@
 %token LPAR RPAR LBKT RBKT
 %token OR AND IMPLY NOT
 %token EQUAL DIFF
-%token <string> VAR FUN
+%token <string> VAR VARV FUN
 
 %nonassoc NOT
 %left OR AND
