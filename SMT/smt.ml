@@ -35,7 +35,8 @@ exception Inconsistent;;
 
 type terms = Fun of string * terms list | Cst of string
 type predicat = Equal of terms * terms | Diff of terms * terms;;
-type formule = Pred of predicat | Or of formule * formule | And of formule * formule | Not of formule | Imply of formule * formule;;
+type formule = Pred of predicat | Or of formule * formule | And of formule * formule
+             | Not of formule | Imply of formule * formule | Var of int;;
 
 (* Verifie la coherence de l'arite des symboles de fonction. *)
 let arity =
@@ -43,6 +44,10 @@ let arity =
   let search x n = try Hashtbl.find table x with Not_found -> Hashtbl.add table x n; n in 
     fun x n -> if search x n <> n then raise Inconsistent;;
 
+(* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
+let newEqual t1 t2 r1 r2 = Or(Pred(Diff (t1, t2)), Or (Pred(Equal(r1, t1)), Pred(Equal (r2, t2))));;
+(* Idem en cas d'incoherence sur une inegalite  *)
+let newDiff t1 t2 r1 r2 = Or(Pred(Equal (t1, t2)), Or (Pred(Diff(r1, t1)), Pred(Diff (r2, t2))));;
 
 (* Met a jour les structure union-find tout en verifiant la coherence. *)
 let check pred eq df = 
@@ -77,6 +82,11 @@ let check pred eq df =
       then raise Inconsistent else diff (t1, t2); df.union t1 t2;;
 
 
+let valide lst =
+  let eq = create ()
+  and df = create () in
+    List.iter (fun p -> check p eq df);;
+
 (* Tests *)
 
 
@@ -84,8 +94,10 @@ let eq = create ()
 and df = create ();;
 check (Equal(Cst"a", Cst"b")) eq df;;
 check (Diff(Cst"c", Cst"b")) eq df;;
-check (Equal(Cst"a", Cst"c")) eq df;;
-
+check (Equal(Cst"c", Cst"d")) eq df;;
+check (Diff(Cst"a", Cst"d")) eq df;;
+check (Equal(Cst"a", Cst"e")) eq df;;
+check (Equal(Cst"c", Cst"e")) eq df;;
 (*
 let test = create ();;
 test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
