@@ -36,13 +36,14 @@ generate :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 graph :
+	rm -f Graph/*.pdf Graph/*~
 	if [ -d Graph/ ]; \
 	  then ( for file in `ls Graph`; \
 		   do dot -Tpdf Graph/$$file -o Graph/$$file.pdf; \
 		 done ) ; \
 	  else : ; \
 	fi
-	rm -f Graph/*.dot
+	rm -f Graph/*.dot Graph/*~
 	
 proof :
 	pdflatex proof.tex -outpout-directory Latex
