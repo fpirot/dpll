@@ -21,6 +21,10 @@ De bonnes nouvelles dans cet ultime rendu :
 - La génération de graphe renvoie le graphe complet jusqu'au point
   d'articulation (ce qui n'était pas le cas dans le rendu 3)
 
+Une mauvaise nouvelle :
+SMT est prêt à être utilisé, mais non n'avons pas encore réussi à le compiler...
+Peut être pour une autre version plus tard..?
+
 -------------------------
 Compilation et exécution :
 -------------------------

@@ -5,10 +5,8 @@ module Graph = Graph.Make (Core);;
 module Proof = Proof.Make (Core);;
 module Order = Order.Make (Core);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
-
 module Smt = struct
-  let compt = ref 3
-  let verif file = let k = (- !compt) in Printf.printf "On ajoute la clause %d\n" k; decr compt; if k = 0 then [] else [k]
+  let validity () = []
 end;;
 
 exception Unsatisfiable;;
@@ -65,7 +63,7 @@ let dpll env =
 	  (* On rentre dans la partie vérification de concordance avec la théorie*)
 	  write_result file true;
 	  (* On génère la clause insatisfiable selon la théorie *)
-	  let c = Smt.verif (open_in "Test/result.txt") in
+	  let c = Smt.validity () in
 	  if c = [] then raise Core.Satisfiable
 	  else Oper.add_cls c
 	end;

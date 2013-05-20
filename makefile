@@ -17,7 +17,6 @@ all :
 	ocamlc addition.ml -o arith
 	cd tseitin/; make; cd ..
 	cd enigmes/; make; cd ..
-	cd SMT/; make; cd ..
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\#
 
 generate :
