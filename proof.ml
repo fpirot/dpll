@@ -37,28 +37,40 @@ struct
 
     let rec iter p i =
       if f_size p > 5 then begin
-	let (c, p', c') = f_decomp p in
-	iter p' (i + 1);
-	Printf.fprintf channel "\092begin{mathpar}\n\092preuve{%d}:~\092inferrule{\n\092preuve{%d}\n\092and" i (i + 1);
-	clause channel c' f_id f_elt;
-	Printf.fprintf channel "\n}\n{";
-	clause channel c f_id f_elt;
-	Printf.fprintf channel "\n}\n\092end{mathpar}\n" end
+	      let (c, p', c') = f_decomp p in
+	      iter p' (i + 1);
+	      Printf.fprintf channel "\092begin{mathpar}\n\092preuve{%d}:~\092inferrule{\n\092preuve{%d}\n\092and" i (i + 1);
+	      clause channel c' f_id f_elt;
+	      Printf.fprintf channel "\n}\n{";
+	      clause channel c f_id f_elt;
+	      Printf.fprintf channel "\n}\n\092end{mathpar}\n" end
+      else if f_size p < 5 then begin
+	      let (c1, p', c2) = f_decomp p in
+	      let (c3, _, _) = f_get p' in
+	      Printf.fprintf channel "\092begin{mathpar}\n\092preuve{%d}:~\n\092inferrule{" i;
+	      clause channel c3 f_id f_elt;
+	      Printf.fprintf channel "\n\092and";
+	      clause channel c2 f_id f_elt;
+	      Printf.fprintf channel "\n}{";
+	      clause channel c1 f_id f_elt;
+	      Printf.fprintf channel "\n}\n\092end{mathpar}\n"
+      end
       else begin
-	let (c1, p', c2) = f_decomp p in
-	let (c3, p'', c4) = f_decomp p' in
-	let (c5, _, _) = f_get p'' in
-	Printf.fprintf channel "\092begin{mathpar}\n\092preuve{%d}:~\n\092inferrule{\n\092inferrule{" i;
-	clause channel c4 f_id f_elt;
-	Printf.fprintf channel "\n\092and";
-	clause channel c5 f_id f_elt;
-	Printf.fprintf channel "\n}{";
-	clause channel c3 f_id f_elt;
-	Printf.fprintf channel "\n}\092and";
-	clause channel c2 f_id f_elt;
-	Printf.fprintf channel "\n}{";
-	clause channel c1 f_id f_elt;
-	Printf.fprintf channel "\n}\n\092end{mathpar}\n" end in
+	      let (c1, p', c2) = f_decomp p in
+	      let (c3, p'', c4) = f_decomp p' in
+	      let (c5, _, _) = f_get p'' in
+	      Printf.fprintf channel "\092begin{mathpar}\n\092preuve{%d}:~\n\092inferrule{\n\092inferrule{" i;
+	      clause channel c4 f_id f_elt;
+	      Printf.fprintf channel "\n\092and";
+	      clause channel c5 f_id f_elt;
+	      Printf.fprintf channel "\n}{";
+	      clause channel c3 f_id f_elt;
+	      Printf.fprintf channel "\n}\092and";
+	      clause channel c2 f_id f_elt;
+	      Printf.fprintf channel "\n}{";
+	      clause channel c1 f_id f_elt;
+	      Printf.fprintf channel "\n}\n\092end{mathpar}\n"
+	    end in
 
     iter prf 0
       
