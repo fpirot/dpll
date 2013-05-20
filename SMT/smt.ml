@@ -119,7 +119,7 @@ let validity () =
       |Equal(a, b), false -> check (Diff(a, b)) eq df  
       |Diff(a, b), true -> check (Diff(a, b)) eq df   
       |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc with
-  Inconsistent(a) -> a;;
+  Inconsistent(lst) -> List.iter (fun x -> Main.table.add x) lst;;
   
 
 
