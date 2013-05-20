@@ -23,6 +23,7 @@ sig
   val cls_make : int -> cls
   val length : cls -> int
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
+  val add_cls : int list -> int
   val backtrack : cls -> bool -> int
   val proof : cls -> proof
   val graphe : cls -> (int * int) list
@@ -220,6 +221,9 @@ struct
 	let k = print_conflict c in
       	raise (Backtrack k))
 
+  let add_cls l = let c = Cor.add_cls l in
+		  let k = Cor.backtrack c false in
+		  raise (Backtrack k)
 
   let bindings env = Elt.bindings env.clause
 
@@ -245,6 +249,8 @@ sig
   val propagation : cls list -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
   val find : int -> env -> cls list
+  val add_cls : int list -> unit
+
 end;;
 
 module Make = (OpCore : OpAbstract);;
