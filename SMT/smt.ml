@@ -100,16 +100,16 @@ let check pred eq df =
         then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2;;
 
 
-
 let (_, t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt");;
-let assoc x =
+let (valu, assoc) =
   let table = Hashtbl.create 257
-  and channel = Scanf.Scanning.ope_in "../Test/assoc.txt" in
+  and autre = Hashtbl.create 257
+  and channel = Scanf.Scanning.open_in "../Test/assoc.txt" in
   let rec read =
     try Scanf.Scanning.bscanf channel "x%d : %d "
-      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); read channel)
+      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); Hashtbl.add autre x n; read channel)
     with End_of_file -> () in
-  table;;
+  (table, autre);;
 
 let validity () =
 
@@ -118,8 +118,8 @@ let validity () =
       |Equal(a, b), true -> check (Equal(a, b)) eq df
       |Equal(a, b), false -> check (Diff(a, b)) eq df  
       |Diff(a, b), true -> check (Diff(a, b)) eq df   
-      |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc with
-  Inconsistent(lst) -> List.iter (fun x -> Main.table.add x) lst;;
+      |Diff(a, b), false -> check (Equal(a, b)) eq df) valu with
+  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Main.table.add x)) lst;;
   
 
 
