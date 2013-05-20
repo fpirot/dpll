@@ -65,6 +65,10 @@ Pour exécuter les programmes :
     ./sudoku n : Résout le sudoku décrit à la ligne n dans le fichier enigmes/grilles.txt
     ./color (nom_du_fichier) k : Résout le problème de k-coloration du graphe décrit dans le fichier (Test/graph0.cnf par défaut)
 
+- Pour l'addition :
+  ./addition ['0'-'9' '+' '-']*['=']. La formule doit terminer par le symbole =, puis entrer.
+  Le calcul est actuellement fait sur des entiers non signés.
+
 --------------------------------
 Description rapide du programme :
 --------------------------------
