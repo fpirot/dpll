@@ -25,6 +25,7 @@ sig
   val cls_fold : (int -> 'a -> 'a) -> cls -> 'a -> 'a
   val backtrack : cls -> bool -> int
   val proof : cls -> proof
+  val graphe : cls -> (int * int) list
 end;;
 
 module type OpElt =
@@ -66,7 +67,7 @@ end;;
 module type Graph =
 sig
   type cls
-  val draw : cls -> unit
+  val draw : cls -> (int * int) list -> unit
 end;;
 
 module type Proof =
@@ -199,7 +200,7 @@ struct
   s n : continuer jusqu'au n-ieme prochain conflit
   t : terminer l'execution sans s'arreter\n";
       match read_line() with
-	|"g" -> Graph.draw c; aux()
+	|"g" -> Graph.draw c (Cor.graphe c); aux()
 	|"r" -> Proof.file (Cor.proof c); aux()
 	|"c" -> nxt_print := 1
 	|"t" -> nxt_print := -1
