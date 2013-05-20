@@ -335,8 +335,10 @@ struct
      point d'articulation. *)
 
   let proof c = (fun (x, y, z, t) -> z) (calcul (clause c))
+  (* Preuve de résolution à partir de la clause insatisfaite c. *)
 
   let graphe c = (fun (x, y, z, t) -> t) (calcul (clause c))
+  (* Graphe des conflits à partir de la clause insatisfaite c. *)
 
   let backtrack c b =
     let (c1,x,_,_) = calcul (clause c) in
