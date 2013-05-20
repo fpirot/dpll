@@ -7,7 +7,8 @@ module Order = Order.Make (Core);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
 module Smt = struct
-  let verif file = []
+  let compt = ref 3
+  let verif file = let k = (- !compt) in Printf.printf "On ajoute la clause %d\n" k; decr compt; if k = 0 then [] else [k]
 end;;
 
 exception Unsatisfiable;;
@@ -100,7 +101,7 @@ let dpll env =
 
 
 let t = Sys.time() in
-try dpll (Oper.create ())
+(try dpll (Oper.create ())
  with 
    |Core.Satisfiable -> write_result file true;
      if Core.aff then (
@@ -109,7 +110,7 @@ try dpll (Oper.create ())
        print_newline();
        if verify Core.lst then print_string "c Assignation verified with success.\n" else print_string "c Error during verification.\n")
    |Unsatisfiable -> write_result file false;
-     (* On tombe sur cette exception lorsque la propagation au niveau 0
-	tombe sur une incohérence. *)
-     output_string file "UNSATISFIABLE\n";
-     if Core.aff then (print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");;
+    (* On tombe sur cette exception lorsque la propagation au niveau 0
+       tombe sur une incohérence. *)
+     if Core.aff then print_string "UNSATISFIABLE\n");
+if Core.aff then (print_string "c Result found within "; print_float (Sys.time() -. t); print_string " seconds.\n");;

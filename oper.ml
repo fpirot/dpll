@@ -26,6 +26,7 @@ sig
   val add_cls : int list -> int
   val backtrack : cls -> bool -> int
   val proof : cls -> proof
+  val prf : cls -> int
   val graphe : cls -> (int * int) list
 end;;
 
@@ -222,7 +223,7 @@ struct
       	raise (Backtrack k))
 
   let add_cls l = let c = Cor.add_cls l in
-		  let k = Cor.backtrack c false in
+		  let k = Cor.prf c in
 		  raise (Backtrack k)
 
   let bindings env = Elt.bindings env.clause

@@ -60,7 +60,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable of cls
 
-  let debug = false
+  let debug = true
 
   let printint x =
     let e = if x < 0 then 1 else 0 in
@@ -222,7 +222,7 @@ struct
 
   let add_clause c = ClauseArray.add c clauseArray; incr ncls
 
-  let add_cls l = add_clause (List.fold_right (fun x c -> Cls.add x c) l Cls.empty); !ncls
+  let add_cls l = add_clause (List.fold_right (fun x c -> Cls.add x c) l Cls.empty); !ncls - 1
 
   let fill l = ClauseArray.add (fold (fun x c -> Cls.add x c) l Cls.empty) clauseArray;
     ClauseArray.length clauseArray - 1
@@ -338,6 +338,8 @@ struct
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
 
+  let prf c = Cls.fold (fun x d -> max (depth x) d) (clause c) 0
+
   let proof c = (fun (x, y, z, t) -> z) (calcul (clause c))
   (* Preuve de résolution à partir de la clause insatisfaite c. *)
 
@@ -399,6 +401,7 @@ sig
   val is_singleton : cls -> int
   val backtrack : cls -> bool -> int
   val father : int -> cls
+  val prf : cls -> int
   val proof : cls -> proof
   val graphe : cls -> (int * int) list
   val get : proof -> (int list * proof * proof)
