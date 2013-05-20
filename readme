@@ -30,7 +30,7 @@ Pour compiler, utiliser le makefile :
 - make pour compiler le solveur, le testeur à la racine, et chacune des
   options du rendu 4 (./tseitin, ./latin, ./magique, ./sudoku, ./color)
 
-- make test pour compiler le générateur de test (celui qui affiche des graphes de performance)
+- make generate pour compiler le générateur de graphes de performances
 
 - make graph pour générer les graphes qui ont été engendrés par le solveur avec l'option -graph
 
