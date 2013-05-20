@@ -11,9 +11,13 @@ end);;
 
 let table = ref Assoc.empty;;
 
+let channel = open_out "../Test/assoc.txt" in
+
 let var x = try Assoc.find x !table
   with Not_found -> (incr compt; 
     table := Assoc.add x !compt !table;
+    Printf.fprintf channel "%s : %d" x !compt;
+    flush channel;
     !compt);;
 
 let tseitin form = 
