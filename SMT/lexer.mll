@@ -9,16 +9,26 @@ rule lexer = parse
   { LPAR }
 | ")"	    
   { RPAR }
-| "["	    
-  { LPAR }
+  | "["	    
+  { LBKT }
 | "]"	    
-  { RPAR }
-| "\\"
-  { FUN }
+  { RBKT }
+| "\\/"
+  { OR }
+| "/\\"
+  { AND }
+| "=>"
+  { IMPLY }
+| "~"
+  { NOT }
 | "=="
-  { EQ }
+  { EQUAL }
 | "!="
-  { DF }
+  { DIFF }
+| "\\"
+  { FUN (Lexing.lexeme lexbuf) }
+| ['_''a'-'z' 'A'-'Z'] ['_''a'-'z' 'A'-'Z' '0'-'9']* [',']
+  { VARV (Lexing.lexeme lexbuf) }
 | ['_''a'-'z' 'A'-'Z'] ['_''a'-'z' 'A'-'Z' '0'-'9']*
   { VAR (Lexing.lexeme lexbuf) }
 | eof

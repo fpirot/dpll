@@ -1,21 +1,23 @@
 %{
-  open Formule
+  open Smt
 %}
 
 %token EOF
-%token LBKT RBKT
-%token LPAR RPAR
-%token EQ DF
-%token <string> VAR FUN
+%token LPAR RPAR LBKT RBKT
+%token OR AND IMPLY NOT
+%token EQUAL DIFF
+%token <string> VAR VARV FUN
 
 %nonassoc NOT
-%left EQ DF
-%right FUN
-%nonassoc LPAR RPAR
+%left OR AND
+%right IMPLY
+%nonassoc LPAR RPAR LBKT RBKT
 
+%start form
+%type <Smt.formule> form
 %start terms
-%start pred
 %type <Smt.terms> terms
+%start pred
 %type <Smt.predicat> pred
 
 %%
@@ -23,17 +25,33 @@
 terms :
   | LPAR terms RPAR {
     $2 }
-  | FUN terms terms {
-    Fun ($2, [$3]) }
-  | VAR, {
+  | FUN terms {
+    Fun ($1, [$2]) }
+  | VARV {
+    Var ($1); }
+  | VAR {
     Var ($1) }
 
 pred :
-  | LBKT terms RBKT {
-    ($2) }
-  | pred EQ pred {
-    Equal ($1, $3) }
-  | pred DF pred {
-    Diff ($1, $3) }
+  | LPAR pred RPAR {
+    $2 }
+  | terms EQUAL terms {
+    Equal ($1,$3) }
+  | terms DIFF terms {
+    Diff ($1,$3) }
+
+form :
+  | LPAR form RPAR {
+    $2 }
+  | form OR form {
+    Or ($1,$3) }
+  | form AND form {
+    And ($1,$3) }
+  | form IMPLY form {
+    Imply ($1,$3) }
+  | NOT form {
+    Not ($2) }
+  | LBKT pred RBKT {
+    Pred ($2) }
 
 %%  
