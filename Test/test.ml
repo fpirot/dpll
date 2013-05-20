@@ -27,7 +27,7 @@ struct
     and c2 = ref 1000
     and n = ref 10
     and m = ref ""
-    and p = ref "Test/" in
+    and p = ref "Tmp/" in
     Arg.parse [("-setc", Arg.Tuple [Arg.Set_int c1; Arg.Set_int c2], "Number of clauses");
                ("-sets", Arg.Tuple [Arg.Set_int s1; Arg.Set_int s2], "Size of clauses");
                ("-setv", Arg.Tuple [Arg.Set_int v1; Arg.Set_int v2], "Number of variables");

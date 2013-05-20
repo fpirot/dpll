@@ -5,30 +5,30 @@ rm -f comparaison.dat
 echo "argument default rand moms dlis" >> comparaison.dat
 
 
-for directory in `ls Test/ | sort -n`; do
+for directory in `ls Tmp/ | sort -n`; do
 
 TEMPS1="0"
 TEMPS2="0"
 TEMPS3="0"
 TEMPS4="0"
 
-for file in `ls Test/$directory | sort -n`; do
+for file in `ls Tmp/$directory | sort -n`; do
 
   echo "je suis en train de traiter l'entree" $directory
 
-  echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Test/$directory/$file"
+  echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Tmp/$directory/$file"
   TMP=`cat /tmp/toto.txt`
   TEMPS1=`echo $TEMPS1 + $TMP | bc`
 
-  echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Test/$directory/$file" -rand
+  echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Tmp/$directory/$file" -rand
   TMP=`cat /tmp/toto.txt`
   TEMPS2=`echo $TEMPS1 + $TMP | bc`
   
-   echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Test/$directory/$file" -moms
+   echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Tmp/$directory/$file" -moms
   TMP=`cat /tmp/toto.txt`
   TEMPS3=`echo $TEMPS1 + $TMP | bc`
   
-   echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Test/$directory/$file" -dlis
+   echo $file | /usr/bin/time -f'%U' -o /tmp/toto.txt ./dpll "Tmp/$directory/$file" -dlis
   TMP=`cat /tmp/toto.txt`
   TEMPS4=`echo $TEMPS1 + $TMP | bc`
 
