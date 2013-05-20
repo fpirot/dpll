@@ -1,33 +1,62 @@
-À notre plus grand regret, faute de temps, nous n'avons pas pu
-implémenter la création du fichier log permettant d'accéder à
-l'information voulue sur les backtrack après l'exécution de notre
-programme. Nous souhaitons nous en excuser honteusement.
+De bonnes nouvelles dans cet ultime rendu : 
 
-De plus, les couleurs dans les graphes générés ne sont pas forcément
-exactement ce qu'elles devraient être : elles sont basées sur la
-profondeur à laquelle les litéraux ont été assignés.
+ - L'engendrement des clauses du rendu 3 était buggé lorsque le point
+    d'articulation était le pari en cours, cela a été corrigé.
+
+ - Les watched literals de tous les rendus ne tenaient pas la route
+   car ils n'étaient pas réaffectés convenablement lors des
+   backtracks, cela a été corrigé, et leur implémentation est de plus
+   maintenant entièrement fonctionnelle.
+
+ - L'affichage des preuves de résolution est non buggé, et la compilation
+   se fait en direct.
+
+ - Un fichier de test très simple a été implémenté dans le dossier
+   racine, qui peut recevoir toutes les options de dpll.  
+   ./test (-setv n) (-setc p) (-sets k) (-wlit) (-rand) (-moms)
+   (-dlis) (-graph) -> lance le solveur sur un problème engendré
+   aléatoirement, contenant n variables, et p clauses de taille k,
+   avec les options voulues.
+
+- La génération de graphe renvoie le graphe complet jusqu'au point
+  d'articulation (ce qui n'était pas le cas dans le rendu 3)
 
 -------------------------
 Compilation et exécution :
 -------------------------
 
 Pour compiler, utiliser le makefile :
-- make pour compiler le solveur.
-- make test pour compiler le générateur de test.
-- make graph pour générer le graphe en .pdf après avoir généré le .dot
-- make proof pour générer la preuve en .pdf après avoir généré le .tex
+
+- make pour compiler le solveur, le testeur à la racine, et chacune des
+  options du rendu 4 (./tseitin, ./latin, ./magique, ./sudoku, ./color)
+
+- make test pour compiler le générateur de test (celui qui affiche des graphes de performance)
+
+- make graph pour générer les graphes qui ont été engendrés par le solveur avec l'option -graph
+
 - make clean pour nettoyer les fichiers temporaires.
 
 Pour exécuter les programmes :
 
 - ./dpll (nom_du_fichier) (-wlit) (-rand) (-moms) (-dlis) (-graph) ->
-lance le solveur sur le fichier indiqué en argument (ou le fichier
-ex0.cnf par défaut, dans le répertoire Test), avec les heuristiques
-correspondant aux arguments optionnels qui suivent. L'argument -graph
-permet d'activer l'interactivité du programme.
+  lance le solveur sur le fichier indiqué en argument (ou le fichier
+  ex0.cnf par défaut, dans le répertoire Test), avec les heuristiques
+  correspondant aux arguments optionnels qui suivent. L'argument -graph
+  permet d'activer l'interactivité du programme.
 
 - Dans le répertoire test : ./test (--help pour voir les différentes
-options proposées) : lance le générateur de tests aléatoires.
+  options proposées) : lance le générateur de tests aléatoires.
+
+- Dans tseitin : ./tseitin (nom_du_fichier) -> génère une instance de
+  dpll à partir de la formule logique décrite dans le fichier
+  (Test/form0.cnf par défaut), et lance le solveur pour donner une
+  solution à cette formule.
+
+- Dans enigmes :
+  ./latin n : Génère un carré latin de taille n*n grâce au solveur
+  ./magique n : Génère un carré magique de taille n*n grâce au solveur
+  ./sudoku n : Résout le sudoku décrit à la ligne n dans le fichier enigmes/grilles.txt
+  ./color (nom_du_fichier) k : Résout le problème de k-coloration du graphe décrit dans le fichier (Test/graph0.cnf par défaut)
 
 --------------------------------
 Description rapide du programme :
@@ -53,18 +82,16 @@ Le programme se décompose en plusieurs modules.
     fonctions nécessaires à leur utilisation.
     -> François & Benjamin
 
-- Wlit : Ce module gère l'utilisation des watched literals. Sa
-    fonction principale, update x, prend en entrée une nouvelle
-    assignation et renvoie deux ensembles : celui des clauses
-    satisfaites par cette nouvelle assignation, et celui des
-    assignations nécessaires engendrées par cette dernière. Elle
-    change au passage l'attribution des watched literals.
+- Wlit : Ce module gère l'utilisation des watched literals. 
+    Il contient deux fonctions principales : 
+    - remove : int -> wlit -> wlit, qui réattribue les watched literals lorsque l'on assigne un litéral à vrai.
+    - entail : wlit -> set, qui renvoie l'ensemble des clauses à un seul watched literal
     -> François
 
 - Oper : Ce module gère les opérations propres à DPLL à appliquer sur
     les clauses, indépendamment de leur implémentation. Il gère la
     façon dont sont propagées les assignations, avec ou sans les
-    WatchLiterals.
+    Watched Literals.
     -> François
 
 - Test : Module externe appelant une version moins verbeuse de dpll
@@ -113,18 +140,53 @@ Le programme se décompose en plusieurs modules.
   d'association.
   -> François
 
-- Graph : Génère le graph des conflits.
+- Graph : Affiche le graphe des conflits.
   -> Benjamin
 
-----------------------
-Quelques commentaires :
-----------------------
+- Proof : Affiche la preuve de résolution.
+  -> Benjamin
 
-L'implémentation modulaire des programmes nous a pris un peu de
-temps. Mais on espère que la facilité à le modifier ainsi obtenue nous
-permettra d'en gagner par la suite. Des options de débuggage sont
-incluses dans les modules. Pour les afficher, passer le booléen debug
-du module souhaité à true. Attention, c'est un peu verbeux.
+- Latin : Génère un problème SAT traduisant les contraintes d'un carré latin, sous la forme :
+  - Pour tout couple de cases (i,j) sur une même ligne ou colonne, pour toute valeur k dans [1; n]
+    ~(i a la valeur k) \/ ~(j a la valeur k)
+  - Pour toute case i, (i a la valeur 1)  \/ ... \/ (i a la valeur n)
+  Puis lance le solveur sur cette instance, et traduit la carré obtenu.
+  -> François
+
+- Magique : Génère un carré magique à l'aide d'un carré gréco latin :
+    On génère deux carrés latins diagonaux orthogonaux, c'est à dire
+    qu'en faisant un produit cartésien des deux carrés, on obtient
+    tous les couples de (1,1) à (n,n). On les traduit ensuite par leur
+    valeur en base n, ce qui donne un carré magique.
+    Cette méthode ne fonctionne pas pour n=3, ou n=6, donc on gère ces
+    cas particuliers directement avec un carré magique qui convient.
+    -> François
+
+- Sudoku : Traduit les contraintes d'un sudoku comme un carré latin de
+    taille 9x9, composé de 9 carrés latins de taille 3x3.
+    -> François
+
+- Color : Traduit les contraintes d'une instance de k-color : mêmes
+    clauses que pour le carré latin, en prenant les couples
+    représentés par les arêtes plutôt que les couples sur une même
+    ligne ou même colonne.
+    -> François
+
+- Tseitin : Parse une formule logique, applique tseitin pour obtenir
+    un problème Sat équivalent, lance le solveur dessus et traduit le
+    résultat obtenu.
+    -> François
+
+- Addition : Lit une formule arithmétique composée d'additions et
+    soustractions, et effectue les opérations grâce au solveur DPLL,
+    grâce aux règles logiques de l'addition (ajout de variables pour
+    les bits de retenue et les bits de somme).
+    -> Benjamin
+
+- SMT : Parse des contraintes de congruence, et lance DPLL sur le
+    problème, en vérifiant que le résultat obtenu vérifie ces
+    contraintes.
+    -> Benjamin
 
 ----------------------------------------
 Analyse et comparaison des heuristiques :
