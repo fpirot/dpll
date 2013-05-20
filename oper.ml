@@ -223,8 +223,6 @@ struct
 
   let bindings env = Elt.bindings env.clause
 
-  let init () = ()
-
 end;;
 
 
@@ -247,7 +245,6 @@ sig
   val propagation : cls list -> env -> out_channel -> env
   val bindings : env -> (int * int list list) list
   val find : int -> env -> cls list
-  val init : unit -> unit
 end;;
 
 module Make = (OpCore : OpAbstract);;
