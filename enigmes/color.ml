@@ -87,14 +87,15 @@ end
   else print_string "UNSATISFIABLE\n";;
 
 let main () =
-  let channel = Scanf.Scanning.open_in (try Sys.argv.(1) with _ -> "../Test/graph0.cnf") in
+  let k = ref 3 and s = ref "../Test/graph0.cnf" in
+  Arg.parse [("-setk", Arg.Set_int k, "Number of colors allowed")] (fun x -> s := x) "";
+  let channel = Scanf.Scanning.open_in !s in
   let (n, edge) = load channel in
   let g = {n = n; node = Array.make n (-1); edge = edge} in
-  let k = try int_of_string Sys.argv.(2) with _ -> 3 in
-  reduction k g;
+  reduction !k g;
   let file = open_out "../Test/color.cnf" in
   Solution.write file;
   let _ = Sys.command "./../dpll -naff ../Test/color.cnf" in
-  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g k;;
+  print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt")) g !k;;
 
 main ();;
