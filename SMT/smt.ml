@@ -99,7 +99,19 @@ let check pred eq df =
       if t1 = t2 || r1 = r2
         then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2;;
 
-let valide lst =
+
+
+let (_, t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt");;
+let assoc =
+  let table = Hashtbl.create 257
+  and channel = Scanf.Scanning.ope_in "../Test/assoc.txt" in
+  let rec read =
+    try Scanf.Scanning.bscanf channel "x%d : %d "
+      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); read channel)
+    with End_of_file -> () in table;;
+
+(* Main.table.find x *)
+  
   let (eq, df) = create () in
     List.iter (fun p -> check p eq df);;
 
