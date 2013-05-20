@@ -1,7 +1,7 @@
 module Print =
 struct
 
-  let nbr = 32
+  let nbr = 31
 
   let init = fun n ->
     let bitArray = Array.init nbr (fun i -> n land (1 lsl i) > 0) in
@@ -55,15 +55,42 @@ struct
         Printf.fprintf channel "%d 0\n" (if y k then k + nbr + 1 else -(k + nbr + 1));
       done;
       sum channel;
-      carry channel;
-      
+      carry channel
+
+  let convert () =
+    let channel = Scanf.Scanning.open_in "Test/result.txt"
+    and res = ref 0 in
+      Scanf.bscanf channel "%s %s %d" (fun s1 s2 x -> ());
+      for k = 0 to nbr * 3 - 1 do
+        Scanf.bscanf channel " %d" (fun x -> ())
+      done;
+      for k = 0 to nbr - 2 do
+        Scanf.bscanf channel " %d" (fun x -> if x > 0 then res := !res + (1 lsl k))
+      done;
+      Scanf.bscanf channel " %d" (fun x -> if x > 0 then max_int - (!res + 1) else !res)
+
 
 end;;
 
+let calcul x y =
+  let channel = open_out "add" in
+    Print.add channel x y;
+    close_out channel;
+    let _ = Sys.command "./dpll -naff add" in
+      Print.convert ();;
+
+let rec add x = Scanf.scanf " %c" (fun c -> match c with
+  |'+' -> Scanf.scanf " %d" (fun y -> add (calcul x y))
+  |'-' -> Scanf.scanf " %d" (fun y -> add (min_int + calcul x (-y))) (* Complement a deux *)
+  |_ -> print_int x; print_newline ());;
+
+Scanf.scanf " %d" (fun x -> add x);;
+  
 
 (* Tests *)
 
 
+(*
 let add x y =
 
   let channel = open_out "add" in
@@ -92,4 +119,4 @@ let verif nbr =
   auxi true nbr;;
 
 verif 256;;
-
+*)
