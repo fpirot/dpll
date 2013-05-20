@@ -1,4 +1,6 @@
 open Solution;;
+open Type;;
+open Main;;
 
 (* ***************************************************************** *)
 (* Structure union-find a la 'objet' utilisant les tables de hachage *)
@@ -49,12 +51,6 @@ let create () =
 (* ************** *)
 (* Le SMT checker *)
 (* ************** *)
-
-
-type terms = Fun of string * terms list | Cst of string
-type predicat = Equal of terms * terms | Diff of terms * terms;;
-type formule = Pred of predicat | Or of formule * formule | And of formule * formule
-             | Not of formule | Imply of formule * formule | Var of int;;
 
 exception Inconsistent of formule;;
 
