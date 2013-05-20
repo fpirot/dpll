@@ -61,7 +61,7 @@ let arity =
     fun x n -> if search x n <> n then failwith "Signature mismatch";;
 
 (* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
-let newEqual t1 t2 r1 r2 = [Pred(Equal (r1, r2)); Not(Pred(Equal(r1, t1)); Not(Pred(Equal (r2, t2)))];;
+let newEqual t1 t2 r1 r2 = [Pred(Equal (r1, r2)); Not(Pred(Equal(r1, t1))); Not(Pred(Equal (r2, t2)))];;
 (* Idem en cas d'incoherence sur une inegalite  *)
 let newDiff t1 t2 r1 r2 = [Pred(Equal (t1, t2)); Not(Pred(Equal(r1, t1))); Not(Pred(Equal (r2, t2)))];;
 
@@ -106,15 +106,15 @@ let (valu, assoc) =
   and autre = Hashtbl.create 257
   and channel = Scanf.Scanning.open_in "../Test/assoc.txt" in
   let rec read =
-    try Scanf.Scanning.bscanf channel "x%d : %d "
-      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); Hashtbl.add autre x n; read channel)
+    try Scanf.bscanf channel "x%d : %d "
+      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); Hashtbl.add autre x n; read)
     with End_of_file -> () in
   (table, autre);;
 
 module Make = struct
 let validity () =
   let (eq, df) = create () in
-  try Hashtbl.iter (fun x b-> match Main.table.find x, b with
+  try Hashtbl.iter (fun x b-> match (Main.table.find x, b) with
       |Equal(a, b), true -> check (Equal(a, b)) eq df
       |Equal(a, b), false -> check (Diff(a, b)) eq df  
       |Diff(a, b), true -> check (Diff(a, b)) eq df   
