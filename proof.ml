@@ -83,7 +83,7 @@ struct
     proof channel a f_get f_size f_id f_elt;
     Printf.fprintf channel "\n\092end{document}";
     close_out channel;
-    let _ = Sys.command "pdflatex proof.tex; rm -f *.aux *.log; evince proof.pdf &" in ()
+    let _ = Sys.command "pdflatex proof.tex; rm -f *.aux *.log; evince proof.pdf; rm -f *.tex proof.pdf" in ()
       
 end;;
 
