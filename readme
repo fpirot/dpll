@@ -38,25 +38,32 @@ Pour compiler, utiliser le makefile :
 
 Pour exécuter les programmes :
 
-- ./dpll (nom_du_fichier) (-wlit) (-rand) (-moms) (-dlis) (-graph) ->
-  lance le solveur sur le fichier indiqué en argument (ou le fichier
-  ex0.cnf par défaut, dans le répertoire Test), avec les heuristiques
-  correspondant aux arguments optionnels qui suivent. L'argument -graph
-  permet d'activer l'interactivité du programme.
+- Dans la racine :
+    ./dpll (nom_du_fichier) (-wlit) (-rand) (-moms) (-dlis) (-graph) ->
+     lance le solveur sur le fichier indiqué en argument (ou le
+     fichier ex0.cnf par défaut, dans le répertoire Test), avec les
+     heuristiques correspondant aux arguments optionnels qui
+     suivent. L'argument -graph permet d'activer l'interactivité du
+     programme.
+     ./arith (< nom_du_fichier) -> lance le solveur pour calculer une
+     formule arithmétique (celle-ci doit se terminer par un symbole
+     spécial, par exemple '=' ou ';')
 
-- Dans le répertoire test : ./test (--help pour voir les différentes
-  options proposées) : lance le générateur de tests aléatoires.
+- Dans le répertoire test : 
+    ./test (--help pour voir les différentes options proposées) :
+    lance le générateur de tests aléatoires.
 
-- Dans tseitin : ./tseitin (nom_du_fichier) -> génère une instance de
-  dpll à partir de la formule logique décrite dans le fichier
-  (Test/form0.cnf par défaut), et lance le solveur pour donner une
-  solution à cette formule.
+- Dans tseitin : 
+    ./tseitin (nom_du_fichier) -> génère une instance de dpll à partir
+    de la formule logique décrite dans le fichier (Test/form0.cnf par
+    défaut), et lance le solveur pour donner une solution à cette
+    formule.
 
 - Dans enigmes :
-  ./latin n : Génère un carré latin de taille n*n grâce au solveur
-  ./magique n : Génère un carré magique de taille n*n grâce au solveur
-  ./sudoku n : Résout le sudoku décrit à la ligne n dans le fichier enigmes/grilles.txt
-  ./color (nom_du_fichier) k : Résout le problème de k-coloration du graphe décrit dans le fichier (Test/graph0.cnf par défaut)
+    ./latin n : Génère un carré latin de taille n*n grâce au solveur
+    ./magique n : Génère un carré magique de taille n*n grâce au solveur
+    ./sudoku n : Résout le sudoku décrit à la ligne n dans le fichier enigmes/grilles.txt
+    ./color (nom_du_fichier) k : Résout le problème de k-coloration du graphe décrit dans le fichier (Test/graph0.cnf par défaut)
 
 --------------------------------
 Description rapide du programme :
