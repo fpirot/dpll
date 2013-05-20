@@ -70,7 +70,8 @@ struct
     head channel;
     proof channel a f_get f_size f_id f_elt;
     Printf.fprintf channel "\n\092end{document}";
-    close_out channel
+    close_out channel;
+    let _ = Sys.command "pdflatex proof.tex; rm -f *.aux *.log; evince proof.pdf &" in ()
       
 end;;
 

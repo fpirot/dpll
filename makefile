@@ -36,8 +36,14 @@ test :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\# Test\*.exe
 
 graph :
-	for file in `ls Graph`; do dot -Tpdf Graph/$$file -o Graph/$$file.pdf; done
-
+	if [ -d Graph/ ]; \
+	  then ( for file in `ls Graph`; \
+		   do dot -Tpdf Graph/$$file -o Graph/$$file.pdf; \
+		 done ) ; \
+	  else : ; \
+	fi
+	rm -f Graph/*.dot
+	
 proof :
 	pdflatex proof.tex -outpout-directory Latex
 	rm -rf *.log *.aux *.tex

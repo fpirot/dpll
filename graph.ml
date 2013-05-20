@@ -14,17 +14,18 @@ end;;
 module Print = functor (Cor : CoreElt) ->
 struct
 
-  let _ = try if Sys.file_exists "Graph/*" then Sys.command "rm -R Graph/*" else 0 with _ -> Sys.command "mkdir Graph/"
+  let _ = Sys.command "if [ -d Graph/ ]; then : ; else mkdir Graph/; fi"
 
-  let fresh =
-    let compt = ref 0 in
-    fun () -> incr compt; !compt
+  let compt = ref 0
+
+  let fresh () = incr compt; !compt
 
   let colors channel arr =
     Printf.fprintf channel "\nfalse[style=filled,shape=box,color=crimson];";
     Array.iteri (fun i x -> if x then (*let v = abs_float (4. *. float (Cor.depth (i+1))) /. (float Cor.var) in*)
 	Printf.fprintf channel "\n%d[style=filled,color=cornflowerblue];" (Cor.read (i+1))) arr 
-      
+  (* Attribue leur couleur aux noeuds du graphe. *)  
+    
   let rec others channel test = function
     |[] -> ()
     |(x, y):: l -> if test x y then
@@ -37,11 +38,9 @@ struct
 
 
   let file cls arr (lcur, loth) =
-    
     let test =
       let mat = Array.create_matrix Cor.var Cor.var true in
       fun x y -> let b = abs x <> abs y && mat.(abs x - 1).(abs y - 1) in mat.(abs x - 1).(abs y - 1) <- false; b in
-
     let channel =
       open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
     Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" Cor.var Cor.var;
@@ -52,7 +51,7 @@ struct
     Printf.fprintf channel "\n}";
     others channel test loth;
     Printf.fprintf channel "\n}";
-    close_out channel
+    close_out channel;
 
 end;;
 
