@@ -10,8 +10,6 @@ exception Unsatisfiable;;
 
 let debug = false;;
 
-let print_graph () = ();;
-
 let rec new_cls n = if n = Core.nb_cls() then [] else n :: (new_cls (n+1));;
 
 let rec valuation n =
@@ -35,7 +33,6 @@ let print_list l =
     |[a] -> print_int a; print_string "]"
     |a::l -> print_int a; print_string "; "; print l in
   print_string "["; print l
-
 
 let dpll env =
   let channel = open_out "log" in  
@@ -71,11 +68,8 @@ let dpll env =
     with Oper.Backtrack k -> if k = i then
 	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
       else raise (Oper.Backtrack k)
-  in
-  Oper.init();
-  (* Gère l'initialisation des structures référentes. *)
-  if Oper.is_empty env then raise Core.Satisfiable
-  else aux 0 env;;
+  in if Oper.is_empty env then raise Core.Satisfiable
+    else aux 0 env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
 

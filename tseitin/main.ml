@@ -59,4 +59,10 @@ Solution.write file;
 let _ = Sys.command "./../dpll -naff ../Test/tseitin.cnf" in
 print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt"));;
 
+module Make = struct
+  type var = string
+  type form = Var of var | Or of formule * formule | And of formule * formule | Not of formule | Imply of formule * formule
+  val tseitin : form -> unit
+end;;
+
 main ()
