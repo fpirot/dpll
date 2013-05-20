@@ -1,53 +1,73 @@
+open Solution;;
+
 (* ***************************************************************** *)
 (* Structure union-find a la 'objet' utilisant les tables de hachage *)
 (* ***************************************************************** *)
 
 type ('a, 'b) unionFind = {union : 'a -> 'b -> unit; find : 'a -> 'b; (*iter : ('a -> 'b -> unit) -> unit*)};;
+type ('a, 'b) set = {add :'a -> 'b -> unit; exists : 'a -> 'a -> bool};;
 
 let create () =
 
   (* La valeur 257 est arbitraire dans l'ordre de grandeur du nombre de predicats. *)
-  let table = Hashtbl.create 257 in
-  let search x = try Hashtbl.find table x with Not_found -> Hashtbl.add table x x; x in 
+  let ufTable = Hashtbl.create 257 in
+  let ufSearch x = try Hashtbl.find ufTable x with Not_found -> Hashtbl.add ufTable x x; x in 
 
+  let setTable = Hashtbl.create 257 in  
+  let setSearch x = try Hashtbl.find setTable x with Not_found -> Hashtbl.add setTable x []; [] in
+
+  let exists x y = List.exists (fun z -> z = y) (setSearch x) in
+  let add x y = let l = setSearch x in
+      if List.exists (fun z -> z = y) l then () else Hashtbl.add setTable x (y::l) in
+  let update x y =  List.iter (fun z -> add z y; add y z) (setSearch x) in
+  
   (* La recherche... *)
   let rec find i =
-    if search i = i then i
+    if ufSearch i = i then i
     else begin
-      let j = find (search i) in
-        Hashtbl.replace table i j; j
+      let j = find (ufSearch i) in
+        Hashtbl.replace ufTable i j;
+        update i j; j
     end in
   (* ...et l'union. *)
   let union i j =
-    if compare (search i) (search j) < 0 then
-      Hashtbl.replace table (search (find j)) (search i)
+    if compare (ufSearch i) (ufSearch j) < 0 then
+      let j' = ufSearch (find j)
+      and i' = ufSearch i in
+        Hashtbl.replace ufTable j' i';
+        update j' i';
     else
-      Hashtbl.replace table (search (find i)) (search j) in
+      let i' = ufSearch (find i)
+      and j' = ufSearch j in
+        Hashtbl.replace ufTable i' j';
+        update i' j' in
 
-  {union = union; find = find; (*iter = fun f -> Hashtbl.iter f table*)};;
 
+  ({union = union; find = find; (*iter = fun f -> Hashtbl.iter f table*)},
+  {add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)});;
 
 (* ************** *)
 (* Le SMT checker *)
 (* ************** *)
 
-exception Inconsistent;;
 
 type terms = Fun of string * terms list | Cst of string
 type predicat = Equal of terms * terms | Diff of terms * terms;;
 type formule = Pred of predicat | Or of formule * formule | And of formule * formule
              | Not of formule | Imply of formule * formule | Var of int;;
 
+exception Inconsistent of formule;;
+
 (* Verifie la coherence de l'arite des symboles de fonction. *)
 let arity =
   let table = Hashtbl.create 257 in
   let search x n = try Hashtbl.find table x with Not_found -> Hashtbl.add table x n; n in 
-    fun x n -> if search x n <> n then raise Inconsistent;;
+    fun x n -> if search x n <> n then failwith "Signature mismatch";;
 
 (* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
-let newEqual t1 t2 r1 r2 = Or(Pred(Diff (t1, t2)), Or (Pred(Equal(r1, t1)), Pred(Equal (r2, t2))));;
+let newEqual t1 t2 r1 r2 = Or(Pred(Equal (r1, r2)), Or (Not(Pred(Equal(r1, t1))), Not(Pred(Equal (r2, t2)))));;
 (* Idem en cas d'incoherence sur une inegalite  *)
-let newDiff t1 t2 r1 r2 = Or(Pred(Equal (t1, t2)), Or (Pred(Diff(r1, t1)), Pred(Diff (r2, t2))));;
+let newDiff t1 t2 r1 r2 = Or(Pred(Equal (t1, t2)), Or (Not(Pred(Equal(r1, t1))), Not(Pred(Equal (r2, t2)))));;
 
 (* Met a jour les structure union-find tout en verifiant la coherence. *)
 let check pred eq df = 
@@ -57,18 +77,18 @@ let check pred eq df =
     |(Cst a , Cst b) -> eq.union (Cst a) (Cst b)
     |(Fun (a, l1), Fun (b, l2)) -> arity a (List.length l1); arity b (List.length l2);
       eq.union (Fun (a, l1)) (Fun (b, l2)); iter_equal (l1, l2)
-    |_ -> raise Inconsistent
+    |_ -> failwith "Signature mismatch"
   and iter_equal = function
     |([], []) -> ()
     |(a::l1, b::l2) -> equal (a, b) ; iter_equal (l1, l2)
-    |_ -> raise Inconsistent in
+    |_ -> failwith "Signature mismatch" in
 
   (* ...et de l'inegalite. *)
   let rec diff = function
-    |(Cst a , Cst b) -> df.union (Cst a) (Cst b)
+    |(Cst a , Cst b) -> df.add (eq.find (Cst a)) (eq.find (Cst b))
     |(Fun (a, l1), Fun (b, l2)) ->  arity a (List.length l1); arity b (List.length l2);
-      df.union (Fun (a, l1)) (Fun (b, l2)); iter_diff (l1, l2)
-    |(t1, t2) -> df.union t1 t2
+      df.add (eq.find (Fun (a, l1))) (eq.find (Fun (b, l2))); iter_diff (l1, l2)
+    |(t1, t2) -> df.add (eq.find t1) (eq.find t2)
   and iter_diff = function
     |([], []) -> ()
     |(a::l1, b::l2) -> diff (a, b) ; iter_diff (l1, l2)
@@ -76,22 +96,21 @@ let check pred eq df =
 
   (* Lors d'une union pour l'egalite on verifie la disjonction pour l'inegalite, et vice et versa. *)
   match pred with
-    |Equal(t1, t2) -> if t1 <> t2 && eq.find (df.find t1) = eq.find (df.find t2)
-      then raise Inconsistent else equal (t1, t2); eq.union t1 t2
-    |Diff(t1, t2) -> if t1 = t2 || df.find (eq.find t1) = df.find (eq.find t2)
-      then raise Inconsistent else diff (t1, t2); df.union t1 t2;;
-
+    |Equal(t1, t2) -> let r1 = eq.find t1 and r2 = eq.find t2 in
+      if t1 <> t2 && df.exists r1 r2
+        then raise (Inconsistent (newEqual t1 t2 r1 r2)) else equal (t1, t2); eq.union t1 t2
+    |Diff(t1, t2) -> let r1 = eq.find t1 and r2 = eq.find t2 in
+      if t1 = t2 || r1 = r2
+        then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2;;
 
 let valide lst =
-  let eq = create ()
-  and df = create () in
+  let (eq, df) = create () in
     List.iter (fun p -> check p eq df);;
 
 (* Tests *)
 
 
-let eq = create ()
-and df = create ();;
+let (eq, df) = create ();;
 check (Equal(Cst"a", Cst"b")) eq df;;
 check (Diff(Cst"c", Cst"b")) eq df;;
 check (Equal(Cst"c", Cst"d")) eq df;;
@@ -115,4 +134,41 @@ test.union 1 0;;
 test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
 test.find 7;;
 test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
+*)
+
+(*
+let uf () =
+
+  (* La valeur 257 est arbitraire dans l'ordre de grandeur du nombre de predicats. *)
+  let table = Hashtbl.create 257 in
+  let search x = try Hashtbl.find table x with Not_found -> Hashtbl.add table x x; x in 
+
+  (* La recherche... *)
+  let rec find i =
+    if search i = i then i
+    else begin
+      let j = find (search i) in
+        Hashtbl.replace table i j; j
+    end in
+  (* ...et l'union. *)
+  let union i j =
+    if compare (search i) (search j) < 0 then
+      Hashtbl.replace table (search (find j)) (search i)
+    else
+      Hashtbl.replace table (search (find i)) (search j) in
+
+  {union = union; find = find; (*iter = fun f -> Hashtbl.iter f table*)};;
+
+
+
+let set () =
+
+  let table = Hashtbl.create 257 in  
+  let search x = try Hashtbl.find table x with Not_found -> Hashtbl.add table x []; [] in
+  
+    let exists x y = List.exists (fun z -> z = y) (search x)
+    and add x y = let l = search x in
+      if List.exists (fun z -> z = y) l then () else Hashtbl.add table x (y::l) in
+  
+{add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)};;
 *)
