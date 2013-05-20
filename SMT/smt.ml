@@ -52,7 +52,7 @@ let create () =
 (* Le SMT checker *)
 (* ************** *)
 
-exception Inconsistent of formule;;
+exception Inconsistent of formule list;;
 
 (* Verifie la coherence de l'arite des symboles de fonction. *)
 let arity =
@@ -61,9 +61,9 @@ let arity =
     fun x n -> if search x n <> n then failwith "Signature mismatch";;
 
 (* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
-let newEqual t1 t2 r1 r2 = Or(Pred(Equal (r1, r2)), Or (Not(Pred(Equal(r1, t1))), Not(Pred(Equal (r2, t2)))));;
+let newEqual t1 t2 r1 r2 = [Pred(Equal (r1, r2)); Not(Pred(Equal(r1, t1)); Not(Pred(Equal (r2, t2)))];;
 (* Idem en cas d'incoherence sur une inegalite  *)
-let newDiff t1 t2 r1 r2 = Or(Pred(Equal (t1, t2)), Or (Not(Pred(Equal(r1, t1))), Not(Pred(Equal (r2, t2)))));;
+let newDiff t1 t2 r1 r2 = [Pred(Equal (t1, t2)); Not(Pred(Equal(r1, t1))); Not(Pred(Equal (r2, t2)))];;
 
 (* Met a jour les structure union-find tout en verifiant la coherence. *)
 let check pred eq df = 
@@ -102,22 +102,30 @@ let check pred eq df =
 
 
 let (_, t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt");;
-let assoc =
+let assoc x =
   let table = Hashtbl.create 257
   and channel = Scanf.Scanning.ope_in "../Test/assoc.txt" in
   let rec read =
     try Scanf.Scanning.bscanf channel "x%d : %d "
       (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); read channel)
-    with End_of_file -> () in table;;
+    with End_of_file -> () in
+  table;;
 
-(* Main.table.find x *)
-  
+let validity () =
+
   let (eq, df) = create () in
-    List.iter (fun p -> check p eq df);;
+  try Hashtbl.iter (fun x b-> match Main.table.find x, b with
+      |Equal(a, b), true -> check (Equal(a, b)) eq df
+      |Equal(a, b), false -> check (Diff(a, b)) eq df  
+      |Diff(a, b), true -> check (Diff(a, b)) eq df   
+      |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc with
+  Inconsistent(a) -> a;;
+  
+
 
 (* Tests *)
 
-
+(*
 let (eq, df) = create ();;
 check (Equal(Cst"a", Cst"b")) eq df;;
 check (Diff(Cst"c", Cst"b")) eq df;;
@@ -125,6 +133,7 @@ check (Equal(Cst"c", Cst"d")) eq df;;
 check (Diff(Cst"a", Cst"d")) eq df;;
 check (Equal(Cst"a", Cst"e")) eq df;;
 check (Equal(Cst"c", Cst"e")) eq df;;
+*)
 (*
 let test = create ();;
 test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
