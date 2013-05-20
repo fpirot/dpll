@@ -39,8 +39,9 @@ struct
     let channel =
       open_out ("Graph/graph"^(string_of_int (fresh ()))^".dot") in
     Printf.fprintf channel "digraph G {\nsize =\034%d, %d\034;" Cor.var Cor.var;
+    (*Printf.fprintf channel "\nsubgraph current_level{";*)
     colors channel arr;
-    Printf.fprintf channel "\nsubgraph current_level{";
+    (*Printf.fprintf channel "\n}";*)
     Cor.iter (fun x -> Printf.fprintf channel "\n%d -> false" (Cor.read x)) cls;
     node channel test lst;
     Printf.fprintf channel "\n}";
