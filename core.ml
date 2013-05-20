@@ -235,7 +235,7 @@ struct
 
   let cls_make id = id
 
-  let cls_fold f cls = Cls.fold f (clause cls)
+  let cls_fold f cls = Cls.fold (fun x v -> if read x = 0 then f x v else v) (clause cls)
   
   let iter f cls = Cls.iter f (clause cls)
 

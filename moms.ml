@@ -65,7 +65,7 @@ struct
 
   let create () =
     let rec make_list l = function
-      |0 -> Cor.cls_make 0 :: l
+      |0 -> l
       |n -> make_list (Cor.cls_make (n-1) :: l) (n-1) in
     let l = make_list [] (Cor.nb_cls ()) in
     add l Map.empty
