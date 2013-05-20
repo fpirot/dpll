@@ -25,7 +25,8 @@ let main() =
 	     ("-wlit", Arg.Unit (fun () -> s := (!s)^" -wlit"), "Watched Literals");
 	     ("-rand", Arg.Unit (fun () -> s := (!s)^" -rand"), "Random choice");
 	     ("-moms", Arg.Unit (fun () -> s := (!s)^" -moms"), "Most Occurences in clauses of Minimum Size");
-	     ("-dlis", Arg.Unit (fun () -> s := (!s)^" -dlis"), "Dynamic Largest Individual Sum")] (fun x -> ()) "";
+	     ("-dlis", Arg.Unit (fun () -> s := (!s)^" -dlis"), "Dynamic Largest Individual Sum");
+	     ("-graph", Arg.Unit (fun () -> s := (!s)^" -graph"), "Displays the graph options")] (fun x -> ()) "";
   let file = open_out "Test/ex0.cnf" in
   random_sat !n !p !k;
   Solution.write file;
