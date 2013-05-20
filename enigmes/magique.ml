@@ -84,19 +84,40 @@ let printint x =
 (* Affiche un entier sur un nombre de caractères fixé, en
    complétant avec des espaces. *)
 
+let print_matrix = Array.iter (fun vect -> Array.iter (fun x -> printint x; print_string " ") vect; print_newline())
+
 let print_solution (b,t) =
   if b then begin
     print_string "SATISFIABLE\n";
-    Array.iter (fun vect -> Array.iter (fun x -> printint x; print_string " ") vect; print_newline()) (transformation (solution t))
+    print_matrix (transformation (solution t))
   end
   else print_string "UNSATISFIABLE\n";;
 
 let main () =
-  reduction ();
-  let file = open_out "../Test/latin.cnf" in
-  Solution.write file;
-  let _ = Sys.command "./../dpll -naff -dlis ../Test/latin.cnf" in
-  let (b,t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt") in
-  print_solution (b,t);;
+  (* On ne peut pas trouver de carré gréco-latin diagonal d'ordre n = 3
+     ou n = 6, bien que des carrés magiques de ces ordres existent. *)
+  if n = 3 then begin
+    print_string "SATISFIABLE\n"; 
+    print_matrix [|[|2; 7; 6|];
+		   [|9; 5; 1|];
+		   [|4; 3; 8|]|]
+  end
+  else if n = 6 then begin
+    print_string "SATISFIABLE\n";
+    print_matrix [|[|6; 25; 24; 13; 7; 36|];
+		   [|35; 11; 14; 20; 29; 2|];
+		   [|33; 27; 16; 22; 10; 3|];
+		   [|4; 28; 15; 21; 9; 34|];
+		   [|32; 8; 23; 17; 26; 5|];
+		   [|1; 12; 19; 18; 30; 31|]|]
+  end
+  else begin
+    reduction ();
+    let file = open_out "../Test/latin.cnf" in
+    Solution.write file;
+    let _ = Sys.command "./../dpll -naff -dlis ../Test/latin.cnf" in
+    let (b,t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt") in
+    print_solution (b,t)
+  end;;
 
 main();;

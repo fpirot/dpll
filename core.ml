@@ -2,7 +2,6 @@
 
 module Load =
 struct
-
   exception Useless
 
   let rec insert x = function
@@ -19,45 +18,38 @@ struct
 	    else
 	      (m, y) :: (m', y') :: l'
 
-
   let add x l = if List.exists (fun y -> y = -x) l then raise Useless else x::l
-
 
   let rec read s channel = Scanf.bscanf channel "%0c"
     (fun c -> if c = 'c' then
 	read (Scanf.bscanf channel "%[^\n]\n" (fun x -> s^ x ^ "\n")) channel
       else s)
 
-
   let init str n channel =
     let rec next () = match Scanf.bscanf channel " %d " (fun x -> x) with
       | 0 -> ()
-      | n -> next ()
-	
+      | n -> next ()	
     and iter s c lst lstC ensV = function
-      | 0 -> let s = read s channel in Scanf.bscanf channel " %d "
+      | 0 -> let s = read s channel in 
+	     Scanf.bscanf channel " %d "
 	       (fun x -> if x = 0 then (c + 1, ensV :: lstC, lst, s)
 		 else begin
 		   try iter s c (insert (abs x) lst) lstC (add x ensV) 0 with
 		       Useless -> (c, lstC, lst, s) end)
-      | n -> let s = read s channel in Scanf.bscanf channel " %d "
+      | n -> let s = read s channel in 
+	     Scanf.bscanf channel " %d "
 	       (fun x -> if x = 0 then
 		   iter s c lst (ensV :: lstC) [] (n - 1)
 		 else begin
 		   try iter s c (insert (abs x) lst) lstC (add x ensV) n with
 		       Useless ->
-			 (next (); iter s (c - 1) lst lstC [] (n - 1)) end) in
-    
-    iter str n [] [] [] n;;
-
+			 (next (); iter s (c - 1) lst lstC [] (n - 1)) end)
+    in iter str n [] [] [] n;;
 
   let load channel =
     let s = read "" channel (*try Scanf.bscanf channel "c %s@\n" (fun x -> x ^ "\n") with _ -> ""*) in
     Scanf.bscanf channel "p cnf %d %d" (fun v c -> (v, init s (c-1) channel))
-
 end;;
-
-
 (* Regroupe les modules d'initialisation *)
 
 module Core =
@@ -68,7 +60,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable of cls
 
-  let debug = false
+  let debug = true
 
   let printint x =
     let e = if x < 0 then 1 else 0 in
@@ -304,23 +296,24 @@ struct
 	end
       else (c,s)) cls (c,s) in
     (* Actualise la clause engendrée et l'ensemble des litéraux propagés en cours, à partir d'une clause cls. *)
-    let rec aux c s p x0 = 
-      (* s est un ensemble de litéraux; on utilisera les
-	 opérations sur les clauses pour le manipuler. c est la
-	 clause engendrée en cours p est la preuve en cours. x0
-	 est le pari s'il a été rencontré dans la clause
-	 engendrée en cours, 0 sinon. *)
+    let rec aux c s p x0 g = 
+      (* s est un ensemble de litéraux; on utilisera les opérations
+	 sur les clauses pour le manipuler. c est la clause engendrée
+	 en cours p est la preuve en cours. x0 est le pari s'il a été
+	 rencontré dans la clause engendrée en cours, 0 sinon. g est
+	 la liste des arêtes dans le graphe de conflits. *)
       let x = try Cls.choose s with Not_found -> 0 in
       if x = 0 then 
-	if x0 <> 0 then (c, x0, p)
+	if x0 <> 0 then (c, x0, p, g)
 	else failwith "Problème lors de l'apprentissage de clause"
       else let s1 = Cls.remove x s in
 	   (* On s'arrête quand on a trouvé un point d'articulation. *)
-	   if Cls.is_empty s1 && x0 = 0 then (Cls.add x c, x, p)
+	   if Cls.is_empty s1 && x0 = 0 then (Cls.add x c, x, p, g)
 	   else let f = father x in
-		if f = -1 then aux (Cls.add x c) s1 p x
+		if f = -1 then aux (Cls.add x c) s1 p x g
 		else let c1 = clause f in
 		     let (c2,s2) = add c1 c s1 in
+		     let g' = Cls.fold (fun y l -> if y = x then l else (read y, x) :: l) c1 g in 
 		     if debug then begin
 		       print_string "Clause père de "; 
 		       print_int x; 
@@ -329,22 +322,24 @@ struct
 		       print_string "\nNouveau set: ";
 		       print_list (Cls.elements s2);
 		       print_newline() end;
-		     aux c2 s2 (Proof.build (Cls.union c2 s2) c1 p) x0 in
+		     aux c2 s2 (Proof.build (Cls.union c2 s2) c1 p) x0 g' in
   (* Renvoie la clause engendrée par le backtrack. *)
   let (c1,s) = add c Cls.empty Cls.empty in
   if debug then begin
     print_string "Set de départ: ";
     print_list (Cls.elements s);
     print_newline() end;
-  aux c1 s (Proof.singleton c) 0
+  aux c1 s (Proof.singleton c) 0 []
   (* Génère une preuve de résolution à partir d'une clause
      insatisfaite c, et donne en plus la valeur du potentiel
      point d'articulation. *)
 
-  let proof c = let (_,x,p) = calcul (clause c) in p
+  let proof c = (fun (x, y, z, t) -> z) (calcul (clause c))
+
+  let graphe c = (fun (x, y, z, t) -> t) (calcul (clause c))
 
   let backtrack c b =
-    let (c1,x,p) = calcul (clause c) in
+    let (c1,x,_,_) = calcul (clause c) in
     let d = Cls.fold (fun y d -> if y <> x then max (depth y) d else d) c1 0 in
     (* On cherche la profondeur de backtrack maximale dans cette
        clause. *)
@@ -397,6 +392,7 @@ sig
   val backtrack : cls -> bool -> int
   val father : int -> cls
   val proof : cls -> proof
+  val graphe : cls -> (int * int) list
   val get : proof -> (int list * proof * proof)
   val size : proof -> int
 end;;
