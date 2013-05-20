@@ -81,7 +81,7 @@ let calcul x y =
 
 let rec add x = Scanf.scanf " %c" (fun c -> match c with
   |'+' -> Scanf.scanf " %d" (fun y -> add (calcul x y))
-  |'-' -> Scanf.scanf " %d" (fun y -> add (min_int + calcul x (-y))) (* Complement a deux *)
+  |'-' -> Scanf.scanf " %d" (fun y -> add ((calcul x (-y)) - max_int - 1)) (* Complement a deux *)
   |_ -> print_int x; print_newline ());;
 
 Scanf.scanf " %d" (fun x -> add x);;
