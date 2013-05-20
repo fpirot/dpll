@@ -8,8 +8,8 @@ let table =
   and ptovTable = Hashtbl.create 257
   and vtopTable = Hashtbl.create 257 in
   let var p = try Hashtbl.find ptovTable p with Not_found -> incr compt; Hashtbl.add ptovTable p !compt; !compt
-  and pred n x = let _ = try Hashtbl.find vtopTable n with Not_found -> Hashtbl.add vtopTable n x; x in () in
-  {add = (fun x -> pred (var x) x; !compt);
+  and pred n x = try Hashtbl.find vtopTable n with Not_found -> Hashtbl.add vtopTable n x; x in
+  {add = (fun x -> pred (var x) x);
    find = (fun n -> Hashtbl.find vtopTable n)};;
 
 let rec convert_formule = function
