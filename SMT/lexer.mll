@@ -25,9 +25,9 @@ rule lexer = parse
   { EQUAL }
 | "!="
   { DIFF }
-| "\\"
+| ['_' 'a'-'z' 'A'-'Z'] ['_' 'a'-'z' 'A'-'Z' '0'-'9']*
   { FUN (Lexing.lexeme lexbuf) }
-| ['_''a'-'z' 'A'-'Z'] ['_''a'-'z' 'A'-'Z' '0'-'9']* [',']
+| ['_' 'a'-'z' 'A'-'Z'] [',' '_' 'a'-'z' 'A'-'Z' '0'-'9']*
   { VARV (Lexing.lexeme lexbuf) }
 | ['_''a'-'z' 'A'-'Z'] ['_''a'-'z' 'A'-'Z' '0'-'9']*
   { VAR (Lexing.lexeme lexbuf) }

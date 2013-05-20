@@ -3,16 +3,12 @@ module Clause = Clause.Make (Core);;
 module Wlit = Wlit.Make (Core);;
 module Graph = Graph.Make (Core);;
 module Proof = Proof.Make (Core);;
-module Order = Order.Make (Core) (Clause);;
+module Order = Order.Make (Core);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
 
-exception TimeOut;;
-let debug = false;;
+exception Unsatisfiable;;
 
-let (set_time, get_time) =
-  let t = ref 0. in
-  ((fun () -> t := Sys.time()),
-   (fun () -> if Sys.time() -. !t > 10. then raise TimeOut))
+let debug = false;;
 
 let print_graph () = ();;
 
@@ -40,17 +36,16 @@ let print_list l =
     |a::l -> print_int a; print_string "; "; print l in
   print_string "["; print l
 
+
 let dpll env =
-  set_time();
   let channel = open_out "log" in  
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
-    get_time();
     let nb_cls = Core.nb_cls () in
     if i = 0 then begin
       Core.restore 0;
       Core.fix_depth 0;
-      propag (new_cls 0) env nb_cls 0
+      try propag (new_cls 0) env nb_cls 0 with Oper.Backtrack(0) -> raise Unsatisfiable
     end else begin
       if Oper.is_empty env then raise Core.Satisfiable
       else let x = Oper.extract env in
@@ -83,6 +78,7 @@ let dpll env =
   else aux 0 env;;
 (* Renvoie l'exception Satisfiable dans le cas où l'instance est
    satisfiable, ou Unsatisfiable dans le cas contraire. *)
+
 
 try dpll (Oper.create ()) with 
   |Core.Satisfiable -> if verify Core.lst then print_string "SATISFIABLE\n" else print_string "ERROR\n"

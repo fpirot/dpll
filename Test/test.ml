@@ -40,11 +40,10 @@ struct
     (!m, !n, (!v1, !v2), (!c1, !c2), (!s1, !s2), !p)
 
   let start () =
-    print_int (Sys.command "rm -R Test/*");
-    print_newline();
+    let _ = try (if Sys.is_directory "Tmp/" then Sys.command "rm -R Tmp/*" else 0) with _ -> Sys.command "mkdir Tmp" in
     for k = 0 to nbr do
-      print_int (Sys.command ("mkdir Test/"^(string_of_int k)))
-    done; print_newline()
+      let _ = Sys.command ("mkdir Tmp/"^(string_of_int k)) in ()
+    done
 
   let random_literal v = 
     Random.self_init();

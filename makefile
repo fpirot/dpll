@@ -18,7 +18,7 @@ all :
 	cd enigmes/; make; cd ..
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
 
-test :
+generate :
 	ocamlc -a da.ml -o da.cma
 	ocamlc da.cma -a core.ml -o core.cma
 	ocamlc -a rand.ml -o rand.cma
