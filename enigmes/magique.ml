@@ -115,7 +115,8 @@ let main () =
     reduction ();
     let file = open_out "../Test/latin.cnf" in
     Solution.write file;
-    let _ = Sys.command "./../dpll -naff -dlis ../Test/latin.cnf" in
+    let _ = try Sys.command "./../dpll -naff -dlis ../Test/latin.cnf"
+      with _ -> failwith "Too hard problem" in
     let (b,t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt") in
     print_solution (b,t)
   end;;
