@@ -1,18 +1,6 @@
 all :
-	cd SMT/; make; cd ..
-	ocamlc -a da.ml -o da.cma
-	ocamlc da.cma -a core.ml -o core.cma
-	ocamlc -a rand.ml -o rand.cma
-	ocamlc -a default.ml -o default.cma
-	ocamlc -a moms.ml -o moms.cma
-	ocamlc -a dlis.ml -o dlis.cma
-	ocamlc -a clause.ml -o clause.cma
-	ocamlc -a wlit.ml -o wlit.cma
-	ocamlc -a graph.ml -o graph.cma
-	ocamlc -a proof.ml -o proof.cma
-	ocamlc -a wlit.cma oper.ml -o oper.cma
-	ocamlc rand.cma default.cma moms.cma dlis.cma -a order.ml -o order.cma
-	ocamlc core.cma order.cma clause.cma oper.cma wlit.cma graph.cma proof.cma dpll.ml -o dpll
+	ocamlbuild -yaccflag -v -lib unix smt.native; ln -fs smt.native
+	ocamlbuild -yaccflag -v -lib unix dpll.native; ln -fs main.native dpll
 	ocamlc -a solution.ml -o solution.cma
 	ocamlc solution.cma test.ml -o test
 	cd tseitin/; make; cd ..
@@ -52,3 +40,4 @@ proof :
 
 clean :
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
+	ocamlbuild -clean
