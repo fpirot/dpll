@@ -52,7 +52,7 @@ let create () =
 (* Le SMT checker *)
 (* ************** *)
 
-exception Inconsistent of formule list;;
+exception Inconsistent of predicat list;;
 
 (* Verifie la coherence de l'arite des symboles de fonction. *)
 let arity =
@@ -61,9 +61,9 @@ let arity =
     fun x n -> if search x n <> n then failwith "Signature mismatch";;
 
 (* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
-let newEqual t1 t2 r1 r2 = [Pred(Equal (r1, r2)); Not(Pred(Equal(r1, t1))); Not(Pred(Equal (r2, t2)))];;
+let newEqual t1 t2 r1 r2 = [(Equal (r1, r2)); (Diff(r1, t1)); (Diff (r2, t2))];;
 (* Idem en cas d'incoherence sur une inegalite  *)
-let newDiff t1 t2 r1 r2 = [Pred(Equal (t1, t2)); Not(Pred(Equal(r1, t1))); Not(Pred(Equal (r2, t2)))];;
+let newDiff t1 t2 r1 r2 = [(Equal (t1, t2)); (Diff(r1, t1)); (Diff (r2, t2))];;
 
 (* Met a jour les structure union-find tout en verifiant la coherence. *)
 let check pred eq df = 
@@ -101,25 +101,24 @@ let check pred eq df =
 
 
 let (_, t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt");;
-let (valu, assoc) =
+let assoc =
   let table = Hashtbl.create 257
-  and autre = Hashtbl.create 257
+  (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
   and channel = Scanf.Scanning.open_in "../Test/assoc.txt" in
-  let rec read =
-    try Scanf.bscanf channel "x%d : %d "
-      (fun x n -> Hashtbl.add table x (t.(abs n - 1) > 0); Hashtbl.add autre x n; read)
+  let rec read () =
+    try Scanf.bscanf channel "x%d : %d " (fun x n -> Hashtbl.add table x t.(n-1); read ())
     with End_of_file -> () in
-  (table, autre);;
+  table;;
 
 module Make = struct
-let validity () =
-  let (eq, df) = create () in
-  try Hashtbl.iter (fun x b-> match (Main.table.read x, b) with
+  let validity () =
+    let (eq, df) = create () in
+    try (Hashtbl.iter (fun x n -> match (Main.table.read x, n > 0) with
       |Equal(a, b), true -> check (Equal(a, b)) eq df
       |Equal(a, b), false -> check (Diff(a, b)) eq df  
       |Diff(a, b), true -> check (Diff(a, b)) eq df   
-      |Diff(a, b), false -> check (Equal(a, b)) eq df) valu with
-  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Main.table.write x)) lst;;
+      |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc; [])
+    with  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Main.table.write x)) lst;;
 end;;
 
 
