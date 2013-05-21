@@ -1,6 +1,6 @@
 all :
-	ocamlbuild -yaccflag -v -lib unix smt.native; ln -fs smt.native
-	ocamlbuild -yaccflag -v -lib unix dpll.native; ln -fs main.native dpll
+	ocamlbuild -yaccflag -v -lib unix smt.native; ln -fs smt.native smt
+	ocamlbuild -yaccflag -v -lib unix dpll.native; ln -fs dpll.native dpll
 	ocamlc -a solution.ml -o solution.cma
 	ocamlc solution.cma test.ml -o test
 	cd tseitin/; make; cd ..

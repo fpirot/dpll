@@ -45,7 +45,7 @@ let create () =
         update i' j' in
 
 
-  ({union = union; find = find; (*iter = fun f -> Hashtbl.iter f table*)},
+  ({union = union; find = find;},
   {add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)});;
 
 (* ************** *)
@@ -104,7 +104,7 @@ let (_, t) = Solution.read (Scanf.Scanning.open_in "../Test/result.txt");;
 let assoc =
   let table = Hashtbl.create 257
   (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
-  and channel = Scanf.Scanning.open_in "../Test/assoc.txt" in
+  and channel = Scanf.Scanning.open_in "Test/assoc.txt" in
   let rec read () =
     try Scanf.bscanf channel "x%d : %d " (fun x n -> Hashtbl.add table x t.(n-1); read ())
     with End_of_file -> () in
@@ -120,71 +120,3 @@ module Make = struct
       |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc; [])
     with  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Convert.table.write x)) lst;;
 end;;
-
-
-(* Tests *)
-
-(*
-let (eq, df) = create ();;
-check (Equal(Cst"a", Cst"b")) eq df;;
-check (Diff(Cst"c", Cst"b")) eq df;;
-check (Equal(Cst"c", Cst"d")) eq df;;
-check (Diff(Cst"a", Cst"d")) eq df;;
-check (Equal(Cst"a", Cst"e")) eq df;;
-check (Equal(Cst"c", Cst"e")) eq df;;
-*)
-(*
-let test = create ();;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 5 4;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 6 7;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 5 7;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 2 4;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 1 4;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.union 1 0;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-test.find 7;;
-test.iter (fun a b -> print_int a; print_string "->"; print_int b; print_string " ");;
-*)
-
-(*
-let uf () =
-
-  (* La valeur 257 est arbitraire dans l'ordre de grandeur du nombre de predicats. *)
-  let table = Hashtbl.create 257 in
-  let search x = try Hashtbl.find table x with Not_found -> Hashtbl.add table x x; x in 
-
-  (* La recherche... *)
-  let rec find i =
-    if search i = i then i
-    else begin
-      let j = find (search i) in
-        Hashtbl.replace table i j; j
-    end in
-  (* ...et l'union. *)
-  let union i j =
-    if compare (search i) (search j) < 0 then
-      Hashtbl.replace table (search (find j)) (search i)
-    else
-      Hashtbl.replace table (search (find i)) (search j) in
-
-  {union = union; find = find; (*iter = fun f -> Hashtbl.iter f table*)};;
-
-
-
-let set () =
-
-  let table = Hashtbl.create 257 in  
-  let search x = try Hashtbl.find table x with Not_found -> Hashtbl.add table x []; [] in
-  
-    let exists x y = List.exists (fun z -> z = y) (search x)
-    and add x y = let l = search x in
-      if List.exists (fun z -> z = y) l then () else Hashtbl.add table x (y::l) in
-  
-{add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)};;
-*)

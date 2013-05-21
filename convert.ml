@@ -46,6 +46,6 @@ and print_terms = function
 let main =
   let channel = open_in "test" in
   let lexbuf = Lexing.from_channel channel in
-  let file = open_out "../Test/smt.cnf" in
+  let file = open_out "Test/smt.cnf" in
   print_formule file (convert_formule (Parser.pform Lexer.lexer lexbuf));
   close_out file;;
