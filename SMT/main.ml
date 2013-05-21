@@ -1,6 +1,6 @@
 open Type;;
 
-type 'a alloc = {add : 'a -> int; find : int -> 'a}
+type 'a alloc = {write : 'a -> int; read : int -> 'a}
 
 let table =
 
@@ -9,15 +9,15 @@ let table =
   and vtopTable = Hashtbl.create 257 in
   let var p = try Hashtbl.find ptovTable p with Not_found -> incr compt; Hashtbl.add ptovTable p !compt; !compt
   and pred n x = try Hashtbl.find vtopTable n with Not_found -> Hashtbl.add vtopTable n x; x in
-  {add = (fun x -> let n = var x in let _ = pred n x in n);
-   find = (fun n -> Hashtbl.find vtopTable n)};;
+  {write = (fun x -> let n = var x in let _ = pred n x in n);
+   read = (fun n -> Hashtbl.find vtopTable n)};;
 
 let rec convert_formule = function
   | POr(a, b) -> Or(convert_formule a, convert_formule b)
   | PAnd(a, b) -> And(convert_formule a, convert_formule b)
   | PImply(a, b) -> Imply(convert_formule a, convert_formule b)
   | PNot(a) -> Not(convert_formule a)
-  | PPred(p) -> Var (table.add (convert_predicat p))
+  | PPred(p) -> Var (table.write (convert_predicat p))
 and convert_predicat = function
   | PEqual(a, b) -> Equal(convert_terms a, convert_terms b)
   | PDiff(a, b) -> Diff(convert_terms a, convert_terms b)
