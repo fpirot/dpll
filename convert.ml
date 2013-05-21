@@ -43,8 +43,7 @@ and print_terms = function
   | Fun(a, b) -> print_string ("Fun ("^a^" ("); List.iter (fun x -> print_terms x; print_string " ") b; print_string ")"
   | Cst(v) -> print_string v;;
 
-let main =
-  let channel = open_in "test" in
+let main channel =
   let lexbuf = Lexing.from_channel channel in
   let file = open_out "Test/smt.cnf" in
   print_formule file (convert_formule (Parser.pform Lexer.lexer lexbuf));

@@ -110,6 +110,8 @@ let assoc =
     with End_of_file -> () in
   table;;
 
+let print_solution () = ();;
+
 module Make = struct
   let validity () =
     let (eq, df) = create () in
@@ -120,3 +122,11 @@ module Make = struct
       |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc; [])
     with  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Convert.table.write x)) lst;;
 end;;
+
+let main () =
+let s = ref "Test/formule.txt" in
+Arg.parse [] (fun x -> s := x) "";
+let file = open_in !s in
+Convert.main file;
+let _ = Sys.command "./dpll -naff Test/smt.cnf" in
+print_solution ();;
