@@ -43,6 +43,12 @@ and print_terms = function
   | Fun(a, b) -> print_string ("Fun ("^a^" ("); List.iter (fun x -> print_terms x; print_string " ") b; print_string ")"
   | Cst(v) -> print_string v;;
 
+let print_pred p b = match (p,b) with
+  | (Equal (a, b), true)
+  | (Diff (a, b), false) -> print_terms a; print_string " == "; print_terms b; print_newline()
+  | (Equal (a, b), false)
+  | (Diff (a, b), true) -> print_terms a; print_string " != "; print_terms b; print_newline()
+
 let main channel =
   let lexbuf = Lexing.from_channel channel in
   let file = open_out "Test/smt.cnf" in

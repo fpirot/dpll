@@ -74,10 +74,10 @@ struct
 end;;
 
 let calcul x y =
-  let channel = open_out "../add" in
+  let channel = open_out "../Test/add" in
     Print.add channel x y;
     close_out channel;
-    let _ = Sys.command "./../dpll -naff ../add" in
+    let _ = Sys.command "./../dpll -naff ../Test/add" in
       Print.convert ();;
 
 let rec add x = Scanf.scanf " %c" (fun c -> match c with

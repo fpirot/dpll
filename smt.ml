@@ -105,7 +105,7 @@ let check pred eq df =
         then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2
 
 
-let (_, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
+let (b, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
 let assoc =
   let table = Hashtbl.create 257
   (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
@@ -115,7 +115,6 @@ let assoc =
     with End_of_file -> () in
   table
 
-let print_solution () = ()
 end;;
 
 
@@ -128,4 +127,8 @@ module Make = struct
       |Diff(a, b), true -> Smt.check (Diff(a, b)) eq df   
       |Diff(a, b), false -> Smt.check (Equal(a, b)) eq df) Smt.assoc; [])
     with Smt.Inconsistent(lst) -> List.map (fun x -> Hashtbl.find Smt.assoc (Convert.table.write x)) lst;;
+  let print_solution () = 
+    if Smt.b then begin print_string "s SATISFIABLE\n";
+      Hashtbl.iter (fun x n -> Convert.print_pred (Convert.table.read x) (n > 0)) Smt.assoc
+    end else print_string "s UNSATISFIABLE";;
 end;;
