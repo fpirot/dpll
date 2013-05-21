@@ -113,6 +113,7 @@ let assoc =
   let rec read () =
     try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(n-1); read ())
     with End_of_file -> () in
+  read();
   table
 
 end;;
@@ -127,8 +128,18 @@ module Make = struct
       |Diff(a, b), true -> Smt.check (Diff(a, b)) eq df   
       |Diff(a, b), false -> Smt.check (Equal(a, b)) eq df) Smt.assoc; [])
     with Smt.Inconsistent(lst) -> List.map (fun x -> Hashtbl.find Smt.assoc (Convert.table.write x)) lst;;
-  let print_solution () = 
-    if Smt.b then begin print_string "s SATISFIABLE\n";
-      Hashtbl.iter (fun x n -> Convert.print_pred (Convert.table.read x) (n > 0)) Smt.assoc
-    end else print_string "s UNSATISFIABLE";;
+  let print_solution () =
+    let (b, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt") in
+    let assoc =
+      let table = Hashtbl.create 257
+      (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
+      and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
+      let rec read () =
+	try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(abs n - 1); read ())
+	with End_of_file -> () in
+      read();
+      table in
+    if b then begin print_string "s SATISFIABLE\n";
+      Hashtbl.iter (fun x n -> Convert.print_pred (Convert.table.read x) (n > 0)) assoc
+    end else print_string "s UNSATISFIABLE\n";;
 end;;

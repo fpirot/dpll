@@ -55,15 +55,15 @@ let print_solution (b,t) =
 let main () =
   let s = ref "../Test/form0.cnf" and aff = ref true in
   Arg.parse [("-naff", Arg.Unit (fun () -> aff := false), "Ne pas afficher le résultat en console")] (fun x -> s := x) "";
-  let s1 = ref "../Test/tseitin.cnf" in
-  let file = try open_out !s1 with _ -> s1 := "Test/tseitin.cbf"; open_out !s1 in
+  let s1 = ref "../Test/tseitin.cnf" and s2 = ref "./../dpll " in
+  let file = try open_out !s1 with _ -> s1 := "Test/tseitin.cbf"; s2 := "./dpll "; open_out !s1 in
   let channel = open_in !s in
   let lexbuf = Lexing.from_channel channel in
   let form = Parser.form Lexer.lexer lexbuf in
   tseitin form;
   Solution.fix !compt;
   Solution.write file;
-  let _ = try Sys.command ("./../dpll -naff "^(!s1)) with _ ->  Sys.command ("./dpll -naff "^(!s1)) in
+  let _ = Sys.command (!s2 ^ " -naff " ^ !s1) in
   if !aff then print_solution (Solution.read (try Scanf.Scanning.open_in "../Test/result.txt" with _ -> Scanf.Scanning.open_in "Test/result.txt"));;
 
 main ()
