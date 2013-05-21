@@ -21,9 +21,10 @@ De bonnes nouvelles dans cet ultime rendu :
 - La génération de graphe renvoie le graphe complet jusqu'au point
   d'articulation (ce qui n'était pas le cas dans le rendu 3)
 
-Une mauvaise nouvelle :
-SMT est prêt à être utilisé, mais non n'avons pas encore réussi à le compiler...
-Peut être pour une autre version plus tard..?
+/!\ Petite particularité :
+Le fichier result.txt est le coeur du programme : il doit être d'un
+format reconnu par DPLL pour que tout le reste fonctionne (UNSATISFIABLE
+en première ligne suffit)...
 
 -------------------------
 Compilation et exécution :
@@ -200,7 +201,7 @@ Le programme se décompose en plusieurs modules.
 - SMT : Parse des contraintes de congruence, et lance DPLL sur le
     problème, en vérifiant que le résultat obtenu vérifie ces
     contraintes.
-    -> Benjamin
+    -> Benjamin puis François pour l'interface avec DPLL
 
 ----------------------------------------
 Analyse et comparaison des heuristiques :
