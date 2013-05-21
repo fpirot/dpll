@@ -34,7 +34,7 @@ let write_result file b =
     let l = valuation Core.var in
     List.iter (fun x -> output_string file (string_of_int x); output_string file " ") l
   end else output_string file "UNSATISFIABLE\n";
-  flush file;;
+  close_out file;;
 (* Ecrit la valuation trouvée par dpll sur le fichier. *)
 
 let verify lst = List.for_all (fun l -> List.exists (fun x -> Core.read x = x) l) lst;;

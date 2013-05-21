@@ -5,9 +5,11 @@ open Convert;;
 (* ***************************************************************** *)
 (* Structure union-find a la 'objet' utilisant les tables de hachage *)
 (* ***************************************************************** *)
-
-type ('a, 'b) unionFind = {union : 'a -> 'b -> unit; find : 'a -> 'b; (*iter : ('a -> 'b -> unit) -> unit*)};;
+type ('a, 'b) unionFind = {union : 'a -> 'b -> unit; find : 'a -> 'b};;
 type ('a, 'b) set = {add :'a -> 'b -> unit; exists : 'a -> 'a -> bool};;
+
+module Uf =
+struct
 
 let create () =
 
@@ -46,24 +48,27 @@ let create () =
 
 
   ({union = union; find = find;},
-  {add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)});;
+  {add = (fun x y -> add x y; add y x); exists = (fun x y -> exists x y || exists y x)})
+
+end;;
 
 (* ************** *)
 (* Le SMT checker *)
 (* ************** *)
 
+module Smt = struct
 exception Inconsistent of predicat list;;
 
 (* Verifie la coherence de l'arite des symboles de fonction. *)
 let arity =
   let table = Hashtbl.create 257 in
   let search x n = try Hashtbl.find table x with Not_found -> Hashtbl.add table x n; n in 
-    fun x n -> if search x n <> n then failwith "Signature mismatch";;
+    fun x n -> if search x n <> n then failwith "Signature mismatch"
 
 (* Nouvelle 'clause' obtenue en cas d'incoherence sur un egalite *)
-let newEqual t1 t2 r1 r2 = [(Equal (r1, r2)); (Diff(r1, t1)); (Diff (r2, t2))];;
+let newEqual t1 t2 r1 r2 = [(Equal (r1, r2)); (Diff(r1, t1)); (Diff (r2, t2))]
 (* Idem en cas d'incoherence sur une inegalite  *)
-let newDiff t1 t2 r1 r2 = [(Equal (t1, t2)); (Diff(r1, t1)); (Diff (r2, t2))];;
+let newDiff t1 t2 r1 r2 = [(Equal (t1, t2)); (Diff(r1, t1)); (Diff (r2, t2))]
 
 (* Met a jour les structure union-find tout en verifiant la coherence. *)
 let check pred eq df = 
@@ -97,36 +102,30 @@ let check pred eq df =
         then raise (Inconsistent (newEqual t1 t2 r1 r2)) else equal (t1, t2); eq.union t1 t2
     |Diff(t1, t2) -> let r1 = eq.find t1 and r2 = eq.find t2 in
       if t1 = t2 || r1 = r2
-        then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2;;
+        then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2
 
 
-let (_, t) = Solution.read (Scanf.Scanning.open_in "Test/result.txt");;
+let (_, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
 let assoc =
   let table = Hashtbl.create 257
   (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
-  and channel = Scanf.Scanning.open_in "Test/assoc.txt" in
+  and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
   let rec read () =
     try Scanf.bscanf channel "x%d : %d " (fun x n -> Hashtbl.add table x t.(n-1); read ())
     with End_of_file -> () in
-  table;;
+  table
 
-let print_solution () = ();;
+let print_solution () = ()
+end;;
+
 
 module Make = struct
   let validity () =
-    let (eq, df) = create () in
+    let (eq, df) = Uf.create () in
     try (Hashtbl.iter (fun x n -> match (Convert.table.read x, n > 0) with
-      |Equal(a, b), true -> check (Equal(a, b)) eq df
-      |Equal(a, b), false -> check (Diff(a, b)) eq df  
-      |Diff(a, b), true -> check (Diff(a, b)) eq df   
-      |Diff(a, b), false -> check (Equal(a, b)) eq df) assoc; [])
-    with  Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Convert.table.write x)) lst;;
+      |Equal(a, b), true -> Smt.check (Equal(a, b)) eq df
+      |Equal(a, b), false -> Smt.check (Diff(a, b)) eq df  
+      |Diff(a, b), true -> Smt.check (Diff(a, b)) eq df   
+      |Diff(a, b), false -> Smt.check (Equal(a, b)) eq df) Smt.assoc; [])
+    with Smt.Inconsistent(lst) -> List.map (fun x -> Hashtbl.find Smt.assoc (Convert.table.write x)) lst;;
 end;;
-
-let main () =
-let s = ref "Test/formule.txt" in
-Arg.parse [] (fun x -> s := x) "";
-let file = open_in !s in
-Convert.main file;
-let _ = Sys.command "./dpll -naff Test/smt.cnf" in
-print_solution ();;
