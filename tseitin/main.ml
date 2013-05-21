@@ -11,12 +11,12 @@ end);;
 
 let table = ref Assoc.empty;;
 
-let channel = open_out "../Test/assoc.txt";;
+let channel = try open_out "../Test/assoc.txt" with _ -> open_out "Test/assoc.txt";;
 
 let var x = try Assoc.find x !table
   with Not_found -> (incr compt; 
     table := Assoc.add x !compt !table;
-    Printf.fprintf channel "%s : %d" x !compt;
+    Printf.fprintf channel "%s : %d\n" x !compt;
     flush channel;
     !compt);;
 
@@ -53,14 +53,17 @@ let print_solution (b,t) =
   else print_string "UNSATISFIABLE\n";;
 
 let main () =
-let file = open_out "../Test/tseitin.cnf" in
-let channel = open_in (try Sys.argv.(1) with _ -> "../Test/form0.cnf") in
-let lexbuf = Lexing.from_channel channel in
-let form = Parser.form Lexer.lexer lexbuf in
-tseitin form;
-Solution.fix !compt;
-Solution.write file;
-let _ = Sys.command "./../dpll -naff ../Test/tseitin.cnf" in
-print_solution (Solution.read (Scanf.Scanning.open_in "../Test/result.txt"));;
+  let s = ref "../Test/form0.cnf" and aff = ref true in
+  Arg.parse [("-naff", Arg.Unit (fun () -> aff := false), "Ne pas afficher le résultat en console")] (fun x -> s := x) "";
+  let s1 = ref "../Test/tseitin.cnf" in
+  let file = try open_out !s1 with _ -> s1 := "Test/tseitin.cbf"; open_out !s1 in
+  let channel = open_in !s in
+  let lexbuf = Lexing.from_channel channel in
+  let form = Parser.form Lexer.lexer lexbuf in
+  tseitin form;
+  Solution.fix !compt;
+  Solution.write file;
+  let _ = try Sys.command ("./../dpll -naff "^(!s1)) with _ ->  Sys.command ("./dpll -naff "^(!s1)) in
+  if !aff then print_solution (Solution.read (try Scanf.Scanning.open_in "../Test/result.txt" with _ -> Scanf.Scanning.open_in "Test/result.txt"));;
 
 main ()

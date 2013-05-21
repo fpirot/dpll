@@ -111,7 +111,7 @@ let assoc =
   (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
   and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
   let rec read () =
-    try Scanf.bscanf channel "x%d : %d " (fun x n -> Hashtbl.add table x t.(n-1); read ())
+    try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(n-1); read ())
     with End_of_file -> () in
   table
 
