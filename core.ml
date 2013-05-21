@@ -60,7 +60,7 @@ struct
   exception Satisfiable
   exception Unsatisfiable of cls
 
-  let debug = true
+  let debug = false
 
   let printint x =
     let e = if x < 0 then 1 else 0 in
