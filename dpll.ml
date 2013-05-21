@@ -5,9 +5,7 @@ module Graph = Graph.Make (Core);;
 module Proof = Proof.Make (Core);;
 module Order = Order.Make (Core);;
 module Oper = Oper.Make (Core) (Clause) (Wlit) (Order) (Graph) (Proof);;
-module Smt = struct
-  let validity () = []
-end;;
+module Smt = Smt.Make;;
 
 exception Unsatisfiable;;
 

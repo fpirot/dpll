@@ -58,7 +58,7 @@ struct
       carry channel
 
   let convert () =
-    let channel = Scanf.Scanning.open_in "Test/result.txt"
+    let channel = Scanf.Scanning.open_in "../Test/result.txt"
     and res = ref 0 in
       Scanf.bscanf channel "%s %s %d" (fun s1 s2 x -> ());
       for k = 0 to nbr * 3 - 1 do
@@ -76,7 +76,7 @@ let calcul x y =
   let channel = open_out "add" in
     Print.add channel x y;
     close_out channel;
-    let _ = Sys.command "./dpll -naff add" in
+    let _ = Sys.command "./../dpll -naff add" in
       Print.convert ();;
 
 let rec add x = Scanf.scanf " %c" (fun c -> match c with
