@@ -1,7 +1,7 @@
 module Print =
 struct
 
-  let nbr = 31
+  let nbr = 30
 
   let init = fun n ->
     let bitArray = Array.init nbr (fun i -> n land (1 lsl i) > 0) in
@@ -85,7 +85,8 @@ let rec add x = Scanf.scanf " %c" (fun c -> match c with
   |'-' -> Scanf.scanf " %d" (fun y -> add (calcul x (-y)))
   |_ -> print_int x; print_newline ());;
 
-Scanf.scanf " %d" (fun x -> add x);;
+try Scanf.scanf " %d" (fun x -> add x) with
+  Scanf.Scan_failure(s) -> print_string "Fatal error, bad input. Example of expression : -2 + 3 - 1 + -4 =\n";;
   
 
 (* Tests *)
