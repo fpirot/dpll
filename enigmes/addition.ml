@@ -1,7 +1,7 @@
 module Print =
 struct
 
-  let nbr = 31
+  let nbr = 30
 
   let init = fun n ->
     let bitArray = Array.init nbr (fun i -> n land (1 lsl i) > 0) in
