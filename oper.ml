@@ -217,7 +217,7 @@ struct
   let propagation = 
     let propag = if Cor.wlit then wlit_propagation
       else simple_propagation in
-    (fun l env channel ->
+    (fun l env ->
       try propag l env with Cor.Unsatisfiable c ->
 	let k = print_conflict c in
       	raise (Backtrack k))
@@ -247,7 +247,7 @@ sig
   val remove : int -> env -> env
   val update : int -> env -> env
   val entail : int -> env -> set
-  val propagation : cls list -> env -> out_channel -> env
+  val propagation : cls list -> env -> env
   val bindings : env -> (int * int list list) list
   val find : int -> env -> cls list
   val add_cls : int list -> unit

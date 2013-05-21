@@ -32,7 +32,7 @@ Compilation et exécution :
 Pour compiler, utiliser le makefile :
 
 - make pour compiler le solveur, le testeur à la racine, et chacune des
-  options du rendu 4 (./tseitin, ./latin, ./magique, ./sudoku, ./color)
+  options du rendu 4 (./tseitin, ./latin, ./magique, ./sudoku, ./color, ./smt)
 
 - make generate pour compiler le générateur de graphes de performances
 
@@ -49,9 +49,8 @@ Pour exécuter les programmes :
      heuristiques correspondant aux arguments optionnels qui
      suivent. L'argument -graph permet d'activer l'interactivité du
      programme.
-     ./arith (< nom_du_fichier) -> lance le solveur pour calculer une
-     formule arithmétique (celle-ci doit se terminer par un symbole
-     spécial, par exemple '=' ou ';')
+     ./smt (nom_du_fichier) -> lance la satisfaction modulo une théorie
+     par congruence sur le problème décrit dans le fichier (Test/formule.txt par défaut)
 
 - Dans le répertoire test : 
     ./test (--help pour voir les différentes options proposées) :
@@ -64,14 +63,14 @@ Pour exécuter les programmes :
     formule.
 
 - Dans enigmes :
+    ./arith (< nom_du_fichier) -> lance le solveur pour calculer une
+      formule arithmétique (celle-ci doit se terminer par un symbole
+      spécial, par exemple '=' ou ';')
     ./latin n : Génère un carré latin de taille n*n grâce au solveur
     ./magique n : Génère un carré magique de taille n*n grâce au solveur
     ./sudoku n : Résout le sudoku décrit à la ligne n dans le fichier enigmes/grilles.txt
     ./color (nom_du_fichier) k : Résout le problème de k-coloration du graphe décrit dans le fichier (Test/graph0.cnf par défaut)
 
-- Pour l'addition :
-  ./addition ['0'-'9' '+' '-']*['=']. La formule doit terminer par le symbole =, puis entrer.
-  Le calcul est actuellement fait sur des entiers non signés.
 
 --------------------------------
 Description rapide du programme :

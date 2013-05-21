@@ -1,8 +1,8 @@
 all :
-	ocamlbuild -yaccflag -v -lib unix smt.native; ln -fs smt.native smt
-	ocamlbuild -yaccflag -v -lib unix dpll.native; ln -fs dpll.native dpll
-	ocamlc -a solution.ml -o solution.cma
-	ocamlc solution.cma test.ml -o test
+	ocamlbuild -yaccflag -v -lib unix smtlaunch.native dpll.native test.native
+	mv smtlaunch.native smt
+	mv dpll.native dpll
+	mv test.native test
 	cd tseitin/; make; cd ..
 	cd enigmes/; make; cd ..
 	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux Test/*.cmo Test/*.cmi Test/*.cma Test/*~ Test/\#*\#
@@ -39,5 +39,7 @@ proof :
 	rm -rf *.log *.aux *.tex
 
 clean :
-	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux
+	rm -rf *.cmo *.cmi *.cma *~ \#*\# *.exe *.log *.aux Graph/
 	ocamlbuild -clean
+	cd tseitin; make clean; cd ..
+	cd enigmes; make clean; cd ..

@@ -15,7 +15,7 @@ end;;
 module Print = functor (Cor : CoreElt) ->
 struct
 
-  let _ = Sys.command "if [ -d Graph/ ]; then : ; else mkdir Graph/; fi"
+  let _ = Sys.command "if [ -d Graph/ ]; then : ; else ( if [ -d ../Graph/ ]; then : ; else mkdir Graph/ ; fi ); fi"
 
   let compt = ref 0
 

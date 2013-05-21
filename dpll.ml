@@ -34,7 +34,7 @@ let write_result file b =
     let l = valuation Core.var in
     List.iter (fun x -> output_string file (string_of_int x); output_string file " ") l
   end else output_string file "UNSATISFIABLE\n";
-  flush file;;
+  close_out file;;
 (* Ecrit la valuation trouvée par dpll sur le fichier. *)
 
 let verify lst = List.for_all (fun l -> List.exists (fun x -> Core.read x = x) l) lst;;
@@ -47,7 +47,6 @@ let print_list l =
   print_string "["; print l;;
 
 let dpll env =
-  let channel = open_out "log" in  
   let rec aux i env =
     (* i est la profondeur actuelle des paris. *)
     let nb_cls = Core.nb_cls () in
@@ -85,7 +84,7 @@ let dpll env =
     (* On supprime les assignations des niveaux plus hauts
        que celui actuel. *)
     Core.fix_depth i;
-    let e' = Oper.propagation l (Oper.update nb_cls e) channel in
+    let e' = Oper.propagation l (Oper.update nb_cls e) in
     try aux (i+1) e'
     with Oper.Backtrack k -> if k = i then
 	let l' = new_cls nb_cls in propag l' e' (Core.nb_cls()) i
