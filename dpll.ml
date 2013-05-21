@@ -9,8 +9,6 @@ module Smt = Smt.Make;;
 
 exception Unsatisfiable;;
 
-let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt";;
-
 let debug = false;;
 
 let rec new_cls n = if n = Core.nb_cls() then [] else n :: (new_cls (n+1));;
@@ -26,6 +24,8 @@ let rec valuation n =
    l'instance d'entrée est satisfaite, renvoie une liste
    d'assignations qui satisfait le problème, à partir des données
    entrées dans Assig. n est le nombre de variables du problème. *)
+
+let file = try open_out "Test/result.txt" with _ -> open_out "../Test/result.txt";;
 
 let write_result file b =
   if b then begin

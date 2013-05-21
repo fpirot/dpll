@@ -51,7 +51,7 @@ let print_solution (b,t) n =
   else print_string "UNSATISFIABLE\n";;
 
 let main () =
-  let n = try int_of_string Sys.argv.(1) with _ -> 10 in
+  let n = try int_of_string Sys.argv.(1) with _ -> 8 in
   reduction n;
   let file = open_out "../Test/latin.cnf" in
   Solution.write file;

@@ -105,7 +105,8 @@ let check pred eq df =
         then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2
 
 
-let (b, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
+let (b, t) = try Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
+  with _ -> (false, [||])
 let assoc =
   let table = Hashtbl.create 257
   (* table qui à une variable de tseitin associe la variable signée dans dpll. *)

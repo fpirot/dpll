@@ -22,9 +22,9 @@ De bonnes nouvelles dans cet ultime rendu :
   d'articulation (ce qui n'était pas le cas dans le rendu 3)
 
 /!\ Petite particularité :
-Le fichier result.txt est le coeur du programme : il doit être d'un
-format reconnu par DPLL pour que tout le reste fonctionne (UNSATISFIABLE
-en première ligne suffit)...
+S'il y a une erreur de parsing qui apparaît, essayer de recréer le fichier
+Test/result.txt, avec UNSATISFIABLE\n en première ligne : c'est le coeur du
+programme !!
 
 -------------------------
 Compilation et exécution :
