@@ -103,41 +103,38 @@ let check pred eq df =
     |Diff(t1, t2) -> let r1 = eq.find t1 and r2 = eq.find t2 in
       if t1 = t2 || r1 = r2
         then raise (Inconsistent (newDiff t1 t2 r1 r2)) else diff (t1, t2); df.add t1 t2
-
-
-let (b, t) = try Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt")
-  with _ -> (false, [||])
-let assoc =
-  let table = Hashtbl.create 257
-  (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
-  and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
-  let rec read () =
-    try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(n-1); read ())
-    with _  -> () in
-  read();
-  table
-
 end;;
 
 
 module Make = struct
-  let validity () =
+  let validity file =
+    let (b, t) = Solution.read file in
+    let assoc =
+      let table = Hashtbl.create 257
+    (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
+      and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
+      let rec read () =
+	try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(n-1); read ())
+	with _  -> () in
+      read();
+      table in
     let (eq, df) = Uf.create () in
     try (Hashtbl.iter (fun x n -> match (Convert.table.read x, n > 0) with
       |Equal(a, b), true -> Smt.check (Equal(a, b)) eq df
       |Equal(a, b), false -> Smt.check (Diff(a, b)) eq df  
       |Diff(a, b), true -> Smt.check (Diff(a, b)) eq df   
-      |Diff(a, b), false -> Smt.check (Equal(a, b)) eq df) Smt.assoc; [])
-    with Smt.Inconsistent(lst) -> List.map (fun x -> Hashtbl.find Smt.assoc (Convert.table.write x)) lst;;
-  let print_solution () =
-    let (b, t) = Solution.read (try Scanf.Scanning.open_in "Test/result.txt" with _ -> Scanf.Scanning.open_in "../Test/result.txt") in
+      |Diff(a, b), false -> Smt.check (Equal(a, b)) eq df) assoc; [])
+    with Smt.Inconsistent(lst) -> List.map (fun x -> Hashtbl.find assoc (Convert.table.write x)) lst;;
+
+  let print_solution file =
+    let (b, t) = Solution.read file in
     let assoc =
       let table = Hashtbl.create 257
-      (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
+    (* table qui à une variable de tseitin associe la variable signée dans dpll. *)
       and channel = try Scanf.Scanning.open_in "Test/assoc.txt" with _ -> Scanf.Scanning.open_in "../Test/assoc.txt" in
       let rec read () =
-	try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(abs n - 1); read ())
-	with End_of_file -> () in
+	try Scanf.bscanf channel "x%d : %d\n" (fun x n -> Hashtbl.add table x t.(n-1); read ())
+	with _  -> () in
       read();
       table in
     if b then begin print_string "s SATISFIABLE\n";

@@ -59,8 +59,9 @@ let dpll env =
 	if Core.smt then begin
 	  (* On rentre dans la partie vérification de concordance avec la théorie*)
 	  write_result file true;
+	  let channel = Scanf.Scanning.open_in "Test/result.txt" in
 	  (* On génère la clause insatisfiable selon la théorie *)
-	  let c = Smt.validity () in
+	  let c = Smt.validity channel in
 	  if c = [] then raise Core.Satisfiable
 	  else Oper.add_cls c
 	end;
